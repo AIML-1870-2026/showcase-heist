@@ -31,7 +31,7 @@ window.Player = (function () {
   let state     = 'normal';
   let slideTimer = 0;
 
-  let yaw   = Math.PI;   // camera/facing angle (radians)
+  let yaw   = 0;   // camera/facing angle (radians) — 0 = camera south of player, facing into museum
   let pitch = 0.25;
   let pointerLocked = false;
 
@@ -201,8 +201,8 @@ window.Player = (function () {
       const len = Math.sqrt(mx * mx + mz * mz);
       mx /= len; mz /= len;
       const cos = Math.cos(yaw), sin = Math.sin(yaw);
-      vel.x = (cos * mx - sin * mz) * spd;
-      vel.z = (sin * mx + cos * mz) * spd;
+      vel.x = (sin * mz + cos * mx) * spd;
+      vel.z = (cos * mz - sin * mx) * spd;
 
       // Face movement direction
       playerMesh.rotation.y = Math.atan2(vel.x, vel.z) + Math.PI;
