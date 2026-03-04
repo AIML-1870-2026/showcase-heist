@@ -35,11 +35,27 @@ window.Security = (function () {
   }
 
   // ── Constants ──────────────────────────────────────────
-  const CAM_RANGE       = 10;
-  const LOD_FOV_DIST2   = 45 * 45;  // hide FOV fan beyond 45 units
-  const CAM_ANGLE   = Math.PI / 3;
-  const CAM_SPEED   = 0.45;   // rad/sec normal sweep
-  const DETECT_TIME = 1.5;    // seconds in cone → alert
+  const CAM_RANGE     = 10;
+  const LOD_FOV_DIST2 = 45 * 45;
+  const CAM_ANGLE     = Math.PI / 3;
+
+  // ── Difficulty-scaled values ────────────────────────────
+  let CAM_SPEED      = 0.45;   // rad/sec normal sweep
+  let DETECT_TIME    = 1.5;    // seconds in cone → alert
+  let ALARM_DURATION = 60;     // seconds before game over
+
+  const _SEC_DIFF = {
+    easy:   { CAM_SPEED: 0.3,  DETECT_TIME: 2.5, ALARM_DURATION: 90 },
+    normal: { CAM_SPEED: 0.45, DETECT_TIME: 1.5, ALARM_DURATION: 60 },
+    hard:   { CAM_SPEED: 0.72, DETECT_TIME: 0.8, ALARM_DURATION: 40 },
+  };
+
+  function setDifficulty(d) {
+    const p = _SEC_DIFF[d] || _SEC_DIFF.normal;
+    CAM_SPEED      = p.CAM_SPEED;
+    DETECT_TIME    = p.DETECT_TIME;
+    ALARM_DURATION = p.ALARM_DURATION;
+  }
 
   let cameras      = [];
   let lasers       = [];
@@ -262,7 +278,7 @@ window.Security = (function () {
   function startAlarmCountdown() {
     if (alarmActive) return;
     alarmActive    = true;
-    alarmCountdown = 60;
+    alarmCountdown = ALARM_DURATION;
     UI.showAlarm(true);
     UI.SFX.alarm();
     if (window.G) window.G.alarm.active = true;
@@ -354,6 +370,7 @@ window.Security = (function () {
     resetAlarm,
     resetLasers,
     isAlarmActive() { return alarmActive; },
+    setDifficulty,
   };
 
 }());

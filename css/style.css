@@ -71,6 +71,41 @@ html, body {
   opacity: 0;
 }
 
+/* ── Difficulty selector ────────────────────────────────── */
+.diff-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.diff-label {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: #888;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.diff-btn {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  padding: 5px 14px;
+  border: 1px solid #444;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.diff-btn:hover   { border-color: var(--gold); color: var(--gold-light); }
+.diff-btn.active  { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.12); }
+.diff-btn[data-diff="hard"].active  { border-color: #e05050; color: #e05050; background: rgba(224,80,80,0.12); }
+.diff-btn[data-diff="easy"].active  { border-color: #2ecc71; color: #2ecc71; background: rgba(46,204,113,0.12); }
+
 /* ── Utility ────────────────────────────────────────────── */
 .hidden  { display: none !important; }
 .active  { display: flex !important; }

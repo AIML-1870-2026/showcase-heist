@@ -254,11 +254,15 @@ window.Player = (function () {
       // Face movement direction
       playerMesh.rotation.y = Math.atan2(vel.x, vel.z) + Math.PI;
 
-      // Footstep SFX
+      // Footstep SFX + noise
       footT -= dt;
       if (footT <= 0) {
-        UI.SFX.footstep();
+        if (state !== 'crouching') UI.SFX.footstep();
         footT = state === 'crouching' ? 0.55 : 0.27;
+        // Broadcast noise to nearby guards — crouching is silent
+        if (state !== 'crouching' && window.Guards) {
+          Guards.notifyNoise(pos.x, pos.z, state === 'sliding' ? 6.0 : 3.5);
+        }
       }
     } else {
       const friction = Math.pow(0.65, dt * 60);

@@ -6,14 +6,29 @@
 window.Guards = (function () {
 
   // ── Constants ──────────────────────────────────────────
-  const BASE_SPEED    = 3.5;
   const LOD_CONE_DIST2 = 45 * 45;  // hide vision cone beyond 45 units (fog fully opaque at 75)
-  const VISION_RANGE  = 8;
   const VISION_ANGLE  = Math.PI / 3;   // 60° total (30° each side)
-  const DETECT_TIME   = 1.5;           // seconds looking before alerted
   const SUSP_TIME     = 3.0;           // seconds suspicious before giving up
   const SEARCH_TIME   = 5.0;           // seconds searching before giving up
   const CATCH_DIST    = 1.0;           // distance to "catch" player
+
+  // ── Difficulty-scaled values (let so setDifficulty can mutate) ──
+  let BASE_SPEED   = 3.5;
+  let VISION_RANGE = 8;
+  let DETECT_TIME  = 1.5;
+
+  const _DIFF = {
+    easy:   { BASE_SPEED: 2.8, VISION_RANGE: 6,  DETECT_TIME: 2.5 },
+    normal: { BASE_SPEED: 3.5, VISION_RANGE: 8,  DETECT_TIME: 1.5 },
+    hard:   { BASE_SPEED: 4.8, VISION_RANGE: 11, DETECT_TIME: 0.8 },
+  };
+
+  function setDifficulty(d) {
+    const p = _DIFF[d] || _DIFF.normal;
+    BASE_SPEED   = p.BASE_SPEED;
+    VISION_RANGE = p.VISION_RANGE;
+    DETECT_TIME  = p.DETECT_TIME;
+  }
 
   // ── Wall occlusion (2D slab test, XZ plane) ────────────
   function hasLineOfSight(ax, az, bx, bz) {
@@ -209,6 +224,16 @@ window.Guards = (function () {
       this._body      = this.mesh.userData.bodyMesh;
 
       this.mesh.position.copy(this.pos);
+
+      // Flashlight — SpotLight at head height pointing in facing direction
+      const flash = new THREE.SpotLight(0xfff8e0, 0.65, 14, 0.27, 0.45, 1.5);
+      flash.castShadow = false;
+      const flashTarget = new THREE.Object3D();
+      scene.add(flash);
+      scene.add(flashTarget);
+      flash.target = flashTarget;
+      this._flash       = flash;
+      this._flashTarget = flashTarget;
 
       // Speech bubble sprite
       this._bubbleMat     = null;
@@ -406,6 +431,7 @@ window.Guards = (function () {
       this.mesh.rotation.y = this.smoothYaw;
       this.updateCone(playerPos);
       this.tickBubble(dt);
+      this.tickFlashlight();
 
       // Detection bar: visible when suspicious and detectT > 0
       const fill = this.detectT / DETECT_TIME;
@@ -418,6 +444,18 @@ window.Guards = (function () {
       } else {
         this.detectBar.visible = false;
       }
+    }
+
+    tickFlashlight() {
+      this._flash.position.set(this.pos.x, 1.55, this.pos.z);
+      this._flashTarget.position.set(
+        this.pos.x + this.facing.x * 11,
+        0.7,
+        this.pos.z + this.facing.z * 11
+      );
+      const a = this.state === 'alerted', s = this.state === 'suspicious';
+      this._flash.color.setHex(a ? 0xff2200 : s ? 0xffcc44 : 0xfff8e0);
+      this._flash.intensity = a ? 1.9 : s ? 1.2 : 0.65;
     }
 
     _showBubble(text) {
@@ -523,6 +561,7 @@ window.Guards = (function () {
     triggerAlarmLevel,
     resetAlarm,
     notifyNoise,
+    setDifficulty,
   };
 
 }());

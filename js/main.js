@@ -74,6 +74,7 @@
   window.G = {
     phase:          'start',   // 'start' | 'playing' | 'paused' | 'gameover' | 'won'
     mode:           'solo',    // 'solo'  | 'coop'
+    difficulty:     'normal',  // 'easy' | 'normal' | 'hard'
     walls:          [],
     doors:          [],
     keycardPickups: [],
@@ -176,9 +177,13 @@
 
   // ── Stealth rating ─────────────────────────────────────
   function calcRating(seconds, alerted, closeCalls) {
-    if (alerted === 0 && closeCalls === 0 && seconds < 200) return 'S';
-    if (alerted === 0 && seconds < 360)                     return 'A';
-    if (alerted <= 1  && seconds < 600)                     return 'B';
+    const d = window.G.difficulty;
+    const sTime = d === 'hard' ? 260 : d === 'easy' ? 160 : 200;
+    const aTime = d === 'hard' ? 480 : d === 'easy' ? 300 : 360;
+    const bTime = d === 'hard' ? 720 : d === 'easy' ? 480 : 600;
+    if (alerted === 0 && closeCalls === 0 && seconds < sTime) return 'S';
+    if (alerted === 0 && seconds < aTime)                     return 'A';
+    if (alerted <= 1  && seconds < bTime)                     return 'B';
     return 'C';
   }
 
@@ -421,6 +426,10 @@
     G.guardsAlerted = 0;
     G.closeCalls    = 0;
 
+    // Apply difficulty
+    Guards.setDifficulty(G.difficulty);
+    Security.setDifficulty(G.difficulty);
+
     // Reset modules
     Player.reset();
     Guards.resetAlarm();
@@ -490,6 +499,15 @@
   // ── Button wiring ──────────────────────────────────────
   function wireButtons() {
     const $ = id => document.getElementById(id);
+
+    // Difficulty selector
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        window.G.difficulty = btn.dataset.diff;
+      };
+    });
 
     $('btn-solo').onclick       = () => startGame('solo');
     $('btn-coop').onclick       = () => startGame('coop');
