@@ -18,11 +18,39 @@ window.GameMap = (function () {
   const WALL_T = 0.5;
   const FLOOR_T = 0.4;
 
+  // ── Tile texture generator ──────────────────────────────
+  function makeTileTex(tileColor, groutColor, tileSize) {
+    const S = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = tileColor;
+    ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = groutColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(S, 0);
+    ctx.moveTo(0, 0); ctx.lineTo(0, S);
+    ctx.stroke();
+    // Inner tile highlight (subtle bevel)
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(6, 6, S - 12, S - 12);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex._tileSize = tileSize;
+    return tex;
+  }
+
+  const _tileTex    = makeTileTex('#d8cdb8', '#b0a898', 2);
+  const _ceilTex    = makeTileTex('#f4f2ee', '#dedad4', 3);
+  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0xddd8cc, roughness: 0.7, metalness: 0.0 });
+
   // ── Materials ──────────────────────────────────────────
   const M = {
-    floor:    new THREE.MeshStandardMaterial({ color: 0xd8cdb8, roughness: 0.15, metalness: 0.05 }),
+    floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.2, metalness: 0.05 }),
     wall:     new THREE.MeshStandardMaterial({ color: 0xf0ebe2, roughness: 0.85, metalness: 0.0  }),
-    ceiling:  new THREE.MeshStandardMaterial({ color: 0xf8f6f2, roughness: 0.9,  metalness: 0.0  }),
+    ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.9,  metalness: 0.0  }),
     desk:     new THREE.MeshStandardMaterial({ color: 0x7a6348, roughness: 0.7,  metalness: 0.0  }),
     glass:    new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3 }),
     frame:    new THREE.MeshStandardMaterial({ color: 0x3a2718, roughness: 0.6,  metalness: 0.1  }),
@@ -79,14 +107,31 @@ window.GameMap = (function () {
   function wall(scene, cx, cz, w, d) {
     box(scene, w, WALL_H, d, cx, WALL_H / 2, cz, M.wall);
     addWallAABB(cx, cz, w + 0.02, d + 0.02);
+    // Baseboard trim — slightly proud of the wall face
+    const bw = w > d ? w : 0.08;
+    const bd = w > d ? 0.08 : d;
+    box(scene, bw, 0.22, bd, cx, 0.11, cz, _baseMat);
   }
 
   function floor(scene, cx, cz, w, d) {
-    box(scene, w, FLOOR_T, d, cx, -FLOOR_T / 2, cz, M.floor);
+    const mat = M.floor.clone();
+    const tex  = _tileTex.clone();
+    tex.wrapS  = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(w / _tileTex._tileSize, d / _tileTex._tileSize);
+    mat.map = tex;
+    box(scene, w, FLOOR_T, d, cx, -FLOOR_T / 2, cz, mat);
   }
 
   function ceiling(scene, cx, cz, w, d) {
-    box(scene, w, FLOOR_T, d, cx, WALL_H + FLOOR_T / 2, cz, M.ceiling);
+    const mat = M.ceiling.clone();
+    const tex  = _ceilTex.clone();
+    tex.wrapS  = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(w / _ceilTex._tileSize, d / _ceilTex._tileSize);
+    mat.map = tex;
+    box(scene, w, FLOOR_T, d, cx, WALL_H + FLOOR_T / 2, cz, mat);
+    // Recessed ceiling panel strip (thin dark inset frame)
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0xe8e4de, roughness: 0.95, metalness: 0.0 });
+    box(scene, w - 0.6, 0.05, d - 0.6, cx, WALL_H - 0.02, cz, panelMat);
   }
 
   // Full room shell: floor + ceiling + 4 walls with opening gap

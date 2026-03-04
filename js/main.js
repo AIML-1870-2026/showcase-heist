@@ -87,6 +87,7 @@
     _alarmLight:    null,
     _pickupFlash:   0,
     _noiseEvent:    null,
+    _dustEvent:     null,
     _startMs:       0,
     guardsAlerted:  0,
     closeCalls:     0,
@@ -324,6 +325,61 @@
     sparkGeo.attributes.position.needsUpdate = true;
     sparkMesh.material.opacity = Math.max(0, 1 - (sparksActive ? 0 : 1));
     if (!anyAlive) { sparksActive = false; sparkMesh.visible = false; }
+  }
+
+  // ── Footstep dust puffs ────────────────────────────────
+  const PUFF_COUNT = 10;
+  const puffPos    = new Float32Array(PUFF_COUNT * 3);
+  const puffVel    = new Float32Array(PUFF_COUNT * 3);
+  const puffLife   = new Float32Array(PUFF_COUNT);
+  let   puffActive = false;
+
+  const puffGeo  = new THREE.BufferGeometry();
+  puffGeo.setAttribute('position', new THREE.BufferAttribute(puffPos, 3));
+  const puffMesh = new THREE.Points(puffGeo, new THREE.PointsMaterial({
+    color: 0xd8cdb8, size: 0.18, transparent: true, opacity: 0.55, sizeAttenuation: true,
+  }));
+  puffMesh.visible = false;
+  scene.add(puffMesh);
+
+  function spawnDustPuff(ox, oz) {
+    for (let i = 0; i < PUFF_COUNT; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd   = 0.4 + Math.random() * 0.8;
+      puffPos[i * 3]     = ox + (Math.random() - 0.5) * 0.3;
+      puffPos[i * 3 + 1] = 0.05;
+      puffPos[i * 3 + 2] = oz + (Math.random() - 0.5) * 0.3;
+      puffVel[i * 3]     = Math.cos(angle) * spd;
+      puffVel[i * 3 + 1] = 0.5 + Math.random() * 0.6;
+      puffVel[i * 3 + 2] = Math.sin(angle) * spd;
+      puffLife[i]        = 0;
+    }
+    puffActive = true;
+    puffMesh.visible = true;
+    puffGeo.attributes.position.needsUpdate = true;
+  }
+
+  const PUFF_DUR = 0.45;
+  function tickDustPuffs(dt) {
+    const G = window.G;
+    if (G && G._dustEvent) {
+      spawnDustPuff(G._dustEvent.x, G._dustEvent.z);
+      G._dustEvent = null;
+    }
+    if (!puffActive) return;
+    let anyAlive = false;
+    for (let i = 0; i < PUFF_COUNT; i++) {
+      if (puffLife[i] >= PUFF_DUR) continue;
+      puffLife[i] += dt;
+      puffPos[i * 3]     += puffVel[i * 3]     * dt;
+      puffPos[i * 3 + 1] += puffVel[i * 3 + 1] * dt;
+      puffPos[i * 3 + 2] += puffVel[i * 3 + 2] * dt;
+      puffVel[i * 3 + 1] -= 2.5 * dt;  // light gravity
+      anyAlive = true;
+    }
+    puffGeo.attributes.position.needsUpdate = true;
+    puffMesh.material.opacity = 0.55 * Math.max(0, 1 - (puffLife[0] / PUFF_DUR));
+    if (!anyAlive) { puffActive = false; puffMesh.visible = false; }
   }
 
   // ── Noise distraction ring ─────────────────────────────
@@ -579,6 +635,7 @@
     tickAlarmLight(dt);
     tickFloatItems(dt);
     tickDustAndSparks(dt);
+    tickDustPuffs(dt);
     tickNoiseRing(dt);
     tickPickupAndChroma(dt);
     Player.tickDoors(dt);

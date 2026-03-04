@@ -113,32 +113,44 @@ window.Guards = (function () {
   const MAT_BODY    = new THREE.MeshStandardMaterial({ color: 0x2a3a4a, roughness: 0.85, metalness: 0.05 });
   const MAT_HEAD    = new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.9,  metalness: 0.0  });
   const MAT_CONE    = {
-    patrol:    new THREE.MeshLambertMaterial({ color: 0xffee00, transparent: true, opacity: 0.14, side: THREE.DoubleSide }),
-    suspicious:new THREE.MeshLambertMaterial({ color: 0xff8800, transparent: true, opacity: 0.22, side: THREE.DoubleSide }),
-    alerted:   new THREE.MeshLambertMaterial({ color: 0xff2200, transparent: true, opacity: 0.30, side: THREE.DoubleSide }),
-    searching: new THREE.MeshLambertMaterial({ color: 0xff8800, transparent: true, opacity: 0.18, side: THREE.DoubleSide }),
+    patrol:    new THREE.MeshBasicMaterial({ color: 0xffee88, transparent: true, opacity: 0.13, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    suspicious:new THREE.MeshBasicMaterial({ color: 0xffaa22, transparent: true, opacity: 0.22, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    alerted:   new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.32, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    searching: new THREE.MeshBasicMaterial({ color: 0xffaa22, transparent: true, opacity: 0.18, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+  };
+  // Tight hotspot beam at center of cone (brighter, narrower)
+  const MAT_BEAM    = {
+    patrol:    new THREE.MeshBasicMaterial({ color: 0xfffbe0, transparent: true, opacity: 0.18, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    suspicious:new THREE.MeshBasicMaterial({ color: 0xffe0a0, transparent: true, opacity: 0.28, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    alerted:   new THREE.MeshBasicMaterial({ color: 0xff8866, transparent: true, opacity: 0.38, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    searching: new THREE.MeshBasicMaterial({ color: 0xffe0a0, transparent: true, opacity: 0.24, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
   };
 
   // ── Vision-cone geometry ───────────────────────────────
-  function buildConeMesh(scene) {
-    const SEGS   = 14;
-    const verts  = [0, 0.05, 0];
+  function _buildConeGeo(halfAngle, range, yOff) {
+    const SEGS  = 14;
+    const verts = [0, yOff, 0];
     for (let i = 0; i <= SEGS; i++) {
-      const a = -VISION_ANGLE / 2 + (i / SEGS) * VISION_ANGLE;
-      verts.push(
-        Math.sin(a) * VISION_RANGE,
-        0.05,
-        Math.cos(a) * VISION_RANGE
-      );
+      const a = -halfAngle + (i / SEGS) * halfAngle * 2;
+      verts.push(Math.sin(a) * range, yOff, Math.cos(a) * range);
     }
     const indices = [];
     for (let i = 0; i < SEGS; i++) indices.push(0, i + 1, i + 2);
-
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
     geo.setIndex(indices);
+    return geo;
+  }
 
-    const mesh = new THREE.Mesh(geo, MAT_CONE.patrol);
+  function buildConeMesh(scene) {
+    const mesh = new THREE.Mesh(_buildConeGeo(VISION_ANGLE / 2, VISION_RANGE, 0.05), MAT_CONE.patrol);
+    scene.add(mesh);
+    return mesh;
+  }
+
+  function buildBeamMesh(scene) {
+    // Narrower (1/3 angle), shorter range — creates a bright hotspot at center
+    const mesh = new THREE.Mesh(_buildConeGeo(VISION_ANGLE / 6, VISION_RANGE * 0.6, 0.06), MAT_BEAM.patrol);
     scene.add(mesh);
     return mesh;
   }
@@ -150,12 +162,15 @@ window.Guards = (function () {
     const matBelt = new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.5, metalness: 0.4 });
 
     // Legs
-    [-0.17, 0.17].forEach(xOff => {
+    const legs = [-0.17, 0.17].map(xOff => {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.26), MAT_BODY);
       leg.position.set(xOff, 0.325, 0);
       leg.castShadow = true;
       g.add(leg);
+      return leg;
     });
+    g.userData.leftLeg  = legs[0];
+    g.userData.rightLeg = legs[1];
 
     // Torso
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.46), MAT_BODY);
@@ -245,9 +260,12 @@ window.Guards = (function () {
 
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
+      this.beamMesh = buildBeamMesh(scene);
       this.detectBar  = this.mesh.userData.detectBar;
       this.detectFill = this.mesh.userData.detectFill;
       this._body      = this.mesh.userData.bodyMesh;
+      this._leftLeg   = this.mesh.userData.leftLeg;
+      this._rightLeg  = this.mesh.userData.rightLeg;
 
       this.mesh.position.copy(this.pos);
 
@@ -321,15 +339,17 @@ window.Guards = (function () {
     updateCone(playerPos) {
       const dx = playerPos.x - this.pos.x;
       const dz = playerPos.z - this.pos.z;
-      if (dx * dx + dz * dz > LOD_CONE_DIST2) {
-        this.coneMesh.visible = false;
-        return;
-      }
-      this.coneMesh.visible    = true;
-      this.coneMesh.position.copy(this.pos);
-      this.coneMesh.position.y = 0;
-      this.coneMesh.rotation.y = -this.facingAngle();
+      const tooFar = dx * dx + dz * dz > LOD_CONE_DIST2;
+      this.coneMesh.visible = !tooFar;
+      this.beamMesh.visible = !tooFar;
+      if (tooFar) return;
+      const ry = -this.facingAngle();
+      this.coneMesh.position.set(this.pos.x, 0, this.pos.z);
+      this.coneMesh.rotation.y = ry;
       this.coneMesh.material   = MAT_CONE[this.state] || MAT_CONE.patrol;
+      this.beamMesh.position.set(this.pos.x, 0, this.pos.z);
+      this.beamMesh.rotation.y = ry;
+      this.beamMesh.material   = MAT_BEAM[this.state] || MAT_BEAM.patrol;
     }
 
     lookAt(target) {
@@ -437,14 +457,17 @@ window.Guards = (function () {
         }
       }
 
-      // Walk bob animation
+      // Walk animation
       const isMoving = this.state === 'patrol' || this.state === 'alerted' || this.state === 'searching';
       if (isMoving) this._walkT += dt * this.speed() * 0.9;
+      const walkCycle = Math.sin(this._walkT * 3.2);
+      const swing = isMoving ? 0.55 : 0.04;
       if (this._body) {
-        const bob = Math.sin(this._walkT * 3.2) * (isMoving ? 0.06 : 0.015);
-        this._body.position.y = 0.6 + bob;
-        this._body.rotation.z = Math.sin(this._walkT * 3.2 + Math.PI * 0.5) * (isMoving ? 0.05 : 0.01);
+        this._body.position.y = 1.01 + walkCycle * (isMoving ? 0.03 : 0.008);
+        this._body.rotation.z = Math.sin(this._walkT * 3.2 + Math.PI * 0.5) * (isMoving ? 0.04 : 0.008);
       }
+      if (this._leftLeg)  this._leftLeg.rotation.x  =  walkCycle * swing;
+      if (this._rightLeg) this._rightLeg.rotation.x  = -walkCycle * swing;
 
       // Sync mesh — smoothly lerp yaw toward target angle
       const targetYaw = -this.facingAngle();

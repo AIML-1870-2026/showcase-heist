@@ -22,6 +22,7 @@ window.Player = (function () {
   // ── State ──────────────────────────────────────────────
   let scene, camera;
   let playerMesh;
+  let _leftLeg = null, _rightLeg = null;
 
   let pos       = new THREE.Vector3(0, 0, 5);
   let vel       = new THREE.Vector3(0, 0, 0);
@@ -164,12 +165,15 @@ window.Player = (function () {
     const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.4, metalness: 0.6, emissive: 0x443310, emissiveIntensity: 0.3 });
 
     // Legs
-    [[-0.15, 0.15]].forEach(pair => pair.forEach(xOff => {
+    const legs = [-0.15, 0.15].map(xOff => {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.72, 0.22), matSuit);
       leg.position.set(xOff, 0.36, 0);
       leg.castShadow = true;
       group.add(leg);
-    }));
+      return leg;
+    });
+    group.userData.leftLeg  = legs[0];
+    group.userData.rightLeg = legs[1];
 
     // Torso
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.38), matSuit);
@@ -321,6 +325,7 @@ window.Player = (function () {
       footT -= dt;
       if (footT <= 0) {
         if (state !== 'crouching') UI.SFX.footstep();
+        if (window.G) window.G._dustEvent = { x: pos.x, z: pos.z };
         footT = state === 'crouching' ? 0.55 : state === 'sprinting' ? 0.17 : 0.27;
         // Broadcast noise to nearby guards — crouching is silent
         if (state !== 'crouching' && window.Guards) {
@@ -368,6 +373,11 @@ window.Player = (function () {
     }
     const bobAmp = (moving && onGround) ? bobAmount : 0;
     const currentBob = Math.sin(bobT) * bobAmp;
+
+    // Leg swing — driven by bobT (same accumulator as head bob)
+    const legSwing = (moving && onGround) ? (state === 'crouching' ? 0.35 : state === 'sprinting' ? 0.8 : 0.55) : 0.0;
+    if (_leftLeg)  _leftLeg.rotation.x  =  Math.sin(bobT) * legSwing;
+    if (_rightLeg) _rightLeg.rotation.x = -Math.sin(bobT) * legSwing;
 
     // Frame-rate independent camera lerp: same feel at any fps
     const lerpAlpha = 1 - Math.pow(1 - CAM_LERP, dt * 60);
@@ -518,7 +528,9 @@ window.Player = (function () {
     scene  = sc;
     camera = cam;
 
-    playerMesh = buildMesh(sc);
+    playerMesh  = buildMesh(sc);
+    _leftLeg    = playerMesh.userData.leftLeg;
+    _rightLeg   = playerMesh.userData.rightLeg;
 
     document.addEventListener('keydown',          onKeyDown);
     document.addEventListener('keyup',            onKeyUp);
