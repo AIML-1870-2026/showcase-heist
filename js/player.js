@@ -38,7 +38,8 @@ window.Player = (function () {
   let footT = 0;
   let bobT  = 0;   // head-bob accumulator
 
-  const camPos = new THREE.Vector3(0, 5, -5);
+  const camPos    = new THREE.Vector3(0, 5, -5);
+  const _camTarget = new THREE.Vector3();
 
   // ── Input map ──────────────────────────────────────────
   const keys = {};
@@ -244,15 +245,11 @@ window.Player = (function () {
     playerMesh.scale.y = h / H_NORMAL;
     playerMesh.position.set(pos.x, pos.y, pos.z);
 
-    // Head bob — only when moving on the ground
+    // Head bob — only accumulate when moving on ground
     const bobSpeed  = state === 'crouching' ? 6 : 11;
     const bobAmount = state === 'crouching' ? 0.04 : 0.07;
     if (moving && onGround) {
       bobT += dt * bobSpeed;
-    } else {
-      // Smoothly decay bob back to centre
-      bobT += dt * bobSpeed;
-      // Decay amplitude instead of stopping abruptly handled below
     }
     const bobAmp = (moving && onGround) ? bobAmount : 0;
     const currentBob = Math.sin(bobT) * bobAmp;
@@ -262,7 +259,8 @@ window.Player = (function () {
     const cx = pos.x - Math.sin(yaw) * CAM_DIST;
     const cy = pos.y + CAM_H_OFFSET + pitch * 3 + currentBob;
     const cz = pos.z - Math.cos(yaw) * CAM_DIST;
-    camPos.lerp(new THREE.Vector3(cx, cy, cz), lerpAlpha);
+    _camTarget.set(cx, cy, cz);
+    camPos.lerp(_camTarget, lerpAlpha);
     camera.position.copy(camPos);
     camera.lookAt(pos.x, pos.y + 1.4, pos.z);
   }

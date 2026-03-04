@@ -162,6 +162,23 @@ window.UI = (function () {
     { rx: 30,  ry: 81, rw: 100, rh: 28, color: '#1e1018' }, // Crown Vault
   ];
 
+  // Pre-bake static room layout to an offscreen canvas — drawn once, blitted each frame
+  const _mmOffscreen = document.createElement('canvas');
+  _mmOffscreen.width  = 160;
+  _mmOffscreen.height = 120;
+  (function bakeMinimapBg() {
+    const ctx = _mmOffscreen.getContext('2d');
+    ctx.fillStyle = '#0a0a0c';
+    ctx.fillRect(0, 0, 160, 120);
+    MM_ROOMS.forEach(r => {
+      ctx.fillStyle   = r.color;
+      ctx.fillRect(r.rx, r.ry, r.rw, r.rh);
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(r.rx, r.ry, r.rw, r.rh);
+    });
+  }());
+
   function worldToMini(wx, wz) {
     return {
       mx: 80  + wx  * 1.8,
@@ -170,17 +187,8 @@ window.UI = (function () {
   }
 
   function drawMinimap(playerPos, guardPositions, currentRoom) {
-    minimapCtx.clearRect(0, 0, 160, 120);
-    minimapCtx.fillStyle = '#0a0a0c';
-    minimapCtx.fillRect(0, 0, 160, 120);
-
-    MM_ROOMS.forEach(r => {
-      minimapCtx.fillStyle = r.color;
-      minimapCtx.fillRect(r.rx, r.ry, r.rw, r.rh);
-      minimapCtx.strokeStyle = '#444';
-      minimapCtx.lineWidth = 1;
-      minimapCtx.strokeRect(r.rx, r.ry, r.rw, r.rh);
-    });
+    // Blit pre-rendered background — no room geometry redrawn each frame
+    minimapCtx.drawImage(_mmOffscreen, 0, 0);
 
     // Guards (red dots) — visible when alarm is active
     const showGuards = window.G && window.G.alarm.level > 0;

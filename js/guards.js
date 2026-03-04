@@ -151,9 +151,12 @@ window.Guards = (function () {
       if (dist > 0.01) this.facing.set(dx / dist, 0, dz / dist);
     }
 
-    update(dt, playerPos, isCrouching) {
+    update(dt, playerPos, isCrouching, doVisionCheck) {
       const G    = window.G;
-      const sees = this.canSeePlayer(playerPos, isCrouching);
+      // Alerted guards always check vision for responsive catch; others check on their assigned frame
+      const sees = (this.state === 'alerted' || doVisionCheck)
+        ? this.canSeePlayer(playerPos, isCrouching)
+        : false;
 
       switch (this.state) {
 
@@ -290,12 +293,16 @@ window.Guards = (function () {
     guards = spawnData.map(d => new Guard(d, scene));
   }
 
+  let _visionFrame = 0;
   function update(dt, playerPos, isCrouching) {
-    guards.forEach(g => g.update(dt, playerPos, isCrouching));
+    // Stagger vision checks across 3 frames — only ~1/3 of guards check vision per frame.
+    // Alerted guards always check (they're chasing) to keep catch logic responsive.
+    _visionFrame = (_visionFrame + 1) % 3;
+    guards.forEach((g, i) => g.update(dt, playerPos, isCrouching, i % 3 === _visionFrame));
   }
 
   function getGuardPositions() {
-    return guards.map(g => g.getPosition());
+    return guards.map(g => ({ x: g.pos.x, z: g.pos.z }));
   }
 
   return {
