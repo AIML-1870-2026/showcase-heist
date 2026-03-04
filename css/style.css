@@ -61,6 +61,16 @@ html, body {
   z-index: 1;
 }
 
+/* ── Stress vignette (guard proximity) ──────────────────── */
+#stress-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(ellipse at center, transparent 28%, rgba(60, 0, 0, 0.92) 100%);
+  opacity: 0;
+}
+
 /* ── Utility ────────────────────────────────────────────── */
 .hidden  { display: none !important; }
 .active  { display: flex !important; }

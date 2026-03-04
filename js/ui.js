@@ -285,17 +285,39 @@ window.UI = (function () {
     showScreen('gameover');
   }
 
+  const LB_KEY = 'lvdl_leaderboard';
+  const RATING_COLORS = { S: '#ffd700', A: '#00ff88', B: '#4a9eff', C: '#ff8800' };
+
   function showWin(stats) {
     if (stats) {
       const mm = String(Math.floor(stats.time / 60)).padStart(2, '0');
       const ss = String(stats.time % 60).padStart(2, '0');
-      const ratingColors = { S: '#ffd700', A: '#00ff88', B: '#4a9eff', C: '#ff8800' };
       const ratingEl = document.getElementById('win-rating');
       ratingEl.textContent = stats.rating;
-      ratingEl.style.color = ratingColors[stats.rating] || '#fff';
+      ratingEl.style.color = RATING_COLORS[stats.rating] || '#fff';
       document.getElementById('win-time').textContent    = mm + ':' + ss;
       document.getElementById('win-alerted').textContent = stats.guardsAlerted;
       document.getElementById('win-close').textContent   = stats.closeCalls;
+
+      // Leaderboard — persist top 5 by time
+      const board = JSON.parse(localStorage.getItem(LB_KEY) || '[]');
+      board.push({ time: stats.time, rating: stats.rating, date: new Date().toLocaleDateString() });
+      board.sort((a, b) => a.time - b.time);
+      board.splice(5);
+      localStorage.setItem(LB_KEY, JSON.stringify(board));
+
+      const lbEl = document.getElementById('leaderboard-entries');
+      if (lbEl) {
+        lbEl.innerHTML = board.map((e, i) => {
+          const m = String(Math.floor(e.time / 60)).padStart(2, '0');
+          const s = String(e.time % 60).padStart(2, '0');
+          const color = RATING_COLORS[e.rating] || '#ccc';
+          const isNew = i === 0 && e.time === stats.time;
+          const prefix = isNew ? '★ ' : (i + 1) + '. ';
+          const style = isNew ? 'color:#ffd700;' : '';
+          return `<div style="${style}">${prefix}${m}:${s} &nbsp;<span style="color:${color}">[${e.rating}]</span>&nbsp; ${e.date}</div>`;
+        }).join('');
+      }
     }
     SFX.win();
     showScreen('win');
