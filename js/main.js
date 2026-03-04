@@ -77,7 +77,7 @@
 
   // ── Map build ──────────────────────────────────────────
   function buildMap() {
-    const data = Map.init(scene);
+    const data = GameMap.init(scene);
     window.G.walls          = data.walls;
     window.G.doors          = data.doors;
     window.G.keycardPickups = data.keycardPickups;
@@ -210,8 +210,8 @@
   function wireButtons() {
     const $ = id => document.getElementById(id);
 
-    $('btn-solo').onclick       = () => { try { startGame('solo'); } catch(e) { alert('Error starting game: ' + e.message + '\n\nCheck browser console (F12) for details.'); console.error(e); } };
-    $('btn-coop').onclick       = () => { try { startGame('coop'); } catch(e) { alert('Error starting game: ' + e.message + '\n\nCheck browser console (F12) for details.'); console.error(e); } };
+    $('btn-solo').onclick       = () => startGame('solo');
+    $('btn-coop').onclick       = () => startGame('coop');
     $('btn-resume').onclick     = resumeGame;
     $('btn-restart').onclick    = () => startGame(window.G.mode);
     $('btn-main-menu').onclick  = () => { window.G.phase = 'start'; UI.showScreen('start'); document.exitPointerLock(); };

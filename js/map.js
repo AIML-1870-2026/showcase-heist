@@ -12,7 +12,7 @@
 //   Crown Vault X −25→25,  Z 115→160
 //   Exit zone   X  −5→ 5,  Z 160→165
 
-window.Map = (function () {
+window.GameMap = (function () {
 
   const WALL_H = 6;
   const WALL_T = 0.5;
