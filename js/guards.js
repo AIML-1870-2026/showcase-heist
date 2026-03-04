@@ -91,6 +91,8 @@ window.Guards = (function () {
       this.facing     = new THREE.Vector3(0, 0, 1);
       this.smoothYaw  = 0;   // lerped rotation for smooth turning
 
+      this._lastSaw = false;   // cached vision result, updated on this guard's vision frame
+
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
 
@@ -152,11 +154,12 @@ window.Guards = (function () {
     }
 
     update(dt, playerPos, isCrouching, doVisionCheck) {
-      const G    = window.G;
-      // Alerted guards always check vision for responsive catch; others check on their assigned frame
-      const sees = (this.state === 'alerted' || doVisionCheck)
-        ? this.canSeePlayer(playerPos, isCrouching)
-        : false;
+      const G = window.G;
+      // Refresh cached vision result on this guard's assigned frame, or whenever chasing
+      if (this.state === 'alerted' || doVisionCheck) {
+        this._lastSaw = this.canSeePlayer(playerPos, isCrouching);
+      }
+      const sees = this._lastSaw;
 
       switch (this.state) {
 

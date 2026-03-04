@@ -50,8 +50,8 @@
     const sun = new THREE.DirectionalLight(0xfff5e0, 0.9);
     sun.position.set(15, 25, 10);
     sun.castShadow = true;
-    sun.shadow.mapSize.width  = 2048;
-    sun.shadow.mapSize.height = 2048;
+    sun.shadow.mapSize.width  = 1024;
+    sun.shadow.mapSize.height = 1024;
     sun.shadow.camera.near   = 0.5;
     sun.shadow.camera.far    = 250;
     sun.shadow.camera.left   = -70;

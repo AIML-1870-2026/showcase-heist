@@ -88,11 +88,8 @@ window.Security = (function () {
       lens.position.set(data.x, data.y - 0.05, data.z - 0.3);
       scene.add(lens);
 
+      this._facing = new THREE.Vector2(Math.sin(this.angle), Math.cos(this.angle));
       this.fovMesh = buildFOVMesh(scene);
-    }
-
-    getFacing() {
-      return new THREE.Vector3(Math.sin(this.angle), 0, Math.cos(this.angle));
     }
 
     canSeePlayer(playerPos, isCrouching) {
@@ -101,18 +98,18 @@ window.Security = (function () {
       const dz = playerPos.z - this.z;
       const dist2 = dx * dx + dz * dz;
       if (dist2 > CAM_RANGE * CAM_RANGE) return false;
-      const dist  = Math.sqrt(dist2);
-      const facing = this.getFacing();
-      const dot    = facing.x * (dx / dist) + facing.z * (dz / dist);
+      const dist = Math.sqrt(dist2);
+      const dot  = this._facing.x * (dx / dist) + this._facing.y * (dz / dist);
       return dot > Math.cos(CAM_ANGLE / 2);
     }
 
     update(dt, playerPos, isCrouching) {
-      // Sweep
+      // Sweep — update cached facing whenever angle changes
       const spd = alarmActive ? CAM_SPEED * 1.7 : CAM_SPEED;
       this.angle += this.dir * spd * dt;
       if (this.angle > this.baseAngle + this.sweepAngle / 2)  this.dir = -1;
       if (this.angle < this.baseAngle - this.sweepAngle / 2)  this.dir =  1;
+      this._facing.set(Math.sin(this.angle), Math.cos(this.angle));
 
       // Detection
       const sees = this.canSeePlayer(playerPos, isCrouching);
