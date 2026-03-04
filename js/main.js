@@ -390,6 +390,26 @@
     });
   }
 
+  // ── Proximity vignette ─────────────────────────────────
+  const stressVignette = document.getElementById('stress-vignette');
+  let   _vignetteOpacity = 0;
+
+  function tickStressVignette(dt, playerPos) {
+    const guardPositions = Guards.getGuardPositions();
+    let minDist = Infinity;
+    for (const gp of guardPositions) {
+      const dx = gp.x - playerPos.x;
+      const dz = gp.z - playerPos.z;
+      const d  = dx * dx + dz * dz;
+      if (d < minDist) minDist = d;
+    }
+    minDist = Math.sqrt(minDist);
+    // Full vignette at dist ≤ 4, zero at dist ≥ 14
+    const target = Math.max(0, Math.min(1, 1 - (minDist - 4) / 10)) * 0.8;
+    _vignetteOpacity += (target - _vignetteOpacity) * Math.min(1, dt * 5);
+    stressVignette.style.opacity = _vignetteOpacity;
+  }
+
   // ── Game start / restart ───────────────────────────────
   function startGame(mode) {
     const G    = window.G;
@@ -455,6 +475,7 @@
 
     G._startMs = Date.now();
     clock.start();
+    Music.start();
     document.body.requestPointerLock();
   }
 
@@ -534,22 +555,30 @@
     tickPickupAndChroma(dt);
     Player.tickDoors(dt);
     tickScreenShake(dt);
+    tickStressVignette(dt, playerPos);
 
     // HUD minimap — pass a snapshot for the minimap (read-only, safe to use ref)
     UI.drawMinimap(playerPos, Guards.getGuardPositions(), G.currentRoom);
+
+    // Music
+    Music.update(G.alarm.level, G.alarm.active);
 
     // Catch handling
     if (G.playerCaught) {
       Player.setCaught();
       if (G.mode !== 'coop') {
         G.phase = 'gameover';
+        Music.stop();
         UI.showGameOver('Caught!', 'A guard caught you.');
       }
       // In co-op, companion.js handles rescue timer & game over
     }
 
     // Win check
-    if (G.phase === 'playing') checkWin(playerPos);
+    if (G.phase === 'playing') {
+      checkWin(playerPos);
+      if (G.phase === 'won') Music.stop();
+    }
 
     composer.render();
   }

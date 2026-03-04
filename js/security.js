@@ -5,6 +5,35 @@
 
 window.Security = (function () {
 
+  // ── Wall occlusion helper (mirrors guards.js, shared logic) ──
+  function _hasLOS(ax, az, bx, bz) {
+    const dx = bx - ax, dz = bz - az;
+    const walls = window.G ? window.G.walls : [];
+    for (const w of walls) {
+      let tminX, tmaxX;
+      if (Math.abs(dx) < 1e-8) {
+        if (ax < w.minX || ax > w.maxX) continue;
+        tminX = -Infinity; tmaxX = Infinity;
+      } else {
+        const inv = 1 / dx;
+        tminX = (w.minX - ax) * inv; tmaxX = (w.maxX - ax) * inv;
+        if (tminX > tmaxX) { const t = tminX; tminX = tmaxX; tmaxX = t; }
+      }
+      let tminZ, tmaxZ;
+      if (Math.abs(dz) < 1e-8) {
+        if (az < w.minZ || az > w.maxZ) continue;
+        tminZ = -Infinity; tmaxZ = Infinity;
+      } else {
+        const inv = 1 / dz;
+        tminZ = (w.minZ - az) * inv; tmaxZ = (w.maxZ - az) * inv;
+        if (tminZ > tmaxZ) { const t = tminZ; tminZ = tmaxZ; tmaxZ = t; }
+      }
+      const tenter = Math.max(tminX, tminZ), texit = Math.min(tmaxX, tmaxZ);
+      if (texit > tenter && tenter < 1 - 1e-4 && texit > 1e-4) return false;
+    }
+    return true;
+  }
+
   // ── Constants ──────────────────────────────────────────
   const CAM_RANGE       = 10;
   const LOD_FOV_DIST2   = 45 * 45;  // hide FOV fan beyond 45 units
@@ -104,7 +133,8 @@ window.Security = (function () {
       if (dist2 > CAM_RANGE * CAM_RANGE) return false;
       const dist = Math.sqrt(dist2);
       const dot  = this._facing.x * (dx / dist) + this._facing.y * (dz / dist);
-      return dot > Math.cos(CAM_ANGLE / 2);
+      if (dot <= Math.cos(CAM_ANGLE / 2)) return false;
+      return _hasLOS(this.x, this.z, playerPos.x, playerPos.z);
     }
 
     update(dt, playerPos, isCrouching, doVisionCheck) {
@@ -152,6 +182,8 @@ window.Security = (function () {
   }
 
   // ── Laser class ────────────────────────────────────────
+  const LASER_REACTIVATE_TIME = 8;   // seconds before a triggered laser comes back
+
   class Laser {
     constructor(data, scene) {
       this.type = data.type;   // 'low' | 'high'
@@ -159,7 +191,9 @@ window.Security = (function () {
       this.x2   = data.x2;
       this.y    = data.y;
       this.z    = data.z;
-      this.triggered = false;
+      this.triggered      = false;
+      this.reactivateTimer = 0;    // counts down after being triggered
+      this._warned        = false; // prevents duplicate warning
 
       const w   = Math.abs(data.x2 - data.x1);
       const mat = data.type === 'low' ? MAT_LASER_LOW : MAT_LASER_HIGH;
@@ -178,6 +212,26 @@ window.Security = (function () {
         e.position.set(ex, data.y, data.z);
         scene.add(e);
       });
+    }
+
+    // Tick reactivation countdown — called each frame
+    update(dt) {
+      if (!this.triggered || this.reactivateTimer <= 0) return;
+      this.reactivateTimer -= dt;
+      // Warn player 2 s before beam comes back
+      if (!this._warned && this.reactivateTimer <= 2) {
+        this._warned = true;
+        UI.showAlert('⚠ LASER REACTIVATING!', 1800);
+      }
+      // Flash the beam mesh in the last 2 s so the player sees it
+      if (this.reactivateTimer <= 2) {
+        this.mesh.visible = Math.floor(this.reactivateTimer * 6) % 2 === 0;
+      }
+      if (this.reactivateTimer <= 0) {
+        this.triggered        = false;
+        this._warned          = false;
+        this.mesh.visible     = true;
+      }
     }
 
     // Returns true if the player triggers this beam
@@ -246,8 +300,10 @@ window.Security = (function () {
 
     // Check laser beams
     for (const laser of lasers) {
+      laser.update(dt);
       if (laser.checkPlayer(playerPos, playerState)) {
         laser.triggered       = true;
+        laser.reactivateTimer = LASER_REACTIVATE_TIME;
         laser.mesh.visible    = false;
         triggerAlarmLevel(3);
         UI.showAlert('LASER TRIGGERED!', 3500);
@@ -281,8 +337,10 @@ window.Security = (function () {
 
   function resetLasers() {
     lasers.forEach(l => {
-      l.triggered      = false;
-      l.mesh.visible   = true;
+      l.triggered       = false;
+      l.reactivateTimer = 0;
+      l._warned         = false;
+      l.mesh.visible    = true;
     });
   }
 

@@ -11,6 +11,9 @@
   <!-- ── Three.js render target ───────────────────────────── -->
   <div id="canvas-container"></div>
 
+  <!-- ── Stress vignette (driven by guard proximity in main.js) ── -->
+  <div id="stress-vignette"></div>
+
   <!-- ══════════════════════════════════════════════════════ -->
   <!--  SCREENS (full-screen overlays)                        -->
   <!-- ══════════════════════════════════════════════════════ -->
@@ -65,6 +68,10 @@
         <div>Time: <span id="win-time" style="color:#fff;"></span></div>
         <div>Guards Alerted: <span id="win-alerted" style="color:#fff;"></span></div>
         <div>Close Calls: <span id="win-close" style="color:#fff;"></span></div>
+      </div>
+      <div id="win-leaderboard" style="margin:10px 0 16px; font-family:'Courier New',monospace; font-size:0.82rem; color:#aaa; line-height:1.75;">
+        <div style="color:#c9a84c; letter-spacing:0.05em; margin-bottom:4px;">── Best Times ──</div>
+        <div id="leaderboard-entries"></div>
       </div>
       <div class="menu-buttons">
         <button id="btn-play-again" class="btn btn-primary">Play Again</button>
@@ -167,6 +174,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+  <script src="js/music.js"></script>
   <script src="js/map.js"></script>
   <script src="js/player.js"></script>
   <script src="js/guards.js"></script>

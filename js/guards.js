@@ -15,6 +15,82 @@ window.Guards = (function () {
   const SEARCH_TIME   = 5.0;           // seconds searching before giving up
   const CATCH_DIST    = 1.0;           // distance to "catch" player
 
+  // ── Wall occlusion (2D slab test, XZ plane) ────────────
+  function hasLineOfSight(ax, az, bx, bz) {
+    const dx = bx - ax;
+    const dz = bz - az;
+    const walls = window.G ? window.G.walls : [];
+    for (const w of walls) {
+      let tminX, tmaxX;
+      if (Math.abs(dx) < 1e-8) {
+        if (ax < w.minX || ax > w.maxX) continue;
+        tminX = -Infinity; tmaxX = Infinity;
+      } else {
+        const inv = 1 / dx;
+        tminX = (w.minX - ax) * inv;
+        tmaxX = (w.maxX - ax) * inv;
+        if (tminX > tmaxX) { const tmp = tminX; tminX = tmaxX; tmaxX = tmp; }
+      }
+      let tminZ, tmaxZ;
+      if (Math.abs(dz) < 1e-8) {
+        if (az < w.minZ || az > w.maxZ) continue;
+        tminZ = -Infinity; tmaxZ = Infinity;
+      } else {
+        const inv = 1 / dz;
+        tminZ = (w.minZ - az) * inv;
+        tmaxZ = (w.maxZ - az) * inv;
+        if (tminZ > tmaxZ) { const tmp = tminZ; tminZ = tmaxZ; tmaxZ = tmp; }
+      }
+      const tenter = Math.max(tminX, tminZ);
+      const texit  = Math.min(tmaxX, tmaxZ);
+      if (texit > tenter && tenter < 1 - 1e-4 && texit > 1e-4) return false;
+    }
+    return true;
+  }
+
+  // ── Speech bubble phrases ──────────────────────────────
+  const BUBBLE_PHRASES = {
+    patrol:     ['All clear.', 'Nothing here.', 'Quiet tonight...', 'Hmm...', 'Just another shift.'],
+    suspicious: ["Who's there?", 'Did I see something?', 'Hold on...', 'Hey!', 'What was that?'],
+    alerted:    ['STOP!', 'INTRUDER!', 'Sound the alarm!', "You can't hide!", 'Got you now!'],
+    searching:  ['Come out!', "I know you're here.", 'Show yourself!', "Can't hide forever.", "Where'd they go?"],
+  };
+
+  function makeBubbleMaterial(text, state) {
+    const W = 256, H = 72;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const c = canvas.getContext('2d');
+
+    const bg = state === 'alerted' ? '#cc1100' : state === 'suspicious' ? '#aa5500' : '#1a1a2e';
+    const border = state === 'alerted' ? '#ff5500' : state === 'suspicious' ? '#ffaa00' : '#446688';
+
+    // Bubble background (rounded rect)
+    c.fillStyle = bg;
+    c.beginPath();
+    c.roundRect(6, 4, W - 12, 52, 10);
+    c.fill();
+    c.strokeStyle = border;
+    c.lineWidth = 2;
+    c.stroke();
+
+    // Tail
+    c.fillStyle = bg;
+    c.beginPath();
+    c.moveTo(W / 2 - 10, 56); c.lineTo(W / 2 + 10, 56); c.lineTo(W / 2, 70);
+    c.closePath(); c.fill();
+
+    // Text
+    c.fillStyle = '#ffffff';
+    c.font = 'bold 20px "Courier New", monospace';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(text, W / 2, 30);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  }
+
   let guards     = [];
   let alertLevel = 0;
 
@@ -72,6 +148,8 @@ window.Guards = (function () {
     hat.position.y = 1.8;
     g.add(hat);
 
+    g.userData.bodyMesh = body;
+
     // Blob shadow — flat dark disc on the floor
     const blobShadow = new THREE.Mesh(
       new THREE.CircleGeometry(0.5, 12),
@@ -122,13 +200,28 @@ window.Guards = (function () {
 
       this._lastSaw  = false;   // cached vision result, updated on this guard's vision frame
       this._wasClose = false;   // true once detectT exceeded 45% of DETECT_TIME this pass
+      this._walkT    = 0;       // walk animation accumulator
 
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
       this.detectBar  = this.mesh.userData.detectBar;
       this.detectFill = this.mesh.userData.detectFill;
+      this._body      = this.mesh.userData.bodyMesh;
 
       this.mesh.position.copy(this.pos);
+
+      // Speech bubble sprite
+      this._bubbleMat     = null;
+      this._bubbleShowT   = 0;
+      this._bubbleIdleT   = Math.random() * 4; // stagger first appearance
+      this._bubbleVisible = false;
+      this._prevState     = 'patrol';
+      this._bubblePhrase  = '';
+      const initMat = new THREE.SpriteMaterial({ transparent: true, depthTest: false, opacity: 0 });
+      this.bubble = new THREE.Sprite(initMat);
+      this.bubble.scale.set(2.4, 0.75, 1);
+      this.bubble.visible = false;
+      scene.add(this.bubble);
     }
 
     speed() {
@@ -164,7 +257,10 @@ window.Guards = (function () {
       // Dot-product angle check
       const dist = Math.sqrt(dist2);
       const dot  = this.facing.x * (dx / dist) + this.facing.z * (dz / dist);
-      return dot > Math.cos(VISION_ANGLE / 2);
+      if (dot <= Math.cos(VISION_ANGLE / 2)) return false;
+
+      // Wall occlusion — blocked if a wall AABB intersects the sight line
+      return hasLineOfSight(this.pos.x, this.pos.z, playerPos.x, playerPos.z);
     }
 
     facingAngle() {
@@ -290,6 +386,15 @@ window.Guards = (function () {
         }
       }
 
+      // Walk bob animation
+      const isMoving = this.state === 'patrol' || this.state === 'alerted' || this.state === 'searching';
+      if (isMoving) this._walkT += dt * this.speed() * 0.9;
+      if (this._body) {
+        const bob = Math.sin(this._walkT * 3.2) * (isMoving ? 0.06 : 0.015);
+        this._body.position.y = 0.6 + bob;
+        this._body.rotation.z = Math.sin(this._walkT * 3.2 + Math.PI * 0.5) * (isMoving ? 0.05 : 0.01);
+      }
+
       // Sync mesh — smoothly lerp yaw toward target angle
       const targetYaw = -this.facingAngle();
       let delta = targetYaw - this.smoothYaw;
@@ -300,6 +405,7 @@ window.Guards = (function () {
       this.mesh.position.copy(this.pos);
       this.mesh.rotation.y = this.smoothYaw;
       this.updateCone(playerPos);
+      this.tickBubble(dt);
 
       // Detection bar: visible when suspicious and detectT > 0
       const fill = this.detectT / DETECT_TIME;
@@ -311,6 +417,49 @@ window.Guards = (function () {
         this.detectFill.material.color.setHex(0xffee00);
       } else {
         this.detectBar.visible = false;
+      }
+    }
+
+    _showBubble(text) {
+      if (text === this._bubblePhrase) return;
+      this._bubblePhrase = text;
+      if (this._bubbleMat) { this._bubbleMat.map.dispose(); this._bubbleMat.dispose(); }
+      this._bubbleMat = makeBubbleMaterial(text, this.state);
+      this.bubble.material = this._bubbleMat;
+      this.bubble.visible  = true;
+      this._bubbleVisible  = true;
+      this._bubbleShowT    = 0;
+    }
+
+    tickBubble(dt) {
+      const stateChanged = this.state !== this._prevState;
+      if (stateChanged && this.state !== 'patrol') {
+        const pool = BUBBLE_PHRASES[this.state] || BUBBLE_PHRASES.patrol;
+        this._showBubble(pool[Math.floor(Math.random() * pool.length)]);
+        this._bubbleIdleT = 0;
+      }
+      this._prevState = this.state;
+
+      if (this._bubbleVisible) {
+        this._bubbleShowT += dt;
+        const showDur = this.state === 'alerted' ? 1.6 : 2.4;
+        if (this._bubbleShowT > showDur) {
+          this._bubbleVisible   = false;
+          this.bubble.visible   = false;
+          this._bubblePhrase    = ''; // allow repeat
+          this._bubbleIdleT     = 0;
+        }
+      } else {
+        this._bubbleIdleT += dt;
+        const interval = this.state === 'alerted' ? 2.2 : this.state === 'suspicious' ? 3 : 7;
+        if (this._bubbleIdleT > interval) {
+          const pool = BUBBLE_PHRASES[this.state] || BUBBLE_PHRASES.patrol;
+          this._showBubble(pool[Math.floor(Math.random() * pool.length)]);
+        }
+      }
+
+      if (this._bubbleVisible) {
+        this.bubble.position.set(this.pos.x, 3.0, this.pos.z);
       }
     }
 
