@@ -269,7 +269,7 @@
     // Cap delta to avoid huge jumps after tab switch
     const dt = Math.min(clock.getDelta(), 0.05);
 
-    const playerPos   = Player.getPosition();
+    const playerPos   = Player.getPositionRef();
     const playerState = Player.getState();
 
     // Core updates
@@ -284,7 +284,7 @@
     tickAlarmLight(dt);
     tickFloatItems(dt);
 
-    // HUD minimap
+    // HUD minimap — pass a snapshot for the minimap (read-only, safe to use ref)
     UI.drawMinimap(playerPos, Guards.getGuardPositions(), G.currentRoom);
 
     // Catch handling

@@ -88,8 +88,9 @@ window.Security = (function () {
       lens.position.set(data.x, data.y - 0.05, data.z - 0.3);
       scene.add(lens);
 
-      this._facing = new THREE.Vector2(Math.sin(this.angle), Math.cos(this.angle));
-      this.fovMesh = buildFOVMesh(scene);
+      this._facing  = new THREE.Vector2(Math.sin(this.angle), Math.cos(this.angle));
+      this._lastSaw = false;
+      this.fovMesh  = buildFOVMesh(scene);
     }
 
     canSeePlayer(playerPos, isCrouching) {
@@ -103,7 +104,7 @@ window.Security = (function () {
       return dot > Math.cos(CAM_ANGLE / 2);
     }
 
-    update(dt, playerPos, isCrouching) {
+    update(dt, playerPos, isCrouching, doVisionCheck) {
       // Sweep — update cached facing whenever angle changes
       const spd = alarmActive ? CAM_SPEED * 1.7 : CAM_SPEED;
       this.angle += this.dir * spd * dt;
@@ -111,8 +112,9 @@ window.Security = (function () {
       if (this.angle < this.baseAngle - this.sweepAngle / 2)  this.dir =  1;
       this._facing.set(Math.sin(this.angle), Math.cos(this.angle));
 
-      // Detection
-      const sees = this.canSeePlayer(playerPos, isCrouching);
+      // Detection — refresh cached result on this camera's assigned frame
+      if (doVisionCheck) this._lastSaw = this.canSeePlayer(playerPos, isCrouching);
+      const sees = this._lastSaw;
       if (sees) {
         this.detectT += dt;
         if (this.detectT >= DETECT_TIME && !this.alerted) {
@@ -217,6 +219,7 @@ window.Security = (function () {
   }
 
   // ── Update (called each frame) ─────────────────────────
+  let _camVisionFrame = 0;
   function update(dt, playerPos, playerState) {
     // Camera hack timer
     if (cameraHacked) {
@@ -224,9 +227,10 @@ window.Security = (function () {
       if (hackTimer <= 0) { cameraHacked = false; hackTimer = 0; }
     }
 
-    // Update all cameras
+    // Stagger camera vision checks across 3 frames (~4 checks/frame instead of 11)
+    _camVisionFrame = (_camVisionFrame + 1) % 3;
     const crouching = playerState === 'crouching';
-    cameras.forEach(c => c.update(dt, playerPos, crouching));
+    cameras.forEach((c, i) => c.update(dt, playerPos, crouching, i % 3 === _camVisionFrame));
 
     // Check laser beams
     for (const laser of lasers) {

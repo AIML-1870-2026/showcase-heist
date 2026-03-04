@@ -215,8 +215,9 @@ window.Player = (function () {
         footT = state === 'crouching' ? 0.55 : 0.27;
       }
     } else {
-      vel.x *= 0.65;
-      vel.z *= 0.65;
+      const friction = Math.pow(0.65, dt * 60);
+      vel.x *= friction;
+      vel.z *= friction;
     }
 
     // Gravity
@@ -269,12 +270,13 @@ window.Player = (function () {
   function handleInteract() {
     const G = window.G;
     if (!G || G.phase !== 'playing') return;
-    const REACH = 3.2;
+    const REACH2 = 3.2 * 3.2;
 
     // Check keycards
     for (const kc of G.keycardPickups) {
       if (kc.collected) continue;
-      if (Math.hypot(kc.x - pos.x, kc.z - pos.z) < REACH) {
+      const _dx = kc.x - pos.x, _dz = kc.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         kc.collected    = true;
         kc.mesh.visible = false;
         G.inventory[kc.key] = true;
@@ -291,7 +293,8 @@ window.Player = (function () {
     // Check stealable items
     for (const st of G.stealables) {
       if (st.taken) continue;
-      if (Math.hypot(st.x - pos.x, st.z - pos.z) < REACH) {
+      const _dx = st.x - pos.x, _dz = st.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         st.taken        = true;
         st.mesh.visible = false;
         G.inventory[st.item] = true;
@@ -307,7 +310,8 @@ window.Player = (function () {
     // Check hack terminals
     for (const tm of G.terminals) {
       if (tm.hacked) continue;
-      if (Math.hypot(tm.x - pos.x, tm.z - pos.z) < REACH) {
+      const _dx = tm.x - pos.x, _dz = tm.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         tm.hacked = true;
         if (window.Security) Security.hackCameras(20);
         UI.SFX.interact();
@@ -319,7 +323,8 @@ window.Player = (function () {
     // Check doors
     for (const d of G.doors) {
       if (d.open) continue;
-      if (Math.hypot(d.x - pos.x, d.z - pos.z) < REACH) {
+      const _dx = d.x - pos.x, _dz = d.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         if (!d.keyRequired || G.inventory[d.keyRequired]) {
           d.open          = true;
           d.mesh.visible  = false;
@@ -356,33 +361,37 @@ window.Player = (function () {
   function updatePrompt() {
     const G = window.G;
     if (!G || G.phase !== 'playing') { UI.hidePrompt(); return; }
-    const REACH = 3.2;
+    const REACH2 = 3.2 * 3.2;
     let found = false;
 
     for (const kc of G.keycardPickups) {
       if (kc.collected) continue;
-      if (Math.hypot(kc.x - pos.x, kc.z - pos.z) < REACH) {
+      const _dx = kc.x - pos.x, _dz = kc.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         UI.showPrompt('[E] Pick up ' + kc.key + ' keycard');
         found = true; break;
       }
     }
     if (!found) for (const st of G.stealables) {
       if (st.taken) continue;
-      if (Math.hypot(st.x - pos.x, st.z - pos.z) < REACH) {
+      const _dx = st.x - pos.x, _dz = st.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         UI.showPrompt('[E] Steal the ' + st.item);
         found = true; break;
       }
     }
     if (!found) for (const tm of G.terminals) {
       if (tm.hacked) continue;
-      if (Math.hypot(tm.x - pos.x, tm.z - pos.z) < REACH) {
+      const _dx = tm.x - pos.x, _dz = tm.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         UI.showPrompt('[E] Hack terminal');
         found = true; break;
       }
     }
     if (!found) for (const d of G.doors) {
       if (d.open) continue;
-      if (Math.hypot(d.x - pos.x, d.z - pos.z) < REACH) {
+      const _dx = d.x - pos.x, _dz = d.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
         const locked = d.keyRequired && !G.inventory[d.keyRequired];
         UI.showPrompt(locked ? 'Need ' + d.keyRequired + ' keycard' : '[E] Open door');
         found = true; break;
@@ -437,6 +446,7 @@ window.Player = (function () {
     setCaught,
     resume,
     getPosition()    { return pos.clone(); },
+    getPositionRef() { return pos; },
     getState()       { return state; },
     isCrouching()    { return state === 'crouching'; },
     isSliding()      { return state === 'sliding'; },
