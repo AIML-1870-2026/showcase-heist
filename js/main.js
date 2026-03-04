@@ -26,6 +26,14 @@
   // ── Post-processing (bloom + chromatic aberration) ─────
   const composer  = new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene, camera));
+
+  // Ambient occlusion — darkens corners/crevices before bloom
+  const ssaoPass = new THREE.SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+  ssaoPass.kernelRadius = 16;
+  ssaoPass.minDistance  = 0.001;
+  ssaoPass.maxDistance  = 0.12;
+  composer.addPass(ssaoPass);
+
   const bloomPass = new THREE.UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
     0.8,   // strength
@@ -77,6 +85,10 @@
     currentRoom:    'Lobby',
     _alarmLight:    null,
     _pickupFlash:   0,
+    _noiseEvent:    null,
+    _startMs:       0,
+    guardsAlerted:  0,
+    closeCalls:     0,
   };
 
   // ── Lighting ───────────────────────────────────────────
@@ -162,13 +174,23 @@
     else              G.currentRoom = 'Crown Vault';
   }
 
+  // ── Stealth rating ─────────────────────────────────────
+  function calcRating(seconds, alerted, closeCalls) {
+    if (alerted === 0 && closeCalls === 0 && seconds < 200) return 'S';
+    if (alerted === 0 && seconds < 360)                     return 'A';
+    if (alerted <= 1  && seconds < 600)                     return 'B';
+    return 'C';
+  }
+
   // ── Win check ──────────────────────────────────────────
   function checkWin(pos) {
     const G = window.G;
     if (G.inventory.painting && G.inventory.crown && pos.z >= 160) {
       G.phase = 'won';
       UI.completeObjective('escape');
-      UI.showWin();
+      const elapsed = Math.floor((Date.now() - G._startMs) / 1000);
+      const rating  = calcRating(elapsed, G.guardsAlerted, G.closeCalls);
+      UI.showWin({ time: elapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating });
     }
   }
 
@@ -296,6 +318,40 @@
     if (!anyAlive) { sparksActive = false; sparkMesh.visible = false; }
   }
 
+  // ── Noise distraction ring ─────────────────────────────
+  const noiseRingGeo = new THREE.RingGeometry(0.05, 0.28, 40);
+  const noiseRingMat = new THREE.MeshBasicMaterial({
+    color: 0xffdd44, transparent: true, opacity: 0.7,
+    side: THREE.DoubleSide, depthWrite: false,
+  });
+  const noiseRingMesh = new THREE.Mesh(noiseRingGeo, noiseRingMat);
+  noiseRingMesh.rotation.x = -Math.PI / 2;
+  noiseRingMesh.visible = false;
+  scene.add(noiseRingMesh);
+
+  let noiseRingState = null;
+
+  function tickNoiseRing(dt) {
+    const G = window.G;
+    if (G._noiseEvent) {
+      noiseRingState    = { x: G._noiseEvent.x, z: G._noiseEvent.z, t: 0 };
+      G._noiseEvent     = null;
+      noiseRingMesh.visible = true;
+    }
+    if (!noiseRingState) return;
+    noiseRingState.t += dt;
+    const progress = noiseRingState.t / 0.65;
+    if (progress >= 1) {
+      noiseRingState = null;
+      noiseRingMesh.visible = false;
+      return;
+    }
+    const s = progress * 8;   // expand to 8-unit noise radius
+    noiseRingMesh.scale.set(s, s, s);
+    noiseRingMesh.position.set(noiseRingState.x, 0.05, noiseRingState.z);
+    noiseRingMat.opacity = 0.7 * (1 - progress);
+  }
+
   // ── Pickup flash + chroma control ─────────────────────
   function tickPickupAndChroma(dt) {
     const G = window.G;
@@ -342,6 +398,8 @@
     G.playerCaught = false;
     G.inventory    = { yellow: false, blue: false, red: false, painting: false, crown: false };
     G.alarm        = { level: 0, active: false };
+    G.guardsAlerted = 0;
+    G.closeCalls    = 0;
 
     // Reset modules
     Player.reset();
@@ -395,6 +453,7 @@
     UI.hideAlert();
     UI.completeObjective('enter');
 
+    G._startMs = Date.now();
     clock.start();
     document.body.requestPointerLock();
   }
@@ -436,6 +495,7 @@
     const h = window.innerHeight;
     renderer.setSize(w, h);
     composer.setSize(w, h);
+    ssaoPass.setSize(w, h);
     bloomPass.resolution.set(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -470,6 +530,7 @@
     tickAlarmLight(dt);
     tickFloatItems(dt);
     tickDustAndSparks(dt);
+    tickNoiseRing(dt);
     tickPickupAndChroma(dt);
     Player.tickDoors(dt);
     tickScreenShake(dt);

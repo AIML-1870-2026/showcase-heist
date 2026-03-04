@@ -285,7 +285,18 @@ window.UI = (function () {
     showScreen('gameover');
   }
 
-  function showWin() {
+  function showWin(stats) {
+    if (stats) {
+      const mm = String(Math.floor(stats.time / 60)).padStart(2, '0');
+      const ss = String(stats.time % 60).padStart(2, '0');
+      const ratingColors = { S: '#ffd700', A: '#00ff88', B: '#4a9eff', C: '#ff8800' };
+      const ratingEl = document.getElementById('win-rating');
+      ratingEl.textContent = stats.rating;
+      ratingEl.style.color = ratingColors[stats.rating] || '#fff';
+      document.getElementById('win-time').textContent    = mm + ':' + ss;
+      document.getElementById('win-alerted').textContent = stats.guardsAlerted;
+      document.getElementById('win-close').textContent   = stats.closeCalls;
+    }
     SFX.win();
     showScreen('win');
   }

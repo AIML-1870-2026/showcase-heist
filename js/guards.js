@@ -81,6 +81,25 @@ window.Guards = (function () {
     blobShadow.position.y = 0.02;
     g.add(blobShadow);
 
+    // Detection meter — flat horizontal bar above hat, visible from third-person camera
+    const barGroup = new THREE.Group();
+    barGroup.position.y = 2.28;
+    const bgBar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.56, 0.03, 0.13),
+      new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.75, depthWrite: false })
+    );
+    barGroup.add(bgBar);
+    const fillBar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.56, 0.04, 0.13),
+      new THREE.MeshBasicMaterial({ color: 0xffee00, transparent: true, opacity: 0.95, depthWrite: false })
+    );
+    fillBar.scale.x = 0.001;
+    barGroup.add(fillBar);
+    barGroup.visible = false;
+    g.add(barGroup);
+    g.userData.detectBar  = barGroup;
+    g.userData.detectFill = fillBar;
+
     g.castShadow = true;
     scene.add(g);
     return g;
@@ -101,10 +120,13 @@ window.Guards = (function () {
       this.facing     = new THREE.Vector3(0, 0, 1);
       this.smoothYaw  = 0;   // lerped rotation for smooth turning
 
-      this._lastSaw = false;   // cached vision result, updated on this guard's vision frame
+      this._lastSaw  = false;   // cached vision result, updated on this guard's vision frame
+      this._wasClose = false;   // true once detectT exceeded 45% of DETECT_TIME this pass
 
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
+      this.detectBar  = this.mesh.userData.detectBar;
+      this.detectFill = this.mesh.userData.detectFill;
 
       this.mesh.position.copy(this.pos);
     }
@@ -208,16 +230,23 @@ window.Guards = (function () {
           if (sees) {
             this.detectT += dt;
             this.lookAt(playerPos);
+            if (this.detectT > DETECT_TIME * 0.45) this._wasClose = true;
             if (this.detectT >= DETECT_TIME) {
               this.state  = 'alerted';
               this.stateT = 0;
               this.lastKnown.copy(playerPos);
+              this._wasClose = false;
+              if (window.G) window.G.guardsAlerted++;
               triggerAlarmLevel(2);
               UI.showAlert('GUARD SPOTTED YOU!', 3000);
               UI.SFX.alert();
             }
           } else {
             this.detectT = Math.max(0, this.detectT - dt * 0.5);
+            if (this.detectT === 0 && this._wasClose) {
+              if (window.G) window.G.closeCalls++;
+              this._wasClose = false;
+            }
             if (this.stateT > SUSP_TIME) {
               this.state   = 'patrol';
               this.detectT = 0;
@@ -271,6 +300,18 @@ window.Guards = (function () {
       this.mesh.position.copy(this.pos);
       this.mesh.rotation.y = this.smoothYaw;
       this.updateCone(playerPos);
+
+      // Detection bar: visible when suspicious and detectT > 0
+      const fill = this.detectT / DETECT_TIME;
+      if (fill > 0.01 && this.state === 'suspicious') {
+        this.detectBar.visible  = true;
+        this.detectFill.scale.x = fill;
+        // Pin left edge: full bar width=0.56, pivot at center, shift by half-missing portion
+        this.detectFill.position.x = (fill - 1) * 0.28;
+        this.detectFill.material.color.setHex(0xffee00);
+      } else {
+        this.detectBar.visible = false;
+      }
     }
 
     getPosition() { return this.pos.clone(); }

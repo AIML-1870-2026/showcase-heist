@@ -396,6 +396,7 @@ window.Player = (function () {
     // Throw coin forward: noise source 5 units ahead
     const noiseX = pos.x + Math.sin(yaw) * 5;
     const noiseZ = pos.z + Math.cos(yaw) * 5;
+    if (window.G) window.G._noiseEvent = { x: noiseX, z: noiseZ };
     Guards.notifyNoise(noiseX, noiseZ, 8);
     UI.SFX.interact();
   }
