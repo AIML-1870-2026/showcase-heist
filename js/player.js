@@ -36,6 +36,7 @@ window.Player = (function () {
   let pointerLocked = false;
 
   let footT = 0;
+  let bobT  = 0;   // head-bob accumulator
 
   const camPos = new THREE.Vector3(0, 5, -5);
 
@@ -194,7 +195,9 @@ window.Player = (function () {
               : state === 'sliding'   ? SPEED_SLIDE
               : SPEED_WALK;
 
-    if (mx !== 0 || mz !== 0) {
+    const moving = mx !== 0 || mz !== 0;
+
+    if (moving) {
       const len = Math.sqrt(mx * mx + mz * mz);
       mx /= len; mz /= len;
       const cos = Math.cos(yaw), sin = Math.sin(yaw);
@@ -241,11 +244,25 @@ window.Player = (function () {
     playerMesh.scale.y = h / H_NORMAL;
     playerMesh.position.set(pos.x, pos.y, pos.z);
 
-    // Update camera
+    // Head bob — only when moving on the ground
+    const bobSpeed  = state === 'crouching' ? 6 : 11;
+    const bobAmount = state === 'crouching' ? 0.04 : 0.07;
+    if (moving && onGround) {
+      bobT += dt * bobSpeed;
+    } else {
+      // Smoothly decay bob back to centre
+      bobT += dt * bobSpeed;
+      // Decay amplitude instead of stopping abruptly handled below
+    }
+    const bobAmp = (moving && onGround) ? bobAmount : 0;
+    const currentBob = Math.sin(bobT) * bobAmp;
+
+    // Frame-rate independent camera lerp: same feel at any fps
+    const lerpAlpha = 1 - Math.pow(1 - CAM_LERP, dt * 60);
     const cx = pos.x - Math.sin(yaw) * CAM_DIST;
-    const cy = pos.y + CAM_H_OFFSET + pitch * 3;
+    const cy = pos.y + CAM_H_OFFSET + pitch * 3 + currentBob;
     const cz = pos.z - Math.cos(yaw) * CAM_DIST;
-    camPos.lerp(new THREE.Vector3(cx, cy, cz), CAM_LERP);
+    camPos.lerp(new THREE.Vector3(cx, cy, cz), lerpAlpha);
     camera.position.copy(camPos);
     camera.lookAt(pos.x, pos.y + 1.4, pos.z);
   }

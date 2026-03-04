@@ -8,14 +8,17 @@
   // ── Renderer ───────────────────────────────────────────
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled  = true;
+  renderer.shadowMap.type     = THREE.PCFSoftShadowMap;
+  renderer.toneMapping        = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  renderer.outputEncoding     = THREE.sRGBEncoding;
   document.getElementById('canvas-container').appendChild(renderer.domElement);
 
   // ── Scene & camera ─────────────────────────────────────
   const scene  = new THREE.Scene();
   scene.background = new THREE.Color(0x0e0e14);
-  scene.fog        = new THREE.Fog(0x0e0e14, 28, 90);
+  scene.fog        = new THREE.Fog(0x0a0a0e, 20, 75);
 
   const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 200);
   camera.position.set(0, 5, -5);
@@ -40,11 +43,11 @@
 
   // ── Lighting ───────────────────────────────────────────
   function setupLighting() {
-    // Ambient
-    scene.add(new THREE.AmbientLight(0xfff8f0, 0.55));
+    // Ambient — slightly warm to feel like museum hall lighting
+    scene.add(new THREE.AmbientLight(0xffe8d0, 0.4));
 
     // Directional (museum overhead style)
-    const sun = new THREE.DirectionalLight(0xfffae8, 0.75);
+    const sun = new THREE.DirectionalLight(0xfff5e0, 0.9);
     sun.position.set(15, 25, 10);
     sun.castShadow = true;
     sun.shadow.mapSize.width  = 2048;
@@ -55,18 +58,32 @@
     sun.shadow.camera.right  =  70;
     sun.shadow.camera.top    =  70;
     sun.shadow.camera.bottom = -70;
+    sun.shadow.bias = -0.001;
     scene.add(sun);
 
-    // Point lights throughout each area
-    [
-      [0, 5, 20],    // Lobby
-      [0, 5, 77.5],  // Gallery
-      [0, 5, 137.5], // Crown Vault
-    ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0xfff8e8, 0.45, 50);
+    // Lobby — warm gold chandelier pools
+    [ [-8, 4.5, 10], [8, 4.5, 10], [-8, 4.5, 30], [8, 4.5, 30] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0xffd080, 0.6, 22);
       pt.position.set(x, y, z);
       scene.add(pt);
     });
+
+    // Gallery — cool blue-white spotlight feel
+    [ [-10, 5, 65], [10, 5, 65], [0, 5, 80], [-10, 5, 95], [10, 5, 95] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0xddeeff, 0.55, 20);
+      pt.position.set(x, y, z);
+      scene.add(pt);
+    });
+
+    // Crown Vault — moody amber with a single blue accent
+    [ [-10, 4.5, 125], [10, 4.5, 125], [0, 4.5, 140], [-10, 4.5, 155], [10, 4.5, 155] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0xffaa44, 0.65, 22);
+      pt.position.set(x, y, z);
+      scene.add(pt);
+    });
+    const vaultAccent = new THREE.PointLight(0x4466ff, 0.4, 18);
+    vaultAccent.position.set(0, 3, 140);
+    scene.add(vaultAccent);
 
     // Red alarm light (intensity driven at runtime)
     const alarmLight = new THREE.PointLight(0xff2200, 0, 80);

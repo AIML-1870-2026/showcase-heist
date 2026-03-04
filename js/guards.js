@@ -87,8 +87,9 @@ window.Guards = (function () {
       this.lastKnown  = new THREE.Vector3();
       this.noiseTarget = null;
 
-      this.pos    = new THREE.Vector3(data.spawnX, 0, data.spawnZ);
-      this.facing = new THREE.Vector3(0, 0, 1);
+      this.pos        = new THREE.Vector3(data.spawnX, 0, data.spawnZ);
+      this.facing     = new THREE.Vector3(0, 0, 1);
+      this.smoothYaw  = 0;   // lerped rotation for smooth turning
 
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
@@ -237,9 +238,15 @@ window.Guards = (function () {
         }
       }
 
-      // Sync mesh
+      // Sync mesh — smoothly lerp yaw toward target angle
+      const targetYaw = -this.facingAngle();
+      let delta = targetYaw - this.smoothYaw;
+      // Wrap delta to [-π, π] so guards take the short arc
+      while (delta >  Math.PI) delta -= Math.PI * 2;
+      while (delta < -Math.PI) delta += Math.PI * 2;
+      this.smoothYaw += delta * Math.min(1, dt * 12);
       this.mesh.position.copy(this.pos);
-      this.mesh.rotation.y = -this.facingAngle();
+      this.mesh.rotation.y = this.smoothYaw;
       this.updateCone();
     }
 

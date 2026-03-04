@@ -48,6 +48,19 @@ html, body {
   height: 100%;
 }
 
+/* Cinematic vignette over the 3D canvas */
+#canvas-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  z-index: 1;
+}
+
 /* ── Utility ────────────────────────────────────────────── */
 .hidden  { display: none !important; }
 .active  { display: flex !important; }
