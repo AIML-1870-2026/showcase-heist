@@ -143,7 +143,7 @@ window.GameMap = (function () {
     box(scene, 1.0, 1.6, 0.5, x, 0.8, z, M.terminal);
     // Screen glow
     box(scene, 0.8, 0.8, 0.05, x, 1.2, z - 0.28,
-      new THREE.MeshLambertMaterial({ color: 0x00ff88, transparent: true, opacity: 0.6 }));
+      new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x00ff44, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.1, transparent: true, opacity: 0.85 }));
     addWallAABB(x, z, 1.0, 0.5);
     const t = { mesh: null, x, z, hacked: false };
     terminals.push(t);
@@ -163,7 +163,7 @@ window.GameMap = (function () {
     if (keyRequired === 'yellow') mesh.material = new THREE.MeshLambertMaterial({ color: 0xb8960a });
     if (keyRequired === 'blue')   mesh.material = new THREE.MeshLambertMaterial({ color: 0x2255aa });
     addWallAABB(cx, cz, 3, WALL_T + 0.1);
-    doors.push({ mesh, x: cx, z: cz, keyRequired, open: false });
+    doors.push({ mesh, x: cx, z: cz, keyRequired, open: false, opening: false, openProgress: 0 });
   }
 
   // ── Build museum ───────────────────────────────────────

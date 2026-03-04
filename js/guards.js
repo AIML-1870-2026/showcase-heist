@@ -72,6 +72,15 @@ window.Guards = (function () {
     hat.position.y = 1.8;
     g.add(hat);
 
+    // Blob shadow — flat dark disc on the floor
+    const blobShadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.5, 12),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.38, depthWrite: false })
+    );
+    blobShadow.rotation.x = -Math.PI / 2;
+    blobShadow.position.y = 0.02;
+    g.add(blobShadow);
+
     g.castShadow = true;
     scene.add(g);
     return g;

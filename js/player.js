@@ -326,6 +326,7 @@ window.Player = (function () {
         kc.collected    = true;
         kc.mesh.visible = false;
         G.inventory[kc.key] = true;
+        G._pickupFlash  = 1.0;
         UI.addItem(kc.key);
         UI.SFX.pickup();
         const name = kc.key.charAt(0).toUpperCase() + kc.key.slice(1);
@@ -344,6 +345,7 @@ window.Player = (function () {
         st.taken        = true;
         st.mesh.visible = false;
         G.inventory[st.item] = true;
+        G._pickupFlash  = 1.0;
         UI.addItem(st.item === 'painting' ? 'painting' : 'crown');
         UI.SFX.pickup();
         UI.showAlert((st.item === 'painting' ? 'Painting' : 'Crown') + ' stolen! ALARM!', 3500);
@@ -372,17 +374,9 @@ window.Player = (function () {
       const _dx = d.x - pos.x, _dz = d.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
         if (!d.keyRequired || G.inventory[d.keyRequired]) {
-          d.open          = true;
-          d.mesh.visible  = false;
-          // Remove door AABB from wall list
-          const idx = G.walls.findIndex(w =>
-            Math.abs((w.minX + w.maxX) / 2 - d.x) < 2 &&
-            Math.abs((w.minZ + w.maxZ) / 2 - d.z) < 1
-          );
-          if (idx >= 0) {
-            G.walls.splice(idx, 1);
-            wallGrid = _buildWallGrid(G.walls);  // rebuild grid — door AABB removed
-          }
+          d.open    = true;
+          d.opening = true;
+          // Mesh hide + AABB removal now handled by tickDoors() when animation completes
           UI.SFX.door();
           if (d.keyRequired === 'yellow') UI.completeObjective('gallery');
           if (d.keyRequired === 'blue')   UI.completeObjective('vault');
@@ -486,6 +480,30 @@ window.Player = (function () {
     if (state === 'caught') state = 'normal';
   }
 
+  // ── Door open animations ───────────────────────────────
+  function tickDoors(dt) {
+    const G = window.G;
+    if (!G) return;
+    G.doors.forEach(d => {
+      if (!d.opening || d.openProgress >= 1) return;
+      d.openProgress = Math.min(1, d.openProgress + dt / 0.45);
+      const s = 1 - d.openProgress;
+      d.mesh.scale.y    = s;
+      d.mesh.position.y = 3 + 3 * d.openProgress;  // top stays fixed, bottom rises
+      if (d.openProgress >= 1) {
+        d.mesh.visible = false;
+        const idx = G.walls.findIndex(w =>
+          Math.abs((w.minX + w.maxX) / 2 - d.x) < 2 &&
+          Math.abs((w.minZ + w.maxZ) / 2 - d.z) < 1
+        );
+        if (idx >= 0) {
+          G.walls.splice(idx, 1);
+          wallGrid = _buildWallGrid(G.walls);
+        }
+      }
+    });
+  }
+
   // ── Public API ─────────────────────────────────────────
   return {
     init,
@@ -494,6 +512,7 @@ window.Player = (function () {
     reset,
     setCaught,
     resume,
+    tickDoors,
     getPosition()    { return pos.clone(); },
     getPositionRef() { return pos; },
     getState()       { return state; },

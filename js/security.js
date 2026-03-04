@@ -23,11 +23,13 @@ window.Security = (function () {
 
   // ── Materials ──────────────────────────────────────────
   const MAT_CAMERA  = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  const MAT_LASER_LOW  = new THREE.MeshLambertMaterial({
-    color: 0xff2200, transparent: true, opacity: 0.75,
+  const MAT_LASER_LOW  = new THREE.MeshStandardMaterial({
+    color: 0xff2200, emissive: 0xff1100, emissiveIntensity: 1.5,
+    transparent: true, opacity: 0.85, roughness: 0.2, metalness: 0,
   });
-  const MAT_LASER_HIGH = new THREE.MeshLambertMaterial({
-    color: 0x0099ff, transparent: true, opacity: 0.75,
+  const MAT_LASER_HIGH = new THREE.MeshStandardMaterial({
+    color: 0x0099ff, emissive: 0x0066ff, emissiveIntensity: 1.5,
+    transparent: true, opacity: 0.85, roughness: 0.2, metalness: 0,
   });
   const MAT_FOV = new THREE.MeshLambertMaterial({
     color: 0x00ffff, transparent: true, opacity: 0.12, side: THREE.DoubleSide,
@@ -167,7 +169,9 @@ window.Security = (function () {
       scene.add(this.mesh);
 
       // Emitter boxes at each end
-      const emitMat = new THREE.MeshLambertMaterial({ color: data.type === 'low' ? 0xff4400 : 0x0066ff });
+      const emitColor  = data.type === 'low' ? 0xff4400 : 0x0066ff;
+      const emitEmissive = data.type === 'low' ? 0xff2200 : 0x0044cc;
+      const emitMat = new THREE.MeshStandardMaterial({ color: emitColor, emissive: emitEmissive, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.1 });
       const emitGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
       [data.x1, data.x2].forEach(ex => {
         const e = new THREE.Mesh(emitGeo, emitMat);
