@@ -7,6 +7,7 @@ window.Guards = (function () {
 
   // ── Constants ──────────────────────────────────────────
   const BASE_SPEED    = 3.5;
+  const LOD_CONE_DIST2 = 45 * 45;  // hide vision cone beyond 45 units (fog fully opaque at 75)
   const VISION_RANGE  = 8;
   const VISION_ANGLE  = Math.PI / 3;   // 60° total (30° each side)
   const DETECT_TIME   = 1.5;           // seconds looking before alerted
@@ -139,7 +140,14 @@ window.Guards = (function () {
       return Math.atan2(this.facing.x, this.facing.z);
     }
 
-    updateCone() {
+    updateCone(playerPos) {
+      const dx = playerPos.x - this.pos.x;
+      const dz = playerPos.z - this.pos.z;
+      if (dx * dx + dz * dz > LOD_CONE_DIST2) {
+        this.coneMesh.visible = false;
+        return;
+      }
+      this.coneMesh.visible    = true;
       this.coneMesh.position.copy(this.pos);
       this.coneMesh.position.y = 0;
       this.coneMesh.rotation.y = -this.facingAngle();
@@ -253,7 +261,7 @@ window.Guards = (function () {
       this.smoothYaw += delta * Math.min(1, dt * 12);
       this.mesh.position.copy(this.pos);
       this.mesh.rotation.y = this.smoothYaw;
-      this.updateCone();
+      this.updateCone(playerPos);
     }
 
     getPosition() { return this.pos.clone(); }

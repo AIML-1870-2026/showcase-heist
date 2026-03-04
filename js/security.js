@@ -6,7 +6,8 @@
 window.Security = (function () {
 
   // ── Constants ──────────────────────────────────────────
-  const CAM_RANGE   = 10;
+  const CAM_RANGE       = 10;
+  const LOD_FOV_DIST2   = 45 * 45;  // hide FOV fan beyond 45 units
   const CAM_ANGLE   = Math.PI / 3;
   const CAM_SPEED   = 0.45;   // rad/sec normal sweep
   const DETECT_TIME = 1.5;    // seconds in cone → alert
@@ -128,15 +129,22 @@ window.Security = (function () {
         if (this.detectT === 0) this.alerted = false;
       }
 
-      // Update FOV mesh
-      this.fovMesh.position.set(this.x, 0.05, this.z);
-      this.fovMesh.rotation.y = -this.angle;
-      if (cameraHacked) {
-        this.fovMesh.material = MAT_FOV_HACKED;
-      } else if (this.alerted) {
-        this.fovMesh.material = MAT_FOV_ALERT;
+      // Update FOV mesh — cull when player is far (fog covers it anyway)
+      const fdx = playerPos.x - this.x;
+      const fdz = playerPos.z - this.z;
+      if (fdx * fdx + fdz * fdz > LOD_FOV_DIST2) {
+        this.fovMesh.visible = false;
       } else {
-        this.fovMesh.material = MAT_FOV;
+        this.fovMesh.visible = true;
+        this.fovMesh.position.set(this.x, 0.05, this.z);
+        this.fovMesh.rotation.y = -this.angle;
+        if (cameraHacked) {
+          this.fovMesh.material = MAT_FOV_HACKED;
+        } else if (this.alerted) {
+          this.fovMesh.material = MAT_FOV_ALERT;
+        } else {
+          this.fovMesh.material = MAT_FOV;
+        }
       }
     }
   }

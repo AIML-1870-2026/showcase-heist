@@ -38,8 +38,54 @@ window.Player = (function () {
   let footT = 0;
   let bobT  = 0;   // head-bob accumulator
 
-  const camPos    = new THREE.Vector3(0, 5, -5);
+  const camPos     = new THREE.Vector3(0, 5, -5);
   const _camTarget = new THREE.Vector3();
+
+  // ── Spatial grid for wall collision ────────────────────
+  // Divides the map into 10-unit cells so resolveWalls only
+  // checks the ~3-8 walls near the player instead of all ~38.
+  const GRID_CELL    = 10;
+  let   wallGrid     = null;   // Map<string, wall[]>
+  let   _gridStamp   = 0;      // frame counter for dedup — avoids Set allocation
+  const _gridResult  = [];     // reused result array — zero allocations per query
+
+  function _buildWallGrid(walls) {
+    const grid = new Map();
+    for (const w of walls) {
+      const x0 = Math.floor(w.minX / GRID_CELL);
+      const x1 = Math.floor(w.maxX / GRID_CELL);
+      const z0 = Math.floor(w.minZ / GRID_CELL);
+      const z1 = Math.floor(w.maxZ / GRID_CELL);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cz = z0; cz <= z1; cz++) {
+          const key = cx + ',' + cz;
+          let cell = grid.get(key);
+          if (!cell) { cell = []; grid.set(key, cell); }
+          cell.push(w);
+        }
+      }
+    }
+    return grid;
+  }
+
+  function _queryWallGrid(px, pz) {
+    // Lazy-build on first call (walls populated by the time player updates)
+    if (!wallGrid) wallGrid = _buildWallGrid((window.G && window.G.walls) || []);
+    _gridResult.length = 0;
+    _gridStamp++;
+    const cx = Math.floor(px / GRID_CELL);
+    const cz = Math.floor(pz / GRID_CELL);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        const cell = wallGrid.get((cx + dx) + ',' + (cz + dz));
+        if (!cell) continue;
+        for (const w of cell) {
+          if (w._gs !== _gridStamp) { w._gs = _gridStamp; _gridResult.push(w); }
+        }
+      }
+    }
+    return _gridResult;
+  }
 
   // ── Input map ──────────────────────────────────────────
   const keys = {};
@@ -144,7 +190,7 @@ window.Player = (function () {
 
   // ── Collision ──────────────────────────────────────────
   function resolveWalls() {
-    const wallList = (window.G && window.G.walls) || [];
+    const wallList = _queryWallGrid(pos.x, pos.z);
     for (const w of wallList) {
       const pMinX = pos.x - PLAYER_R;
       const pMaxX = pos.x + PLAYER_R;
@@ -333,7 +379,10 @@ window.Player = (function () {
             Math.abs((w.minX + w.maxX) / 2 - d.x) < 2 &&
             Math.abs((w.minZ + w.maxZ) / 2 - d.z) < 1
           );
-          if (idx >= 0) G.walls.splice(idx, 1);
+          if (idx >= 0) {
+            G.walls.splice(idx, 1);
+            wallGrid = _buildWallGrid(G.walls);  // rebuild grid — door AABB removed
+          }
           UI.SFX.door();
           if (d.keyRequired === 'yellow') UI.completeObjective('gallery');
           if (d.keyRequired === 'blue')   UI.completeObjective('vault');
