@@ -202,7 +202,7 @@ window.Player = (function () {
       vel.z = (sin * mx + cos * mz) * spd;
 
       // Face movement direction
-      playerMesh.rotation.y = -Math.atan2(vel.x, vel.z);
+      playerMesh.rotation.y = Math.atan2(vel.x, vel.z) + Math.PI;
 
       // Footstep SFX
       footT -= dt;
