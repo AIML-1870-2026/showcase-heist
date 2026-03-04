@@ -1,0 +1,564 @@
+/* ═══════════════════════════════════════════════════════════
+   Le Vol du Louvre — style.css
+   Dark museum-heist theme, Roblox-inspired flat colors
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Reset & Base ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --gold:        #c9a84c;
+  --gold-light:  #e8c97a;
+  --cream:       #f5f0e8;
+  --dark:        #0d0d0f;
+  --dark-panel:  rgba(10, 10, 14, 0.88);
+  --red:         #e02020;
+  --red-dark:    #8b0000;
+  --green:       #2ecc71;
+  --blue-key:    #4a9eff;
+  --yellow-key:  #f0c040;
+  --red-key:     #e05050;
+  --font-main:   'Georgia', 'Times New Roman', serif;
+  --font-ui:     'Courier New', 'Lucida Console', monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--dark);
+  color: var(--cream);
+  font-family: var(--font-ui);
+}
+
+/* ── Canvas container ───────────────────────────────────── */
+#canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+#canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Utility ────────────────────────────────────────────── */
+.hidden  { display: none !important; }
+.active  { display: flex !important; }
+
+/* ═══════════════════════════════════════════════════════════
+   SCREENS — full-screen overlays (start / pause / gameover / win)
+   ═══════════════════════════════════════════════════════════ */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1410 0%, #0a0a0c 100%);
+}
+
+.screen-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+  max-width: 560px;
+  padding: 48px 32px;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  background: rgba(12, 10, 8, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+/* Title */
+.game-title {
+  font-family: var(--font-main);
+  font-size: 3rem;
+  font-weight: normal;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  text-shadow: 0 0 24px rgba(201, 168, 76, 0.5);
+  line-height: 1.1;
+}
+
+.game-subtitle {
+  font-size: 0.9rem;
+  color: #999;
+  letter-spacing: 0.05em;
+  font-style: italic;
+}
+
+/* h2 on pause / gameover / win */
+.screen-content h2 {
+  font-family: var(--font-main);
+  font-size: 2.2rem;
+  font-weight: normal;
+  color: var(--cream);
+  letter-spacing: 0.06em;
+}
+
+#gameover-title {
+  color: var(--red);
+  text-shadow: 0 0 16px rgba(224, 32, 32, 0.6);
+}
+
+.win-title {
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(201, 168, 76, 0.6);
+}
+
+.screen-content p {
+  font-size: 0.85rem;
+  color: #aaa;
+  line-height: 1.6;
+  max-width: 400px;
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 2px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #0d0d0f;
+  font-weight: bold;
+}
+.btn-primary:hover {
+  background: var(--gold-light);
+  box-shadow: 0 0 14px rgba(201, 168, 76, 0.5);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+.btn-secondary:hover {
+  background: rgba(201, 168, 76, 0.12);
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.3);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #777;
+  border: 1px solid #444;
+}
+.btn-ghost:hover {
+  color: var(--cream);
+  border-color: #777;
+}
+
+/* ── Controls hint (start screen) ──────────────────────── */
+.controls-hint {
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  width: 100%;
+}
+.controls-hint p {
+  font-size: 0.72rem;
+  color: #666;
+  letter-spacing: 0.04em;
+  line-height: 1.8;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HUD — positioned elements over the game canvas
+   ═══════════════════════════════════════════════════════════ */
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* shared HUD panel look */
+.hud-panel {
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 10px 14px;
+  pointer-events: auto;
+}
+
+/* ── Objectives (top-left) ──────────────────────────────── */
+#objectives {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 10px 14px;
+  min-width: 210px;
+}
+
+#objectives h3 {
+  font-family: var(--font-main);
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+  padding-bottom: 6px;
+}
+
+#objectives-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.obj-item {
+  font-size: 0.72rem;
+  color: #999;
+  letter-spacing: 0.03em;
+  padding-left: 16px;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.obj-item::before {
+  content: '○';
+  position: absolute;
+  left: 0;
+  color: #555;
+  transition: color 0.3s;
+}
+
+/* JS adds .done class when objective is completed */
+.obj-item.done {
+  color: #555;
+  text-decoration: line-through;
+}
+.obj-item.done::before {
+  content: '✓';
+  color: var(--green);
+}
+
+/* JS adds .active class for current objective */
+.obj-item.current {
+  color: var(--cream);
+}
+.obj-item.current::before {
+  content: '▶';
+  color: var(--gold);
+}
+
+/* ── Minimap (top-right) ────────────────────────────────── */
+#minimap {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#minimap-canvas {
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111;
+}
+
+#minimap-label {
+  font-size: 0.65rem;
+  color: #888;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Interaction prompt (bottom-center) ─────────────────── */
+#interaction-prompt {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  animation: prompt-fade-in 0.2s ease;
+}
+
+@keyframes prompt-fade-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+#prompt-key {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+#prompt-text {
+  font-size: 0.8rem;
+  color: var(--cream);
+  letter-spacing: 0.05em;
+}
+
+/* ── Inventory (bottom-right) ───────────────────────────── */
+#inventory {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 10px 14px;
+}
+
+#inventory h4 {
+  font-size: 0.65rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+  padding-bottom: 5px;
+}
+
+#inventory-items {
+  display: flex;
+  gap: 8px;
+}
+
+.inv-slot {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #333;
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+/* tooltip label */
+.inv-slot::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  border: 1px solid #444;
+  color: #aaa;
+  font-size: 0.6rem;
+  padding: 3px 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.inv-slot:hover::after { opacity: 1; }
+
+/* JS adds .has-item when player picks up the item */
+#slot-yellow.has-item  { background: rgba(240, 192, 64, 0.2);  border-color: var(--yellow-key); }
+#slot-blue.has-item    { background: rgba(74, 158, 255, 0.2);  border-color: var(--blue-key); }
+#slot-red.has-item     { background: rgba(224, 80, 80, 0.2);   border-color: var(--red-key); }
+#slot-painting.has-item { background: rgba(180, 140, 80, 0.2); border-color: #b48c50; }
+#slot-crown.has-item   { background: rgba(201, 168, 76, 0.3);  border-color: var(--gold); }
+
+/* keycard color dots inside slots */
+#slot-yellow.has-item::before  { content: ''; position: absolute; inset: 6px; background: var(--yellow-key); border-radius: 2px; }
+#slot-blue.has-item::before    { content: ''; position: absolute; inset: 6px; background: var(--blue-key); border-radius: 2px; }
+#slot-red.has-item::before     { content: ''; position: absolute; inset: 6px; background: var(--red-key); border-radius: 2px; }
+#slot-painting.has-item::before { content: '🖼'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+#slot-crown.has-item::before   { content: '👑'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+
+/* ── Alert flash (center screen) ───────────────────────── */
+#alert-flash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: alert-pulse 0.4s ease infinite alternate;
+}
+
+@keyframes alert-pulse {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+#alert-text {
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 0.25em;
+  color: var(--red);
+  text-shadow: 0 0 24px rgba(224, 32, 32, 0.9), 0 0 60px rgba(224, 32, 32, 0.4);
+  text-transform: uppercase;
+}
+
+/* ── Co-op status (top-center) ──────────────────────────── */
+#coop-status {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 6px 16px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+#coop-label { color: #777; }
+#coop-state { color: var(--green); }
+
+/* ═══════════════════════════════════════════════════════════
+   ALARM OVERLAY — full-screen red flash + countdown
+   ═══════════════════════════════════════════════════════════ */
+#alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: alarm-flash 0.6s ease infinite alternate;
+}
+
+@keyframes alarm-flash {
+  from { background: rgba(139, 0, 0, 0); }
+  to   { background: rgba(139, 0, 0, 0.18); }
+}
+
+#alarm-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#alarm-label {
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  color: var(--red);
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(224, 32, 32, 0.8);
+}
+
+#alarm-timer {
+  font-size: 4rem;
+  font-weight: bold;
+  font-family: var(--font-ui);
+  color: #fff;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 30px rgba(224, 32, 32, 1), 0 0 60px rgba(224, 32, 32, 0.5);
+}
+
+/* urgency when ≤ 10s — JS adds .urgent to #alarm-overlay */
+#alarm-overlay.urgent { animation-duration: 0.2s; }
+#alarm-overlay.urgent #alarm-timer { color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════════
+   COMPANION COMMAND MENU (Tab key)
+   ═══════════════════════════════════════════════════════════ */
+#companion-menu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 90;
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  padding: 24px 32px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  backdrop-filter: blur(8px);
+}
+
+#companion-menu h3 {
+  font-family: var(--font-main);
+  font-size: 1rem;
+  font-weight: normal;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-align: center;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.25);
+  padding-bottom: 10px;
+}
+
+#companion-menu ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.companion-cmd {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #333;
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.companion-cmd:hover {
+  background: rgba(201, 168, 76, 0.12);
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+.close-hint {
+  font-size: 0.65rem;
+  color: #555;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Scrollbar (if ever needed)
+   ═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }

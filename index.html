@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Le Vol du Louvre</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── Three.js render target ───────────────────────────── -->
+  <div id="canvas-container"></div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  SCREENS (full-screen overlays)                        -->
+  <!-- ══════════════════════════════════════════════════════ -->
+
+  <!-- Start / Main Menu -->
+  <div id="start-screen" class="screen active">
+    <div class="screen-content">
+      <h1 class="game-title">Le Vol du Louvre</h1>
+      <p class="game-subtitle">Steal the painting. Steal the crown. Don't get caught.</p>
+      <div class="menu-buttons">
+        <button id="btn-solo" class="btn btn-primary">Solo</button>
+        <button id="btn-coop" class="btn btn-secondary">Co-op (AI Partner)</button>
+      </div>
+      <div class="controls-hint">
+        <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
+        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause Menu -->
+  <div id="pause-screen" class="screen hidden">
+    <div class="screen-content">
+      <h2>Paused</h2>
+      <div class="menu-buttons">
+        <button id="btn-resume" class="btn btn-primary">Resume</button>
+        <button id="btn-restart" class="btn btn-secondary">Restart</button>
+        <button id="btn-main-menu" class="btn btn-ghost">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div id="gameover-screen" class="screen hidden">
+    <div class="screen-content">
+      <h2 id="gameover-title">Caught!</h2>
+      <p id="gameover-message">You were spotted by a guard.</p>
+      <div class="menu-buttons">
+        <button id="btn-retry" class="btn btn-primary">Try Again</button>
+        <button id="btn-go-menu" class="btn btn-ghost">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win Screen -->
+  <div id="win-screen" class="screen hidden">
+    <div class="screen-content">
+      <h2 class="win-title">Heist Complete!</h2>
+      <p>You stole the painting and the crown — and got away clean.</p>
+      <div class="menu-buttons">
+        <button id="btn-play-again" class="btn btn-primary">Play Again</button>
+        <button id="btn-win-menu" class="btn btn-ghost">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  HUD (visible during gameplay)                         -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="hud" class="hidden">
+
+    <!-- Top-left: Objectives checklist -->
+    <div id="objectives">
+      <h3>Objectives</h3>
+      <ul id="objectives-list">
+        <li data-obj="enter"    class="obj-item">Enter the Louvre</li>
+        <li data-obj="yellow"   class="obj-item">Find the Yellow Keycard</li>
+        <li data-obj="gallery"  class="obj-item">Reach the Paintings Gallery</li>
+        <li data-obj="painting" class="obj-item">Steal the famous painting</li>
+        <li data-obj="blue"     class="obj-item">Find the Blue Keycard</li>
+        <li data-obj="vault"    class="obj-item">Reach the Crown Vault</li>
+        <li data-obj="crown"    class="obj-item">Steal the Crown</li>
+        <li data-obj="escape"   class="obj-item">Escape the Louvre</li>
+      </ul>
+    </div>
+
+    <!-- Top-right: Minimap -->
+    <div id="minimap">
+      <canvas id="minimap-canvas" width="160" height="120"></canvas>
+      <p id="minimap-label">Area: Lobby</p>
+    </div>
+
+    <!-- Bottom-center: Interaction prompt -->
+    <div id="interaction-prompt" class="hidden">
+      <span id="prompt-key">[E]</span>
+      <span id="prompt-text">Interact</span>
+    </div>
+
+    <!-- Bottom-right: Inventory -->
+    <div id="inventory">
+      <h4>Inventory</h4>
+      <div id="inventory-items">
+        <div class="inv-slot" id="slot-yellow"  data-label="Yellow Keycard"></div>
+        <div class="inv-slot" id="slot-blue"    data-label="Blue Keycard"></div>
+        <div class="inv-slot" id="slot-red"     data-label="Red Keycard"></div>
+        <div class="inv-slot" id="slot-painting" data-label="Painting"></div>
+        <div class="inv-slot" id="slot-crown"   data-label="Crown"></div>
+      </div>
+    </div>
+
+    <!-- Center: Alert flash -->
+    <div id="alert-flash" class="hidden">
+      <span id="alert-text">DETECTED</span>
+    </div>
+
+    <!-- Co-op status bar (top-center, shown in co-op mode) -->
+    <div id="coop-status" class="hidden">
+      <span id="coop-label">Partner: </span>
+      <span id="coop-state">Following</span>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  ALARM COUNTDOWN (full-screen overlay)                 -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="alarm-overlay" class="hidden">
+    <div id="alarm-content">
+      <p id="alarm-label">ALARM TRIGGERED — ESCAPE NOW</p>
+      <div id="alarm-timer">00:60</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  AI COMPANION COMMAND MENU (Tab key)                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="companion-menu" class="hidden">
+    <h3>Partner Commands</h3>
+    <ul>
+      <li><button class="companion-cmd" data-cmd="distract">Distract Guard</button></li>
+      <li><button class="companion-cmd" data-cmd="hack">Hack Terminal</button></li>
+      <li><button class="companion-cmd" data-cmd="wait">Wait Here</button></li>
+      <li><button class="companion-cmd" data-cmd="follow">Follow Me</button></li>
+    </ul>
+    <p class="close-hint">Tab / Esc to close</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  SCRIPTS                                              -->
+  <!--  Load order: Three.js → modules → main (entry point)  -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <script src="libs/three.min.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/guards.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/companion.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
