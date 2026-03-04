@@ -190,17 +190,19 @@ window.UI = (function () {
     // Blit pre-rendered background — no room geometry redrawn each frame
     minimapCtx.drawImage(_mmOffscreen, 0, 0);
 
-    // Guards (red dots) — visible when alarm is active
-    const showGuards = window.G && window.G.alarm.level > 0;
-    if (showGuards && guardPositions) {
+    // Guards — always visible; color escalates with alarm level
+    if (guardPositions) {
+      const lvl = window.G ? window.G.alarm.level : 0;
+      const dotColor = lvl >= 2 ? '#ff2200' : lvl >= 1 ? '#ff8800' : '#cc4444';
+      const dotR     = lvl >= 1 ? 3.0 : 2.0;
       guardPositions.forEach(gp => {
         const { mx, my } = worldToMini(gp.x, gp.z);
-        minimapCtx.fillStyle = '#e02020';
+        minimapCtx.fillStyle = dotColor;
         minimapCtx.beginPath();
         minimapCtx.arc(
           Math.max(2, Math.min(158, mx)),
           Math.max(2, Math.min(118, my)),
-          2.5, 0, Math.PI * 2
+          dotR, 0, Math.PI * 2
         );
         minimapCtx.fill();
       });

@@ -110,6 +110,90 @@ html, body {
 .hidden  { display: none !important; }
 .active  { display: flex !important; }
 
+/* ── Touch overlay ──────────────────────────────────────── */
+#touch-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+@media (pointer: coarse) {
+  #touch-overlay { display: block; }
+  .controls-hint { display: none; }
+}
+
+#joystick-zone {
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 48%;
+  height: 48%;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#joystick-base {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.18);
+  position: relative;
+}
+
+#joystick-stick {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: rgba(201,168,76,0.55);
+  border: 2px solid rgba(201,168,76,0.85);
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.04s;
+}
+
+#touch-buttons {
+  position: absolute;
+  right: 12px; bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: all;
+}
+
+.touch-row {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.tch-btn {
+  width: 62px; height: 52px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255,255,255,0.22);
+  background: rgba(10,10,14,0.7);
+  color: #ccc;
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.08s, border-color 0.08s;
+}
+
+.tch-btn.pressed,
+.tch-btn:active {
+  background: rgba(201,168,76,0.25);
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+#tch-sprint  { border-color: rgba(150,230,150,0.35); }
+#tch-crouch  { border-color: rgba(100,180,255,0.35); }
+
 /* ═══════════════════════════════════════════════════════════
    SCREENS — full-screen overlays (start / pause / gameover / win)
    ═══════════════════════════════════════════════════════════ */

@@ -610,6 +610,7 @@
     buildMap();
     Player.init(scene, camera);
     Companion.init(scene);
+    Touch.init();
     UI.showScreen('start');
     loop();
   }

@@ -6,7 +6,8 @@
 window.Player = (function () {
 
   // ── Constants ──────────────────────────────────────────
-  const SPEED_WALK   = 6;
+  const SPEED_WALK   = 5.5;
+  const SPEED_SPRINT = 9.5;
   const SPEED_CROUCH = 3;
   const SPEED_SLIDE  = 8;
   const GRAVITY      = -22;
@@ -224,7 +225,9 @@ window.Player = (function () {
 
     // State from input (only when not already sliding)
     if (state !== 'sliding') {
-      state = (keys['ShiftLeft'] || keys['ShiftRight']) ? 'crouching' : 'normal';
+      if (keys['ShiftLeft'] || keys['ShiftRight']) state = 'crouching';
+      else if (keys['KeyR'])                       state = 'sprinting';
+      else                                         state = 'normal';
     }
 
     // Movement input
@@ -240,6 +243,7 @@ window.Player = (function () {
 
     const spd = state === 'crouching' ? SPEED_CROUCH
               : state === 'sliding'   ? SPEED_SLIDE
+              : state === 'sprinting' ? SPEED_SPRINT
               : SPEED_WALK;
 
     const moving = mx !== 0 || mz !== 0;
@@ -258,10 +262,11 @@ window.Player = (function () {
       footT -= dt;
       if (footT <= 0) {
         if (state !== 'crouching') UI.SFX.footstep();
-        footT = state === 'crouching' ? 0.55 : 0.27;
+        footT = state === 'crouching' ? 0.55 : state === 'sprinting' ? 0.17 : 0.27;
         // Broadcast noise to nearby guards — crouching is silent
         if (state !== 'crouching' && window.Guards) {
-          Guards.notifyNoise(pos.x, pos.z, state === 'sliding' ? 6.0 : 3.5);
+          const r = state === 'sliding' ? 6.0 : state === 'sprinting' ? 7.5 : 3.5;
+          Guards.notifyNoise(pos.x, pos.z, r);
         }
       }
     } else {
@@ -524,6 +529,7 @@ window.Player = (function () {
     isCrouching()    { return state === 'crouching'; },
     isSliding()      { return state === 'sliding'; },
     getPlayerY()     { return pos.y; },
+    simulateKey(code, down) { keys[code] = down; },
   };
 
 }());
