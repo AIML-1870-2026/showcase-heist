@@ -159,28 +159,49 @@ window.Player = (function () {
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    // Body
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(PLAYER_R * 2, H_NORMAL * 0.7, PLAYER_R * 2),
-      new THREE.MeshLambertMaterial({ color: 0x8b7355 })
-    );
-    body.position.y = H_NORMAL * 0.35;
-    group.add(body);
+    const matSuit = new THREE.MeshStandardMaterial({ color: 0x1a1a2a, roughness: 0.8, metalness: 0.1 });
+    const matMask = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.9, metalness: 0.0 });
+    const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.4, metalness: 0.6, emissive: 0x443310, emissiveIntensity: 0.3 });
 
-    // Head
-    const head = new THREE.Mesh(
-      new THREE.BoxGeometry(PLAYER_R * 1.8, PLAYER_R * 1.4, PLAYER_R * 1.8),
-      new THREE.MeshLambertMaterial({ color: 0xa08060 })
-    );
-    head.position.y = H_NORMAL * 0.85;
+    // Legs
+    [[-0.15, 0.15]].forEach(pair => pair.forEach(xOff => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.72, 0.22), matSuit);
+      leg.position.set(xOff, 0.36, 0);
+      leg.castShadow = true;
+      group.add(leg);
+    }));
+
+    // Torso
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.38), matSuit);
+    torso.position.y = 1.08;
+    torso.castShadow = true;
+    group.add(torso);
+
+    // Gold trim stripe on chest
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.4), matGold);
+    stripe.position.set(0, 1.22, 0);
+    group.add(stripe);
+
+    // Arms
+    [[-0.44, 0.44]].forEach(pair => pair.forEach(xOff => {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), matSuit);
+      arm.position.set(xOff, 1.02, 0);
+      arm.castShadow = true;
+      group.add(arm);
+    }));
+
+    // Head / balaclava
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.44, 0.44), matMask);
+    head.position.y = 1.64;
+    head.castShadow = true;
     group.add(head);
 
-    // Red eyes
-    const eyeMat = new THREE.MeshLambertMaterial({ color: 0xff2200 });
-    const eyeGeo = new THREE.SphereGeometry(0.06, 6, 4);
-    [-0.12, 0.12].forEach(xOff => {
+    // Glowing eyes (emissive — subtle)
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 1.2, roughness: 0.5 });
+    const eyeGeo = new THREE.BoxGeometry(0.07, 0.05, 0.06);
+    [-0.1, 0.1].forEach(xOff => {
       const eye = new THREE.Mesh(eyeGeo, eyeMat);
-      eye.position.set(xOff, H_NORMAL * 0.88, -(PLAYER_R + 0.02));
+      eye.position.set(xOff, 1.66, -0.22);
       group.add(eye);
     });
 
@@ -209,6 +230,43 @@ window.Player = (function () {
         }
       }
     }
+  }
+
+  // ── Camera wall clamp ──────────────────────────────────
+  // Sweeps from player toward desired camera position; stops before any wall AABB.
+  function _safeCameraPos(tx, tz) {
+    const G = window.G;
+    if (!G || !G.walls) return { x: tx, z: tz };
+    const dx = tx - pos.x, dz = tz - pos.z;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    if (len < 0.001) return { x: tx, z: tz };
+    const nx = dx / len, nz = dz / len;
+    let minT = len;
+    const R = 0.25; // camera radius padding
+    for (const w of G.walls) {
+      let t0x, t1x, t0z, t1z;
+      if (Math.abs(nx) < 1e-8) {
+        if (pos.x + R < w.minX || pos.x - R > w.maxX) continue;
+        t0x = -Infinity; t1x = Infinity;
+      } else {
+        t0x = (w.minX - R - pos.x) / nx;
+        t1x = (w.maxX + R - pos.x) / nx;
+        if (t0x > t1x) { const tmp = t0x; t0x = t1x; t1x = tmp; }
+      }
+      if (Math.abs(nz) < 1e-8) {
+        if (pos.z + R < w.minZ || pos.z - R > w.maxZ) continue;
+        t0z = -Infinity; t1z = Infinity;
+      } else {
+        t0z = (w.minZ - R - pos.z) / nz;
+        t1z = (w.maxZ + R - pos.z) / nz;
+        if (t0z > t1z) { const tmp = t0z; t0z = t1z; t1z = tmp; }
+      }
+      const tenter = Math.max(t0x, t0z);
+      const texit  = Math.min(t1x, t1z);
+      if (texit > tenter && tenter > 0 && tenter < minT) minT = tenter - 0.1;
+    }
+    const t = Math.max(0, Math.min(minT, len)) / len;
+    return { x: pos.x + dx * t, z: pos.z + dz * t };
   }
 
   // ── Update ─────────────────────────────────────────────
@@ -252,8 +310,9 @@ window.Player = (function () {
       const len = Math.sqrt(mx * mx + mz * mz);
       mx /= len; mz /= len;
       const cos = Math.cos(yaw), sin = Math.sin(yaw);
-      vel.x = (sin * mz + cos * mx) * spd;
-      vel.z = (cos * mz - sin * mx) * spd;
+      // Three.js lookAt gives camera screen-right = (-cos, 0, sin), so strafe signs are negated
+      vel.x = (sin * mz - cos * mx) * spd;
+      vel.z = (cos * mz + sin * mx) * spd;
 
       // Face movement direction
       playerMesh.rotation.y = Math.atan2(vel.x, vel.z) + Math.PI;
@@ -312,10 +371,11 @@ window.Player = (function () {
 
     // Frame-rate independent camera lerp: same feel at any fps
     const lerpAlpha = 1 - Math.pow(1 - CAM_LERP, dt * 60);
-    const cx = pos.x - Math.sin(yaw) * CAM_DIST;
+    const idealX = pos.x - Math.sin(yaw) * CAM_DIST;
+    const idealZ = pos.z - Math.cos(yaw) * CAM_DIST;
     const cy = pos.y + CAM_H_OFFSET + pitch * 3 + currentBob;
-    const cz = pos.z - Math.cos(yaw) * CAM_DIST;
-    _camTarget.set(cx, cy, cz);
+    const safe = _safeCameraPos(idealX, idealZ);
+    _camTarget.set(safe.x, cy, safe.z);
     camPos.lerp(_camTarget, lerpAlpha);
     camera.position.copy(camPos);
     camera.lookAt(pos.x, pos.y + 1.4, pos.z);

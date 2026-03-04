@@ -94,25 +94,28 @@
 
   // ── Lighting ───────────────────────────────────────────
   const flickerLights = [];  // point lights that flicker during alarm
+  let sun = null;            // directional light — updated each frame to follow player
 
   function setupLighting() {
     // Ambient — slightly warm to feel like museum hall lighting
     scene.add(new THREE.AmbientLight(0xffe8d0, 0.4));
 
-    // Directional (museum overhead style)
-    const sun = new THREE.DirectionalLight(0xfff5e0, 0.9);
+    // Directional (museum overhead style) — smaller frustum, higher-res map, follows player
+    sun = new THREE.DirectionalLight(0xfff5e0, 0.9);
     sun.position.set(15, 25, 10);
     sun.castShadow = true;
-    sun.shadow.mapSize.width  = 1024;
-    sun.shadow.mapSize.height = 1024;
+    sun.shadow.mapSize.width  = 2048;
+    sun.shadow.mapSize.height = 2048;
     sun.shadow.camera.near   = 0.5;
-    sun.shadow.camera.far    = 250;
-    sun.shadow.camera.left   = -70;
-    sun.shadow.camera.right  =  70;
-    sun.shadow.camera.top    =  70;
-    sun.shadow.camera.bottom = -70;
-    sun.shadow.bias = -0.001;
+    sun.shadow.camera.far    = 120;
+    sun.shadow.camera.left   = -28;
+    sun.shadow.camera.right  =  28;
+    sun.shadow.camera.top    =  28;
+    sun.shadow.camera.bottom = -28;
+    sun.shadow.bias = -0.0015;
+    sun.shadow.camera.updateProjectionMatrix();
     scene.add(sun);
+    scene.add(sun.target);
 
     // Lobby — warm gold chandelier pools
     [ [-8, 4.5, 10], [8, 4.5, 10], [-8, 4.5, 30], [8, 4.5, 30] ].forEach(([x, y, z]) => {
@@ -556,6 +559,13 @@
 
     const playerPos   = Player.getPositionRef();
     const playerState = Player.getState();
+
+    // Shadow camera follows player for consistent resolution across the full map
+    if (sun) {
+      sun.position.set(playerPos.x + 15, 25, playerPos.z + 10);
+      sun.target.position.set(playerPos.x, 0, playerPos.z);
+      sun.target.updateMatrixWorld();
+    }
 
     // Core updates
     Player.update(dt);

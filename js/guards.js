@@ -110,8 +110,8 @@ window.Guards = (function () {
   let alertLevel = 0;
 
   // ── Materials ──────────────────────────────────────────
-  const MAT_BODY    = new THREE.MeshLambertMaterial({ color: 0x334455 });
-  const MAT_HEAD    = new THREE.MeshLambertMaterial({ color: 0xf0c8a0 });
+  const MAT_BODY    = new THREE.MeshStandardMaterial({ color: 0x2a3a4a, roughness: 0.85, metalness: 0.05 });
+  const MAT_HEAD    = new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.9,  metalness: 0.0  });
   const MAT_CONE    = {
     patrol:    new THREE.MeshLambertMaterial({ color: 0xffee00, transparent: true, opacity: 0.14, side: THREE.DoubleSide }),
     suspicious:new THREE.MeshLambertMaterial({ color: 0xff8800, transparent: true, opacity: 0.22, side: THREE.DoubleSide }),
@@ -146,22 +146,48 @@ window.Guards = (function () {
   // ── Guard body mesh ────────────────────────────────────
   function buildGuardMesh(scene) {
     const g = new THREE.Group();
+    const matHat  = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.8, metalness: 0.1 });
+    const matBelt = new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.5, metalness: 0.4 });
 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, 0.5), MAT_BODY);
-    body.position.y = 0.6;
+    // Legs
+    [-0.17, 0.17].forEach(xOff => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.26), MAT_BODY);
+      leg.position.set(xOff, 0.325, 0);
+      leg.castShadow = true;
+      g.add(leg);
+    });
+
+    // Torso
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.46), MAT_BODY);
+    body.position.y = 1.01;
+    body.castShadow = true;
     g.add(body);
 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), MAT_HEAD);
-    head.position.y = 1.45;
+    // Belt
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.07, 0.48), matBelt);
+    belt.position.y = 0.67;
+    g.add(belt);
+
+    // Arms
+    [-0.46, 0.46].forEach(xOff => {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.58, 0.24), MAT_BODY);
+      arm.position.set(xOff, 0.96, 0);
+      arm.castShadow = true;
+      g.add(arm);
+    });
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), MAT_HEAD);
+    head.position.y = 1.6;
+    head.castShadow = true;
     g.add(head);
 
-    // Hat
-    const hat = new THREE.Mesh(
-      new THREE.BoxGeometry(0.6, 0.2, 0.6),
-      new THREE.MeshLambertMaterial({ color: 0x222233 })
-    );
-    hat.position.y = 1.8;
+    // Hat (peaked cap)
+    const hat = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.18, 0.58), matHat);
+    hat.position.y = 1.93;
     g.add(hat);
+    const hatBrim = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.05, 0.68), matHat);
+    hatBrim.position.set(0, 1.83, 0.04);
+    g.add(hatBrim);
 
     g.userData.bodyMesh = body;
 
@@ -176,7 +202,7 @@ window.Guards = (function () {
 
     // Detection meter — flat horizontal bar above hat, visible from third-person camera
     const barGroup = new THREE.Group();
-    barGroup.position.y = 2.28;
+    barGroup.position.y = 2.18;
     const bgBar = new THREE.Mesh(
       new THREE.BoxGeometry(0.56, 0.03, 0.13),
       new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.75, depthWrite: false })
