@@ -290,11 +290,11 @@
   function boot() {
     onResize();
     window.addEventListener('resize', onResize);
+    wireButtons();           // wire first — before anything that could throw
     setupLighting();
     buildMap();
     Player.init(scene, camera);
     Companion.init(scene);
-    wireButtons();
     UI.showScreen('start');
     loop();
   }
