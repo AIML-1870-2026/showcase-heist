@@ -20,46 +20,10 @@
   scene.background = new THREE.Color(0x0e0e14);
   scene.fog        = new THREE.Fog(0x0a0a0e, 20, 75);
 
-  const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(70, 1, 0.5, 200);
   camera.position.set(0, 5, -5);
 
-  // ── Post-processing (bloom + chromatic aberration) ─────
-  const composer  = new THREE.EffectComposer(renderer);
-  composer.addPass(new THREE.RenderPass(scene, camera));
-
-  const bloomPass = new THREE.UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.45,  // strength — reduced from 0.8 to avoid over-glow on surfaces
-    0.4,   // radius
-    0.90   // threshold — raised so only emissive lights bloom, not wall surfaces
-  );
-  composer.addPass(bloomPass);
-
-  // Chromatic aberration pass — RGB channel offset on alert
-  const chromaShader = {
-    uniforms: {
-      tDiffuse: { value: null },
-      amount:   { value: 0.0 },
-    },
-    vertexShader: [
-      'varying vec2 vUv;',
-      'void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    ].join('\n'),
-    fragmentShader: [
-      'uniform sampler2D tDiffuse;',
-      'uniform float amount;',
-      'varying vec2 vUv;',
-      'void main() {',
-      '  vec2 off = vec2(amount * 0.008, 0.0);',
-      '  float r = texture2D(tDiffuse, vUv + off).r;',
-      '  float g = texture2D(tDiffuse, vUv      ).g;',
-      '  float b = texture2D(tDiffuse, vUv - off).b;',
-      '  gl_FragColor = vec4(r, g, b, 1.0);',
-      '}',
-    ].join('\n'),
-  };
-  const chromaPass = new THREE.ShaderPass(chromaShader);
-  composer.addPass(chromaPass);
+  // No post-processing — use plain renderer for crisp output
 
   const clock = new THREE.Clock();
 
@@ -338,12 +302,9 @@
       const flicker = 0.6 + Math.sin(flickerT) * 0.28 + Math.sin(flickerT * 2.73) * 0.12;
       flickerLights.forEach(l => { l.intensity = l._baseIntensity * flicker; });
 
-      // Bloom ramps up with alarm
-      bloomPass.strength = 0.45 + Math.abs(Math.sin(alarmPulse * 0.6)) * 0.6;
     } else {
       light.intensity = 0;
       flickerLights.forEach(l => { l.intensity = l._baseIntensity; });
-      bloomPass.strength = 0.45;
     }
   }
 
@@ -563,22 +524,12 @@
     noiseRingMat.opacity = 0.7 * (1 - progress);
   }
 
-  // ── Pickup flash + chroma control ─────────────────────
+  // ── Pickup flash (decay only, no bloom) ───────────────
   function tickPickupAndChroma(dt) {
     const G = window.G;
-    // Pickup flash: brief bloom spike
     if (G._pickupFlash > 0) {
       G._pickupFlash = Math.max(0, G._pickupFlash - dt * 3.5);
-      bloomPass.strength += G._pickupFlash * 1.2;
     }
-
-    // Chromatic aberration: scales with alarm level, peaks during alarm
-    let targetChroma = 0;
-    if (G.alarm.active)        targetChroma = 1.0;
-    else if (G.alarm.level >= 2) targetChroma = 0.5;
-    else if (G.alarm.level >= 1) targetChroma = 0.2;
-    chromaPass.uniforms.amount.value +=
-      (targetChroma - chromaPass.uniforms.amount.value) * Math.min(1, dt * 4);
   }
 
   // ── Floating animation for pickups ─────────────────────
@@ -798,8 +749,6 @@
     const w = window.innerWidth;
     const h = window.innerHeight;
     renderer.setSize(w, h);
-    composer.setSize(w, h);
-    bloomPass.resolution.set(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
@@ -811,7 +760,7 @@
     const G = window.G;
 
     if (G.phase !== 'playing') {
-      composer.render();
+      renderer.render(scene, camera);
       return;
     }
 
