@@ -881,10 +881,19 @@ window.Guards = (function () {
     return guards.map(g => ({ x: g.pos.x, z: g.pos.z }));
   }
 
+  // Returns positions of guards that are suspicious or alerted (for companion auto-distract)
+  function getAlertedGuardPositions() {
+    return guards
+      .filter(g => g.state === 'suspicious' || g.state === 'alerted')
+      .map(g => ({ x: g.pos.x, z: g.pos.z }));
+  }
+
   return {
     init,
     update,
     getGuardPositions,
+    getAlertedGuardPositions,
+    astar,   // exposed for companion pathfinding
     getAlertLevel()  { return alertLevel; },
     triggerAlarmLevel,
     resetAlarm,
