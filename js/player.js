@@ -23,6 +23,7 @@ window.Player = (function () {
   let scene, camera;
   let playerMesh;
   let _leftLeg = null, _rightLeg = null;
+  let _leftArm = null, _rightArm = null;
 
   let pos       = new THREE.Vector3(0, 0, 5);
   let vel       = new THREE.Vector3(0, 0, 0);
@@ -160,56 +161,101 @@ window.Player = (function () {
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    const matSuit = new THREE.MeshStandardMaterial({ color: 0x1a1a2a, roughness: 0.8, metalness: 0.1 });
-    const matMask = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.9, metalness: 0.0 });
-    const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.4, metalness: 0.6, emissive: 0x443310, emissiveIntensity: 0.3 });
+    const matSuit = new THREE.MeshStandardMaterial({ color: 0x1a1a2a, roughness: 0.75, metalness: 0.15 });
+    const matMask = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.0  });
+    const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.7, emissive: 0x443310, emissiveIntensity: 0.4 });
+    const matShoe = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.25 });
+    const eyeMat  = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 1.5, roughness: 0.3 });
 
-    // Legs
-    const legs = [-0.15, 0.15].map(xOff => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.72, 0.22), matSuit);
-      leg.position.set(xOff, 0.36, 0);
-      leg.castShadow = true;
-      group.add(leg);
-      return leg;
+    // ── Leg pivots (at hip, y=1.0) ──────────────────────
+    const legPivots = [-0.14, 0.14].map(xOff => {
+      const pivot = new THREE.Group();
+      pivot.position.set(xOff, 1.0, 0);
+
+      // Thigh
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.54, 8), matSuit);
+      thigh.position.y = -0.27; thigh.castShadow = true;
+      pivot.add(thigh);
+
+      // Knee joint
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), matSuit);
+      knee.position.y = -0.54;
+      pivot.add(knee);
+
+      // Shin
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.44, 8), matSuit);
+      shin.position.y = -0.76; shin.castShadow = true;
+      pivot.add(shin);
+
+      // Shoe
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.09, 0.32), matShoe);
+      shoe.position.set(0, -1.0, 0.07);
+      pivot.add(shoe);
+
+      group.add(pivot);
+      return pivot;
     });
-    group.userData.leftLeg  = legs[0];
-    group.userData.rightLeg = legs[1];
+    group.userData.leftLeg  = legPivots[0];
+    group.userData.rightLeg = legPivots[1];
 
-    // Torso
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.38), matSuit);
-    torso.position.y = 1.08;
-    torso.castShadow = true;
+    // ── Torso (tapered cylinder) ─────────────────────────
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.21, 0.65, 10), matSuit);
+    torso.position.y = 1.3; torso.castShadow = true;
     group.add(torso);
 
-    // Gold trim stripe on chest
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.4), matGold);
-    stripe.position.set(0, 1.22, 0);
-    group.add(stripe);
+    // Gold belt ring
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.215, 0.055, 10), matGold);
+    belt.position.y = 1.0;
+    group.add(belt);
 
-    // Arms
-    [[-0.44, 0.44]].forEach(pair => pair.forEach(xOff => {
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), matSuit);
-      arm.position.set(xOff, 1.02, 0);
-      arm.castShadow = true;
-      group.add(arm);
-    }));
+    // ── Arm pivots (at shoulder, y=1.58) ─────────────────
+    const armPivots = [-0.32, 0.32].map(xOff => {
+      const pivot = new THREE.Group();
+      pivot.position.set(xOff, 1.58, 0);
 
-    // Head / balaclava
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.44, 0.44), matMask);
-    head.position.y = 1.64;
-    head.castShadow = true;
+      // Upper arm
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.07, 0.36, 8), matSuit);
+      upper.position.y = -0.18; upper.castShadow = true;
+      pivot.add(upper);
+
+      // Elbow joint
+      const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.072, 8, 6), matSuit);
+      elbow.position.y = -0.36;
+      pivot.add(elbow);
+
+      // Forearm
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.062, 0.32, 8), matSuit);
+      fore.position.y = -0.52; fore.castShadow = true;
+      pivot.add(fore);
+
+      // Glove fist
+      const fist = new THREE.Mesh(new THREE.SphereGeometry(0.068, 8, 6), matShoe);
+      fist.position.y = -0.7;
+      pivot.add(fist);
+
+      group.add(pivot);
+      return pivot;
+    });
+    group.userData.leftArm  = armPivots[0];
+    group.userData.rightArm = armPivots[1];
+
+    // ── Neck ─────────────────────────────────────────────
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.14, 8), matMask);
+    neck.position.y = 1.66;
+    group.add(neck);
+
+    // ── Head (sphere balaclava) ───────────────────────────
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 9), matMask);
+    head.position.y = 1.84; head.castShadow = true;
     group.add(head);
 
-    // Glowing eyes (emissive — subtle)
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 1.2, roughness: 0.5 });
-    const eyeGeo = new THREE.BoxGeometry(0.07, 0.05, 0.06);
-    [-0.1, 0.1].forEach(xOff => {
-      const eye = new THREE.Mesh(eyeGeo, eyeMat);
-      eye.position.set(xOff, 1.66, -0.22);
+    // Glowing eyes
+    [-0.09, 0.09].forEach(xOff => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 6), eyeMat);
+      eye.position.set(xOff, 1.87, -0.21);
       group.add(eye);
     });
 
-    group.castShadow = true;
     sc.add(group);
     return group;
   }
@@ -374,10 +420,14 @@ window.Player = (function () {
     const bobAmp = (moving && onGround) ? bobAmount : 0;
     const currentBob = Math.sin(bobT) * bobAmp;
 
-    // Leg swing — driven by bobT (same accumulator as head bob)
-    const legSwing = (moving && onGround) ? (state === 'crouching' ? 0.35 : state === 'sprinting' ? 0.8 : 0.55) : 0.0;
-    if (_leftLeg)  _leftLeg.rotation.x  =  Math.sin(bobT) * legSwing;
-    if (_rightLeg) _rightLeg.rotation.x = -Math.sin(bobT) * legSwing;
+    // Limb swing — legs and arms counter-swing for natural gait
+    const legSwing = (moving && onGround) ? (state === 'crouching' ? 0.32 : state === 'sprinting' ? 0.75 : 0.52) : 0.0;
+    const armSwing = legSwing * 0.7;
+    const cycle = Math.sin(bobT);
+    if (_leftLeg)  _leftLeg.rotation.x  =  cycle * legSwing;
+    if (_rightLeg) _rightLeg.rotation.x = -cycle * legSwing;
+    if (_leftArm)  _leftArm.rotation.x  = -cycle * armSwing;
+    if (_rightArm) _rightArm.rotation.x  =  cycle * armSwing;
 
     // Frame-rate independent camera lerp: same feel at any fps
     const lerpAlpha = 1 - Math.pow(1 - CAM_LERP, dt * 60);
@@ -531,6 +581,8 @@ window.Player = (function () {
     playerMesh  = buildMesh(sc);
     _leftLeg    = playerMesh.userData.leftLeg;
     _rightLeg   = playerMesh.userData.rightLeg;
+    _leftArm    = playerMesh.userData.leftArm;
+    _rightArm   = playerMesh.userData.rightArm;
 
     document.addEventListener('keydown',          onKeyDown);
     document.addEventListener('keyup',            onKeyUp);

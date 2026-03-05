@@ -158,53 +158,99 @@ window.Guards = (function () {
   // ── Guard body mesh ────────────────────────────────────
   function buildGuardMesh(scene) {
     const g = new THREE.Group();
-    const matHat  = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.8, metalness: 0.1 });
-    const matBelt = new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.5, metalness: 0.4 });
+    const matHat   = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.75, metalness: 0.12 });
+    const matBelt  = new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.4,  metalness: 0.55 });
+    const matBadge = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3,  metalness: 0.8  });
+    const matShoe  = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.3  });
 
-    // Legs
-    const legs = [-0.17, 0.17].map(xOff => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.26), MAT_BODY);
-      leg.position.set(xOff, 0.325, 0);
-      leg.castShadow = true;
-      g.add(leg);
-      return leg;
+    // ── Leg pivots (at hip, y=0.88) ────────────────────
+    const legPivots = [-0.14, 0.14].map(xOff => {
+      const pivot = new THREE.Group();
+      pivot.position.set(xOff, 0.88, 0);
+
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.5, 8), MAT_BODY);
+      thigh.position.y = -0.25; thigh.castShadow = true;
+      pivot.add(thigh);
+
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.092, 8, 6), MAT_BODY);
+      knee.position.y = -0.5;
+      pivot.add(knee);
+
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.42, 8), MAT_BODY);
+      shin.position.y = -0.71; shin.castShadow = true;
+      pivot.add(shin);
+
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.32), matShoe);
+      shoe.position.set(0, -0.94, 0.07);
+      pivot.add(shoe);
+
+      g.add(pivot);
+      return pivot;
     });
-    g.userData.leftLeg  = legs[0];
-    g.userData.rightLeg = legs[1];
+    g.userData.leftLeg  = legPivots[0];
+    g.userData.rightLeg = legPivots[1];
 
-    // Torso
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.46), MAT_BODY);
-    body.position.y = 1.01;
-    body.castShadow = true;
+    // ── Torso ──────────────────────────────────────────
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.22, 0.62, 10), MAT_BODY);
+    body.position.y = 1.15; body.castShadow = true;
     g.add(body);
+    g.userData.bodyMesh = body;
 
-    // Belt
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.07, 0.48), matBelt);
-    belt.position.y = 0.67;
+    // Belt + buckle
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.225, 0.225, 0.055, 10), matBelt);
+    belt.position.y = 0.855;
     g.add(belt);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.07), matBadge);
+    buckle.position.set(0, 0.855, -0.228);
+    g.add(buckle);
 
-    // Arms
-    [-0.46, 0.46].forEach(xOff => {
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.58, 0.24), MAT_BODY);
-      arm.position.set(xOff, 0.96, 0);
-      arm.castShadow = true;
-      g.add(arm);
+    // ── Arm pivots (at shoulder, y=1.42) ───────────────
+    const armPivots = [-0.32, 0.32].map(xOff => {
+      const pivot = new THREE.Group();
+      pivot.position.set(xOff, 1.42, 0);
+
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.074, 0.38, 8), MAT_BODY);
+      upper.position.y = -0.19; upper.castShadow = true;
+      pivot.add(upper);
+
+      const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.076, 8, 6), MAT_BODY);
+      elbow.position.y = -0.38;
+      pivot.add(elbow);
+
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.074, 0.065, 0.34, 8), MAT_BODY);
+      fore.position.y = -0.55; fore.castShadow = true;
+      pivot.add(fore);
+
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), MAT_HEAD);
+      hand.position.y = -0.74;
+      pivot.add(hand);
+
+      g.add(pivot);
+      return pivot;
     });
+    g.userData.leftArm  = armPivots[0];
+    g.userData.rightArm = armPivots[1];
 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), MAT_HEAD);
-    head.position.y = 1.6;
-    head.castShadow = true;
+    // ── Head ───────────────────────────────────────────
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.13, 8), MAT_HEAD);
+    neck.position.y = 1.53;
+    g.add(neck);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.225, 12, 9), MAT_HEAD);
+    head.position.y = 1.67; head.castShadow = true;
     g.add(head);
 
-    // Hat (peaked cap)
-    const hat = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.18, 0.58), matHat);
-    hat.position.y = 1.93;
-    g.add(hat);
-    const hatBrim = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.05, 0.68), matHat);
-    hatBrim.position.set(0, 1.83, 0.04);
+    // Hat body (cylinder) + brim disk
+    const hatBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.28, 10), matHat);
+    hatBody.position.y = 1.95;
+    g.add(hatBody);
+    const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 12), matHat);
+    hatBrim.position.y = 1.81;
     g.add(hatBrim);
-
-    g.userData.bodyMesh = body;
+    // Badge on hat
+    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.05), matBadge);
+    badge.position.set(0, 1.87, -0.34);
+    g.add(badge);
 
     // Blob shadow — flat dark disc on the floor
     const blobShadow = new THREE.Mesh(
@@ -266,6 +312,8 @@ window.Guards = (function () {
       this._body      = this.mesh.userData.bodyMesh;
       this._leftLeg   = this.mesh.userData.leftLeg;
       this._rightLeg  = this.mesh.userData.rightLeg;
+      this._leftArm   = this.mesh.userData.leftArm;
+      this._rightArm  = this.mesh.userData.rightArm;
 
       this.mesh.position.copy(this.pos);
 
@@ -461,13 +509,16 @@ window.Guards = (function () {
       const isMoving = this.state === 'patrol' || this.state === 'alerted' || this.state === 'searching';
       if (isMoving) this._walkT += dt * this.speed() * 0.9;
       const walkCycle = Math.sin(this._walkT * 3.2);
-      const swing = isMoving ? 0.55 : 0.04;
+      const legSwing  = isMoving ? 0.52 : 0.03;
+      const armSwing  = legSwing * 0.65;
       if (this._body) {
-        this._body.position.y = 1.01 + walkCycle * (isMoving ? 0.03 : 0.008);
-        this._body.rotation.z = Math.sin(this._walkT * 3.2 + Math.PI * 0.5) * (isMoving ? 0.04 : 0.008);
+        this._body.position.y = 1.15 + walkCycle * (isMoving ? 0.025 : 0.006);
+        this._body.rotation.z = Math.sin(this._walkT * 3.2 + Math.PI * 0.5) * (isMoving ? 0.035 : 0.006);
       }
-      if (this._leftLeg)  this._leftLeg.rotation.x  =  walkCycle * swing;
-      if (this._rightLeg) this._rightLeg.rotation.x  = -walkCycle * swing;
+      if (this._leftLeg)  this._leftLeg.rotation.x  =  walkCycle * legSwing;
+      if (this._rightLeg) this._rightLeg.rotation.x  = -walkCycle * legSwing;
+      if (this._leftArm)  this._leftArm.rotation.x   = -walkCycle * armSwing;
+      if (this._rightArm) this._rightArm.rotation.x  =  walkCycle * armSwing;
 
       // Sync mesh — smoothly lerp yaw toward target angle
       const targetYaw = -this.facingAngle();
