@@ -191,7 +191,7 @@ window.Guards = (function () {
       pivot.add(shin);
 
       const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.32), matShoe);
-      shoe.position.set(0, -0.94, 0.07);
+      shoe.position.set(0, -0.94, -0.07);
       pivot.add(shoe);
 
       g.add(pivot);
@@ -249,6 +249,14 @@ window.Guards = (function () {
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.225, 12, 9), MAT_HEAD);
     head.position.y = 1.67; head.castShadow = true;
     g.add(head);
+
+    // Eyes
+    const matEye = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9, metalness: 0.0 });
+    [-0.08, 0.08].forEach(xOff => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), matEye);
+      eye.position.set(xOff, 1.71, -0.205);
+      g.add(eye);
+    });
 
     // Hat body (cylinder) + brim disk
     const hatBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.28, 10), matHat);

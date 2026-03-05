@@ -258,7 +258,7 @@ window.Player = (function () {
     const matMask = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.0  });
     const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.7, emissive: 0x443310, emissiveIntensity: 0.4 });
     const matShoe = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.25 });
-    const eyeMat  = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 1.5, roughness: 0.3 });
+    const eyeMat  = new THREE.MeshStandardMaterial({ color: 0xddeeff, emissive: 0x88ccff, emissiveIntensity: 0.9, roughness: 0.2 });
 
     // ── Leg pivots (at hip, y=1.0) ──────────────────────
     const legPivots = [-0.14, 0.14].map(xOff => {
@@ -282,7 +282,7 @@ window.Player = (function () {
 
       // Shoe
       const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.09, 0.32), matShoe);
-      shoe.position.set(0, -1.0, 0.07);
+      shoe.position.set(0, -1.0, -0.07);
       pivot.add(shoe);
 
       group.add(pivot);
