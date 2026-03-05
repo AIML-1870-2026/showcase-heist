@@ -291,6 +291,16 @@ window.UI = (function () {
     $('gameover-message').textContent = message || 'You were spotted.';
     SFX.caught();
     showScreen('gameover');
+    const cp  = window.getCheckpoint ? window.getCheckpoint() : null;
+    const btn = $('btn-resume-checkpoint');
+    if (btn) {
+      if (cp) {
+        btn.textContent = 'Resume from ' + cp.room;
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
   }
 
   const LB_KEY = 'lvdl_leaderboard';

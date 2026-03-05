@@ -12,6 +12,14 @@ window.Guards = (function () {
   const SEARCH_TIME   = 5.0;           // seconds searching before giving up
   const CATCH_DIST    = 1.0;           // distance to "catch" player
 
+  // ── Navigation grid constants (A* pathfinding) ─────────
+  const NAV_CELL  = 2.5;   // world units per cell
+  const NAV_COLS  = 20;    // X: -25 to 25 → 50 / 2.5 = 20 cols
+  const NAV_ROWS  = 66;    // Z:   0 to 165 → 165 / 2.5 = 66 rows
+  const NAV_CLEAR = 0.6;   // expand walls by this much for guard clearance
+  const NAV_X0    = -25;   // world X at column 0
+  const NAV_Z0    = 0;     // world Z at row 0
+
   // ── Difficulty-scaled values (let so setDifficulty can mutate) ──
   let BASE_SPEED   = 3.5;
   let VISION_RANGE = 8;
@@ -108,6 +116,8 @@ window.Guards = (function () {
 
   let guards     = [];
   let alertLevel = 0;
+  let _navGrid   = null;              // Uint8Array: 0=open, 1=blocked
+  const _tmpVec3 = new THREE.Vector3(); // scratch vector to avoid per-frame allocation
 
   // ── Materials ──────────────────────────────────────────
   const MAT_BODY    = new THREE.MeshStandardMaterial({ color: 0x2a3a4a, roughness: 0.85, metalness: 0.05 });
@@ -285,6 +295,152 @@ window.Guards = (function () {
     return g;
   }
 
+  // ── Navigation grid + A* pathfinding ───────────────────
+
+  function worldToCell(wx, wz) {
+    return {
+      col: Math.floor((wx - NAV_X0) / NAV_CELL),
+      row: Math.floor((wz - NAV_Z0) / NAV_CELL),
+    };
+  }
+
+  function cellToWorld(col, row) {
+    return {
+      x: NAV_X0 + col * NAV_CELL + NAV_CELL * 0.5,
+      z: NAV_Z0 + row * NAV_CELL + NAV_CELL * 0.5,
+    };
+  }
+
+  function buildNavGrid() {
+    const walls = window.G ? window.G.walls : [];
+    _navGrid = new Uint8Array(NAV_COLS * NAV_ROWS); // default 0 = open
+    for (const w of walls) {
+      const exMinX = w.minX - NAV_CLEAR;
+      const exMaxX = w.maxX + NAV_CLEAR;
+      const exMinZ = w.minZ - NAV_CLEAR;
+      const exMaxZ = w.maxZ + NAV_CLEAR;
+      const cMinCol = Math.max(0, Math.floor((exMinX - NAV_X0) / NAV_CELL));
+      const cMaxCol = Math.min(NAV_COLS - 1, Math.ceil((exMaxX - NAV_X0) / NAV_CELL));
+      const cMinRow = Math.max(0, Math.floor((exMinZ - NAV_Z0) / NAV_CELL));
+      const cMaxRow = Math.min(NAV_ROWS - 1, Math.ceil((exMaxZ - NAV_Z0) / NAV_CELL));
+      for (let r = cMinRow; r <= cMaxRow; r++) {
+        for (let c = cMinCol; c <= cMaxCol; c++) {
+          _navGrid[r * NAV_COLS + c] = 1;
+        }
+      }
+    }
+  }
+
+  // Simple min-heap for A* open set
+  function _heapPush(heap, node) {
+    heap.push(node);
+    let i = heap.length - 1;
+    while (i > 0) {
+      const parent = (i - 1) >> 1;
+      if (heap[parent].f <= heap[i].f) break;
+      const tmp = heap[parent]; heap[parent] = heap[i]; heap[i] = tmp;
+      i = parent;
+    }
+  }
+
+  function _heapPop(heap) {
+    const top = heap[0];
+    const last = heap.pop();
+    if (heap.length > 0) {
+      heap[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = 2 * i + 2;
+        let s = i;
+        if (l < heap.length && heap[l].f < heap[s].f) s = l;
+        if (r < heap.length && heap[r].f < heap[s].f) s = r;
+        if (s === i) break;
+        const tmp = heap[s]; heap[s] = heap[i]; heap[i] = tmp;
+        i = s;
+      }
+    }
+    return top;
+  }
+
+  // Returns array of {x, z} world waypoints from (sx,sz) to (ex,ez), or null if none.
+  function astar(sx, sz, ex, ez) {
+    if (!_navGrid) return null;
+
+    let { col: sc, row: sr } = worldToCell(sx, sz);
+    let { col: ec, row: er } = worldToCell(ex, ez);
+
+    // Clamp to grid bounds
+    sc = Math.max(0, Math.min(NAV_COLS - 1, sc));
+    sr = Math.max(0, Math.min(NAV_ROWS - 1, sr));
+    ec = Math.max(0, Math.min(NAV_COLS - 1, ec));
+    er = Math.max(0, Math.min(NAV_ROWS - 1, er));
+
+    // If goal cell is blocked, search nearby for open fallback
+    if (_navGrid[er * NAV_COLS + ec] === 1) {
+      let found = false;
+      outer: for (let radius = 1; radius <= 3; radius++) {
+        for (let dr = -radius; dr <= radius; dr++) {
+          for (let dc = -radius; dc <= radius; dc++) {
+            const nr = er + dr, nc = ec + dc;
+            if (nr < 0 || nr >= NAV_ROWS || nc < 0 || nc >= NAV_COLS) continue;
+            if (_navGrid[nr * NAV_COLS + nc] === 0) {
+              er = nr; ec = nc; found = true; break outer;
+            }
+          }
+        }
+      }
+      if (!found) return null;
+    }
+
+    // If start equals goal, nothing to do
+    if (sc === ec && sr === er) return [];
+
+    const closed   = new Uint8Array(NAV_COLS * NAV_ROWS);
+    const parents  = new Int32Array(NAV_COLS * NAV_ROWS).fill(-1);
+    const heap     = [];
+    const DIRS     = [
+      [-1,-1,Math.SQRT2],[0,-1,1],[1,-1,Math.SQRT2],
+      [-1, 0,1],                  [1, 0,1],
+      [-1, 1,Math.SQRT2],[0, 1,1],[1, 1,Math.SQRT2],
+    ];
+
+    const heur = (c, r) => Math.sqrt((c-ec)*(c-ec)+(r-er)*(r-er));
+    _heapPush(heap, { col: sc, row: sr, g: 0, f: heur(sc, sr), parentIdx: -1 });
+
+    let expansions = 0;
+    while (heap.length > 0 && expansions < NAV_COLS * NAV_ROWS) {
+      const cur = _heapPop(heap);
+      const idx = cur.row * NAV_COLS + cur.col;
+      if (closed[idx]) continue;
+      closed[idx]   = 1;
+      parents[idx]  = cur.parentIdx >= 0 ? cur.parentIdx : idx;
+      expansions++;
+
+      if (cur.col === ec && cur.row === er) {
+        // Reconstruct path
+        const path = [];
+        let ci = idx;
+        while (ci !== parents[ci]) {
+          const c = ci % NAV_COLS, r = Math.floor(ci / NAV_COLS);
+          path.push(cellToWorld(c, r));
+          ci = parents[ci];
+        }
+        path.reverse();
+        return path;
+      }
+
+      for (const [dc, dr, cost] of DIRS) {
+        const nc = cur.col + dc, nr = cur.row + dr;
+        if (nc < 0 || nc >= NAV_COLS || nr < 0 || nr >= NAV_ROWS) continue;
+        const ni = nr * NAV_COLS + nc;
+        if (closed[ni] || _navGrid[ni] === 1) continue;
+        const g = cur.g + cost;
+        _heapPush(heap, { col: nc, row: nr, g, f: g + heur(nc, nr), parentIdx: idx });
+      }
+    }
+    return null; // no path found
+  }
+
   // ── Guard class ────────────────────────────────────────
   class Guard {
     constructor(data, scene) {
@@ -306,6 +462,9 @@ window.Guards = (function () {
       this._searchPhase = 'move';  // 'move' | 'look' — investigation sub-state
       this._lookT       = 0;       // time spent in look-around phase
       this._lookYawBase = 0;       // facing angle when look phase started
+      this._path        = [];      // A* waypoints [{x,z}, ...]
+      this._pathIdx     = 0;       // current waypoint index
+      this._pathTimer   = 0;       // countdown until next path recompute
 
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
@@ -364,6 +523,24 @@ window.Guards = (function () {
       this.pos.x += (dx / dist) * step;
       this.pos.z += (dz / dist) * step;
       this.facing.set(dx / dist, 0, dz / dist);
+      return false;
+    }
+
+    requestPath(targetX, targetZ) {
+      const result = astar(this.pos.x, this.pos.z, targetX, targetZ);
+      this._path    = result || [];
+      this._pathIdx = 0;
+    }
+
+    // Follow A* path; returns true when fully arrived. Returns false if no path.
+    followPath(dt) {
+      if (this._path.length === 0 || this._pathIdx >= this._path.length) return false;
+      const wp = this._path[this._pathIdx];
+      _tmpVec3.set(wp.x, 0, wp.z);
+      if (this.moveTo(_tmpVec3, dt)) {
+        this._pathIdx++;
+        if (this._pathIdx >= this._path.length) return true;
+      }
       return false;
     }
 
@@ -474,9 +651,18 @@ window.Guards = (function () {
         }
 
         case 'alerted': {
-          // Chase player
+          // Chase player using A* pathfinding; recompute path every 0.5s
           this.lastKnown.copy(playerPos);
-          this.moveTo(playerPos, dt);
+          this._pathTimer -= dt;
+          if (this._pathTimer <= 0) {
+            this.requestPath(playerPos.x, playerPos.z);
+            this._pathTimer = 0.5;
+          }
+          const followed = this.followPath(dt);
+          if (!followed && this._path.length === 0) {
+            // No path found — fall back to direct movement
+            this.moveTo(playerPos, dt);
+          }
 
           // Catch check
           const dx   = playerPos.x - this.pos.x;
@@ -487,8 +673,11 @@ window.Guards = (function () {
           }
 
           if (!sees) {
-            this.state  = 'searching';
-            this.stateT = 0;
+            this.state        = 'searching';
+            this.stateT       = 0;
+            this._searchPhase = 'move';
+            this.requestPath(this.lastKnown.x, this.lastKnown.z);
+            this._pathTimer   = Infinity;
           }
           break;
         }
@@ -498,11 +687,14 @@ window.Guards = (function () {
             this.state        = 'alerted';
             this.stateT       = 0;
             this._searchPhase = 'move';
+            this._pathTimer   = 0;
             break;
           }
           if (this._searchPhase === 'move') {
             this.stateT += dt;
-            const arrived = this.moveTo(this.lastKnown, dt);
+            const pathArrived = this.followPath(dt);
+            const arrived = pathArrived ||
+              (this._path.length === 0 && this.moveTo(this.lastKnown, dt));
             if (arrived) {
               // Reached last-known position — now look around
               this._searchPhase = 'look';
@@ -643,9 +835,12 @@ window.Guards = (function () {
     alertLevel = 0;
     if (window.G) window.G.alarm.level = 0;
     guards.forEach(g => {
-      g.state   = 'patrol';
-      g.detectT = 0;
-      g.stateT  = 0;
+      g.state       = 'patrol';
+      g.detectT     = 0;
+      g.stateT      = 0;
+      g._path       = [];
+      g._pathIdx    = 0;
+      g._pathTimer  = 0;
     });
   }
 
@@ -662,6 +857,7 @@ window.Guards = (function () {
 
   // ── Public API ─────────────────────────────────────────
   function init(scene, spawnData) {
+    buildNavGrid();
     guards = spawnData.map(d => new Guard(d, scene));
   }
 

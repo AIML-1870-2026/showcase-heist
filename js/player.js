@@ -754,6 +754,11 @@ window.Player = (function () {
     isSliding()      { return state === 'sliding'; },
     getPlayerY()     { return pos.y; },
     simulateKey(code, down) { keys[code] = down; },
+    setPosition(x, y, z) {
+      pos.set(x, y, z);
+      vel.set(0, 0, 0);
+      if (playerMesh) playerMesh.position.set(x, y, z);
+    },
   };
 
 }());

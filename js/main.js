@@ -93,6 +93,8 @@
     closeCalls:     0,
     distractCount:  3,
     _throwEvent:    null,
+    _checkpointReached: { Gallery: false, 'Crown Vault': false },
+    _checkpointData:    null,
   };
 
   // ── Lighting ───────────────────────────────────────────
@@ -171,14 +173,100 @@
     Security.init(scene, data.laserData, data.cameraData);
   }
 
+  // ── Checkpoint system ──────────────────────────────────
+  const CP_KEY = 'showcase-heist-checkpoint';
+  const CP_SPAWN = { 'Gallery': 57, 'Crown Vault': 117 };
+
+  function _buildObjectivesArray() {
+    const G = window.G;
+    const r = G.currentRoom;
+    return [
+      true,                                                        // enter
+      G.inventory.yellow,                                          // yellow keycard
+      r === 'Gallery' || r === 'Crown Vault',                      // gallery
+      G.inventory.painting,                                        // painting
+      G.inventory.blue,                                            // blue keycard
+      r === 'Crown Vault',                                         // vault
+      G.inventory.crown,                                           // crown
+      false,                                                       // escape (never at checkpoint)
+    ];
+  }
+
+  function saveCheckpoint(room) {
+    const G = window.G;
+    const cp = {
+      version:             1,
+      room,
+      spawnX:              0,
+      spawnZ:              CP_SPAWN[room],
+      inventory:           Object.assign({}, G.inventory),
+      difficulty:          G.difficulty,
+      mode:                G.mode,
+      distractCount:       G.distractCount,
+      objectivesCompleted: _buildObjectivesArray(),
+      timestamp:           Date.now(),
+    };
+    G._checkpointData = cp;
+    localStorage.setItem(CP_KEY, JSON.stringify(cp));
+  }
+
+  function getCheckpoint() {
+    const raw = localStorage.getItem(CP_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+  window.getCheckpoint = getCheckpoint;
+
+  function resumeFromCheckpoint() {
+    const cp = getCheckpoint();
+    if (!cp || cp.version !== 1) return;
+
+    startGame(cp.mode || 'solo');
+
+    const G = window.G;
+    G.difficulty    = cp.difficulty;
+    G.distractCount = cp.distractCount;
+    Object.assign(G.inventory, cp.inventory);
+    UI.updateDistractCount(cp.distractCount);
+
+    // Restore inventory HUD slots
+    Object.entries(cp.inventory).forEach(([key, val]) => {
+      if (val) UI.addItem(key);
+    });
+
+    // Restore objectives HUD
+    const OBJ_ORDER = ['enter','yellow','gallery','painting','blue','vault','crown','escape'];
+    cp.objectivesCompleted.forEach((done, i) => {
+      if (done) UI.completeObjective(OBJ_ORDER[i]);
+    });
+
+    Player.setPosition(cp.spawnX, 0, cp.spawnZ);
+
+    G._checkpointReached['Gallery']     = true;
+    G._checkpointReached['Crown Vault'] = cp.room === 'Crown Vault';
+
+    Guards.setDifficulty(cp.difficulty);
+    Security.setDifficulty(cp.difficulty);
+  }
+  window.resumeFromCheckpoint = resumeFromCheckpoint;
+
   // ── Room detection ─────────────────────────────────────
   function updateRoom(z) {
     const G = window.G;
+    const prevRoom = G.currentRoom;
     if      (z < 40)  G.currentRoom = 'Lobby';
     else if (z < 55)  G.currentRoom = 'Corridor';
     else if (z < 100) G.currentRoom = 'Gallery';
     else if (z < 115) G.currentRoom = 'Corridor';
     else              G.currentRoom = 'Crown Vault';
+
+    if (G.phase === 'playing') {
+      const r = G.currentRoom;
+      if (CP_SPAWN[r] && r !== prevRoom && !G._checkpointReached[r]) {
+        G._checkpointReached[r] = true;
+        saveCheckpoint(r);
+      }
+    }
   }
 
   // ── Stealth rating ─────────────────────────────────────
@@ -516,6 +604,8 @@
     G.closeCalls    = 0;
     G.distractCount = 3;
     G._throwEvent   = null;
+    G._checkpointReached = { Gallery: false, 'Crown Vault': false };
+    G._checkpointData    = null;
     UI.updateDistractCount(3);
 
     // Apply difficulty
@@ -606,7 +696,9 @@
     $('btn-resume').onclick     = resumeGame;
     $('btn-restart').onclick    = () => startGame(window.G.mode);
     $('btn-main-menu').onclick  = () => { window.G.phase = 'start'; UI.showScreen('start'); document.exitPointerLock(); };
-    $('btn-retry').onclick      = () => startGame(window.G.mode);
+    $('btn-retry').onclick               = () => startGame(window.G.mode);
+    $('btn-continue').onclick            = resumeFromCheckpoint;
+    $('btn-resume-checkpoint').onclick   = resumeFromCheckpoint;
     $('btn-go-menu').onclick    = () => { window.G.phase = 'start'; UI.showScreen('start'); document.exitPointerLock(); };
     $('btn-play-again').onclick = () => startGame(window.G.mode);
     $('btn-win-menu').onclick   = () => { window.G.phase = 'start'; UI.showScreen('start'); document.exitPointerLock(); };
@@ -713,6 +805,12 @@
     Companion.init(scene);
     Touch.init();
     UI.showScreen('start');
+    const _initCp = getCheckpoint();
+    const _btnContinue = document.getElementById('btn-continue');
+    if (_btnContinue) {
+      _btnContinue.classList.toggle('hidden', !_initCp);
+      if (_initCp) _btnContinue.textContent = 'Continue from ' + _initCp.room;
+    }
     loop();
   }
 
