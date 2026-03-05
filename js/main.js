@@ -79,6 +79,7 @@
     doors:          [],
     keycardPickups: [],
     stealables:     [],
+    coinPickups:    [],
     terminals:      [],
     alarm:          { level: 0, active: false },
     inventory:      { yellow: false, blue: false, red: false, painting: false, crown: false },
@@ -168,6 +169,7 @@
     window.G.doors          = data.doors;
     window.G.keycardPickups = data.keycardPickups;
     window.G.stealables     = data.stealables;
+    window.G.coinPickups    = data.coinPickups;
     window.G.terminals      = data.terminals;
     Guards.init(scene, data.guardData);
     Security.init(scene, data.laserData, data.cameraData);
@@ -570,6 +572,12 @@
         st.mesh.rotation.y += dt * 0.8;
       }
     });
+    (G.coinPickups || []).forEach(cp => {
+      if (!cp.collected && cp.mesh) {
+        cp.mesh.position.y = (cp.baseY || 1.1) + Math.sin(floatT * 2.5 + cp.x) * 0.07;
+        cp.mesh.rotation.y += dt * 1.5;
+      }
+    });
   }
 
   // ── Proximity vignette ─────────────────────────────────
@@ -626,6 +634,10 @@
     G.stealables.forEach(st => {
       st.taken        = false;
       st.mesh.visible = true;
+    });
+    G.coinPickups.forEach(cp => {
+      cp.collected    = false;
+      cp.mesh.visible = true;
     });
     G.terminals.forEach(tm => { tm.hacked = false; });
 

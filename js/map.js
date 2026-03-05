@@ -86,6 +86,7 @@ window.GameMap = (function () {
   const keycardPickups = [];
   const stealables     = [];
   const terminals      = [];
+  const coinPickups    = [];
   const laserData      = [];
   const cameraData     = [];
   const guardData      = [];
@@ -252,6 +253,27 @@ window.GameMap = (function () {
     keycardPickups.push({ mesh: group, key, x, z, collected: false });
   }
 
+  function coinCache(scene, x, z, amount, baseY) {
+    const group = new THREE.Group();
+    group.position.set(x, baseY || 1.1, z);
+    // Cloth bag body
+    const bagMat = new THREE.MeshStandardMaterial({ color: 0x2a5018, roughness: 0.85, metalness: 0.0 });
+    const bag = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 7), bagMat);
+    bag.scale.set(1.0, 0.88, 0.82); bag.castShadow = true;
+    group.add(bag);
+    // Gold drawstring ring
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.2, metalness: 0.85 });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.016, 6, 12), ringMat);
+    ring.position.y = 0.12;
+    group.add(ring);
+    // Coin glinting on top
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.012, 10), ringMat);
+    coin.position.set(0.07, 0.16, 0.04); coin.rotation.z = 0.4;
+    group.add(coin);
+    scene.add(group);
+    coinPickups.push({ mesh: group, x, z, amount, collected: false, baseY: baseY || 1.1 });
+  }
+
   function door(scene, cx, cz, keyRequired) {
     const doorColor = keyRequired === 'yellow' ? 0x8a6e10
                     : keyRequired === 'blue'   ? 0x1a3870
@@ -375,11 +397,26 @@ window.GameMap = (function () {
 
     // ════════════════════════════════
     //  CORRIDOR 1  cx=0  cz=47.5  10×15
+    //  Guard checkpoint / break room
     // ════════════════════════════════
     floor(scene, 0, 47.5, 10, 15);
     ceiling(scene, 0, 47.5, 10, 15);
     wall(scene, -5, 47.5, WALL_T, 15);
     wall(scene,  5, 47.5, WALL_T, 15);
+
+    // Guard break table + chair against east wall
+    box(scene, 2.0, 0.75, 1.3, 3.5, 0.375, 47.5, M.desk);
+    box(scene, 0.65, 0.5,  0.65, 3.5, 0.25, 45.8, M.desk);    // seat
+    box(scene, 0.65, 0.75, 0.1,  3.5, 0.375, 45.5, M.desk);   // backrest
+    // Wall locker on west side (guard equipment)
+    box(scene, 1.1, 2.3, 0.45, -4.6, 1.15, 43.5, _frameMat);
+    box(scene, 0.5, 2.2, 0.06, -4.6, 1.1,  43.27, _moldMat);  // locker door panel
+    // Security schedule board
+    box(scene, 2.2, 1.5, 0.08, -4.6, 2.8, 49.5, M.terminal);
+    box(scene, 1.9, 1.2, 0.05, -4.6, 2.8, 49.45,
+      new THREE.MeshStandardMaterial({ color: 0x001a33, emissive: 0x000d1a, emissiveIntensity: 0.4 }));
+    // Coin cache — guards left their distraction coin stash on the table
+    coinCache(scene, 3.5, 47.5, 3, 1.1);
 
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
@@ -409,6 +446,22 @@ window.GameMap = (function () {
 
     // Blue keycard in display case
     keycard(scene, 'blue', 14, 70);
+
+    // Jade figurine — bonus stealable inside display case at (0, 88)
+    const jadeMat = new THREE.MeshStandardMaterial({
+      color: 0x2d8a50, roughness: 0.32, metalness: 0.22,
+      emissive: 0x0a3018, emissiveIntensity: 0.18,
+    });
+    const jadeFig = new THREE.Group();
+    const jadeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.07, 8), jadeMat);
+    jadeFig.add(jadeBase);
+    const jadeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.11, 0.21, 8), jadeMat);
+    jadeBody.position.y = 0.14; jadeFig.add(jadeBody);
+    const jadeHead = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), jadeMat);
+    jadeHead.position.y = 0.29; jadeFig.add(jadeHead);
+    jadeFig.position.set(0, 1.45, 88);
+    scene.add(jadeFig);
+    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine' });
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
@@ -457,11 +510,22 @@ window.GameMap = (function () {
 
     // ════════════════════════════════
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
+    //  Maintenance / service passage
     // ════════════════════════════════
     floor(scene, 0, 107.5, 10, 15);
     ceiling(scene, 0, 107.5, 10, 15);
     wall(scene, -5, 107.5, WALL_T, 15);
     wall(scene,  5, 107.5, WALL_T, 15);
+
+    // Shelving unit + boxes against west wall
+    box(scene, 2.4, 2.6, 0.45, -4.65, 1.3, 107.5, M.desk);
+    box(scene, 0.65, 0.3, 0.38, -4.65, 2.65, 108.2, M.terminal); // small crate on top
+    box(scene, 0.55, 0.28, 0.38, -4.65, 2.65, 106.8, M.terminal);
+    // Utility table on east side
+    box(scene, 1.8, 0.75, 1.0, 3.5, 0.375, 109, M.desk);
+    box(scene, 0.55, 0.22, 0.35, 3.5, 0.86, 109, M.terminal);    // item on table
+    // Coin cache — maintenance crew left spare coins
+    coinCache(scene, 3.5, 109, 2, 1.1);
 
     // ════════════════════════════════
     //  CROWN VAULT  cx=0  cz=137.5  50×45
@@ -485,6 +549,23 @@ window.GameMap = (function () {
     const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
     crownMesh.userData.float = true;
     stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false });
+
+    // Royal Scepter — bonus stealable on its own pedestal
+    box(scene, 0.9, 1.1, 0.9, -9, 0.55, 135, M.pedestal);
+    const sceptMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700, roughness: 0.15, metalness: 0.95,
+      emissive: 0x332200, emissiveIntensity: 0.35,
+    });
+    const scepter = new THREE.Group();
+    const sceptRod = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.62, 8), sceptMat);
+    scepter.add(sceptRod);
+    const sceptOrb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), sceptMat);
+    sceptOrb.position.y = 0.38; scepter.add(sceptOrb);
+    const sceptCross = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.038, 0.038), sceptMat);
+    sceptCross.position.y = 0.26; scepter.add(sceptCross);
+    scepter.position.set(-9, 1.5, 135);
+    scene.add(scepter);
+    stealables.push({ mesh: scepter, item: 'scepter', x: -9, z: 135, taken: false, bonus: true, label: 'Royal Scepter' });
 
     // Guard spawns — Crown Vault (4 guards)
     guardData.push({
@@ -543,6 +624,7 @@ window.GameMap = (function () {
       doors,
       keycardPickups,
       stealables,
+      coinPickups,
       terminals,
       laserData,
       cameraData,

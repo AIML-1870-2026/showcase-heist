@@ -567,13 +567,34 @@ window.Player = (function () {
       if (_dx * _dx + _dz * _dz < REACH2) {
         st.taken        = true;
         st.mesh.visible = false;
-        G.inventory[st.item] = true;
         G._pickupFlash  = 1.0;
-        UI.addItem(st.item === 'painting' ? 'painting' : 'crown');
         UI.SFX.pickup();
-        UI.showAlert((st.item === 'painting' ? 'Painting' : 'Crown') + ' stolen! ALARM!', 3500);
-        UI.completeObjective(st.item);
+        if (st.bonus) {
+          // Bonus stealable — no objective, no inventory flag needed for win
+          UI.showAlert((st.label || st.item) + ' stolen! ALARM!', 3500);
+        } else {
+          G.inventory[st.item] = true;
+          UI.addItem(st.item === 'painting' ? 'painting' : 'crown');
+          UI.showAlert((st.item === 'painting' ? 'Painting' : 'Crown') + ' stolen! ALARM!', 3500);
+          UI.completeObjective(st.item);
+        }
         if (window.Security) Security.triggerAlarmLevel(3);
+        return;
+      }
+    }
+
+    // Check coin caches
+    for (const cp of (G.coinPickups || [])) {
+      if (cp.collected) continue;
+      const _dx = cp.x - pos.x, _dz = cp.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
+        cp.collected    = true;
+        cp.mesh.visible = false;
+        G.distractCount += cp.amount;
+        UI.updateDistractCount(G.distractCount);
+        G._pickupFlash  = 0.8;
+        UI.SFX.pickup();
+        UI.showAlert('Found ' + cp.amount + ' distraction coin' + (cp.amount > 1 ? 's' : '') + '!', 2000);
         return;
       }
     }
@@ -649,7 +670,15 @@ window.Player = (function () {
       if (st.taken) continue;
       const _dx = st.x - pos.x, _dz = st.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
-        UI.showPrompt('[E] Steal the ' + st.item);
+        UI.showPrompt('[E] Steal the ' + (st.label || st.item));
+        found = true; break;
+      }
+    }
+    if (!found) for (const cp of (G.coinPickups || [])) {
+      if (cp.collected) continue;
+      const _dx = cp.x - pos.x, _dz = cp.z - pos.z;
+      if (_dx * _dx + _dz * _dz < REACH2) {
+        UI.showPrompt('[E] Grab coins (+' + cp.amount + ')');
         found = true; break;
       }
     }
