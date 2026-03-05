@@ -300,9 +300,12 @@ window.Guards = (function () {
       this.facing     = new THREE.Vector3(0, 0, 1);
       this.smoothYaw  = 0;   // lerped rotation for smooth turning
 
-      this._lastSaw  = false;   // cached vision result, updated on this guard's vision frame
-      this._wasClose = false;   // true once detectT exceeded 45% of DETECT_TIME this pass
-      this._walkT    = 0;       // walk animation accumulator
+      this._lastSaw     = false;   // cached vision result, updated on this guard's vision frame
+      this._wasClose    = false;   // true once detectT exceeded 45% of DETECT_TIME this pass
+      this._walkT       = 0;       // walk animation accumulator
+      this._searchPhase = 'move';  // 'move' | 'look' — investigation sub-state
+      this._lookT       = 0;       // time spent in look-around phase
+      this._lookYawBase = 0;       // facing angle when look phase started
 
       this.mesh     = buildGuardMesh(scene);
       this.coneMesh = buildConeMesh(scene);
@@ -491,22 +494,43 @@ window.Guards = (function () {
         }
 
         case 'searching': {
-          this.stateT += dt;
-          this.moveTo(this.lastKnown, dt);
-
           if (sees) {
-            this.state  = 'alerted';
-            this.stateT = 0;
-          } else if (this.stateT > SEARCH_TIME) {
-            this.state  = 'patrol';
-            this.stateT = 0;
+            this.state        = 'alerted';
+            this.stateT       = 0;
+            this._searchPhase = 'move';
+            break;
+          }
+          if (this._searchPhase === 'move') {
+            this.stateT += dt;
+            const arrived = this.moveTo(this.lastKnown, dt);
+            if (arrived) {
+              // Reached last-known position — now look around
+              this._searchPhase = 'look';
+              this._lookT       = 0;
+              this._lookYawBase = this.facingAngle();
+            } else if (this.stateT > SEARCH_TIME) {
+              this.state        = 'patrol';
+              this.stateT       = 0;
+              this._searchPhase = 'move';
+            }
+          } else {
+            // Sweep gaze left/right at the investigation point
+            this._lookT += dt;
+            const sweepYaw = this._lookYawBase + Math.sin(this._lookT * 2.2) * 0.82;
+            this.facing.set(Math.sin(sweepYaw), 0, Math.cos(sweepYaw));
+            if (this._lookT > 2.8) {
+              this.state        = 'patrol';
+              this.stateT       = 0;
+              this._searchPhase = 'move';
+            }
           }
           break;
         }
       }
 
       // Walk animation
-      const isMoving = this.state === 'patrol' || this.state === 'alerted' || this.state === 'searching';
+      const isMoving = this.state === 'patrol' || this.state === 'alerted' ||
+                       (this.state === 'searching' && this._searchPhase === 'move');
       if (isMoving) this._walkT += dt * this.speed() * 0.9;
       const walkCycle = Math.sin(this._walkT * 3.2);
       const legSwing  = isMoving ? 0.52 : 0.03;

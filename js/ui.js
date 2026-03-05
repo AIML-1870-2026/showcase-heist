@@ -82,6 +82,12 @@ window.UI = (function () {
     if (slot) slot.classList.add('has-item');
   }
 
+  // ── Distract count ─────────────────────────────────────
+  function updateDistractCount(n) {
+    const el = $('distract-num');
+    if (el) el.textContent = n;
+  }
+
   // ── Interaction prompt ─────────────────────────────────
   function showPrompt(text) {
     promptText.textContent = text;
@@ -329,6 +335,7 @@ window.UI = (function () {
   return {
     showScreen,
     showHUD,
+    updateDistractCount,
     initObjectives,
     setObjective,
     completeObjective,

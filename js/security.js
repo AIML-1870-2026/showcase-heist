@@ -119,24 +119,22 @@ window.Security = (function () {
       this.detectT    = 0;
       this.alerted    = false;
 
-      // Physical camera body on the ceiling/wall
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35, 0.25, 0.45),
-        MAT_CAMERA
-      );
-      body.position.set(data.x, data.y, data.z);
-      scene.add(body);
+      // Rotating camera mount — body + lens sweep together with angle
+      this._mount = new THREE.Group();
+      this._mount.position.set(data.x, data.y, data.z);
+      scene.add(this._mount);
 
-      // Lens bump
-      const lens = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.1, 0.2, 8),
-        MAT_CAMERA
-      );
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.45), MAT_CAMERA);
+      this._mount.add(body);
+
+      // Lens at -Z in local space; rotation so local -Z → facing direction = angle + PI
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.2, 8), MAT_CAMERA);
       lens.rotation.x = Math.PI / 2;
-      lens.position.set(data.x, data.y - 0.05, data.z - 0.3);
-      scene.add(lens);
+      lens.position.set(0, -0.05, -0.3);
+      this._mount.add(lens);
 
       this._facing  = new THREE.Vector2(Math.sin(this.angle), Math.cos(this.angle));
+      this._mount.rotation.y = this.angle + Math.PI;
       this._lastSaw = false;
       this.fovMesh  = buildFOVMesh(scene);
     }
@@ -160,6 +158,7 @@ window.Security = (function () {
       if (this.angle > this.baseAngle + this.sweepAngle / 2)  this.dir = -1;
       if (this.angle < this.baseAngle - this.sweepAngle / 2)  this.dir =  1;
       this._facing.set(Math.sin(this.angle), Math.cos(this.angle));
+      this._mount.rotation.y = this.angle + Math.PI;
 
       // Detection — refresh cached result on this camera's assigned frame
       if (doVisionCheck) this._lastSaw = this.canSeePlayer(playerPos, isCrouching);

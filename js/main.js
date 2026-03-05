@@ -91,6 +91,8 @@
     _startMs:       0,
     guardsAlerted:  0,
     closeCalls:     0,
+    distractCount:  3,
+    _throwEvent:    null,
   };
 
   // ── Lighting ───────────────────────────────────────────
@@ -382,6 +384,34 @@
     if (!anyAlive) { puffActive = false; puffMesh.visible = false; }
   }
 
+  // ── Thrown coin arc ───────────────────────────────────
+  const _coinMesh = new THREE.Mesh(
+    new THREE.TorusGeometry(0.075, 0.022, 6, 12),
+    new THREE.MeshStandardMaterial({ color: 0xd4a017, metalness: 0.85, roughness: 0.18 })
+  );
+  _coinMesh.visible = false;
+  scene.add(_coinMesh);
+  let _coinState = null;
+
+  function tickCoin(dt) {
+    const G = window.G;
+    if (G._throwEvent) {
+      const e = G._throwEvent;
+      _coinState = { x: e.ox, y: e.oy, z: e.oz, vx: e.vx, vy: e.vy, vz: e.vz };
+      _coinMesh.visible = true;
+      G._throwEvent = null;
+    }
+    if (!_coinState) return;
+    _coinState.vy -= 18 * dt;
+    _coinState.x  += _coinState.vx * dt;
+    _coinState.y  += _coinState.vy * dt;
+    _coinState.z  += _coinState.vz * dt;
+    _coinMesh.position.set(_coinState.x, Math.max(0.1, _coinState.y), _coinState.z);
+    _coinMesh.rotation.x += dt * 9;
+    _coinMesh.rotation.z += dt * 6;
+    if (_coinState.y <= 0.1) { _coinState = null; _coinMesh.visible = false; }
+  }
+
   // ── Noise distraction ring ─────────────────────────────
   const noiseRingGeo = new THREE.RingGeometry(0.05, 0.28, 40);
   const noiseRingMat = new THREE.MeshBasicMaterial({
@@ -484,6 +514,9 @@
     G.alarm        = { level: 0, active: false };
     G.guardsAlerted = 0;
     G.closeCalls    = 0;
+    G.distractCount = 3;
+    G._throwEvent   = null;
+    UI.updateDistractCount(3);
 
     // Apply difficulty
     Guards.setDifficulty(G.difficulty);
@@ -636,6 +669,7 @@
     tickFloatItems(dt);
     tickDustAndSparks(dt);
     tickDustPuffs(dt);
+    tickCoin(dt);
     tickNoiseRing(dt);
     tickPickupAndChroma(dt);
     Player.tickDoors(dt);

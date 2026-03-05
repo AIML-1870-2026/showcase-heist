@@ -118,6 +118,12 @@
       <span id="prompt-text">Interact</span>
     </div>
 
+    <!-- Bottom-left: Distraction coin counter -->
+    <div id="distract-count">
+      <span class="distract-label">Coins</span>
+      <span id="distract-num">3</span>
+    </div>
+
     <!-- Bottom-right: Inventory -->
     <div id="inventory">
       <h4>Inventory</h4>
@@ -141,6 +147,22 @@
       <span id="coop-state">Following</span>
     </div>
 
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  LOCKPICK MINIGAME (in-game overlay)                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="lockpick-overlay" class="hidden">
+    <div id="lockpick-box">
+      <p id="lockpick-title">Lockpicking...</p>
+      <div id="lp-bar-wrap">
+        <div id="lp-zone"></div>
+        <div id="lp-needle"></div>
+      </div>
+      <p id="lp-hint">Press <strong>[E]</strong> when the needle is in the green zone</p>
+      <div id="lp-attempts">●●●</div>
+      <p style="font-size:0.65rem;color:#555;margin-top:4px;">Esc to cancel</p>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════ -->

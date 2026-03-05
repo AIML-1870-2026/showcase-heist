@@ -697,6 +697,104 @@ html, body {
   text-align: center;
 }
 
+/* ── Distraction coin counter (bottom-left HUD) ────────── */
+#distract-count {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.distract-label {
+  font-size: 0.6rem;
+  color: #666;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#distract-num {
+  font-size: 1.1rem;
+  color: var(--gold);
+  font-weight: bold;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ── Lockpick minigame overlay ──────────────────────────── */
+#lockpick-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+#lockpick-box {
+  background: rgba(10, 10, 16, 0.97);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  padding: 28px 36px;
+  min-width: 360px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#lockpick-title {
+  font-family: var(--font-main);
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+
+#lp-bar-wrap {
+  position: relative;
+  height: 32px;
+  background: #1a1a2a;
+  border: 1px solid #333;
+  overflow: hidden;
+}
+
+#lp-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(0, 200, 80, 0.28);
+  border-left: 2px solid #00c850;
+  border-right: 2px solid #00c850;
+}
+
+#lp-needle {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  transform: translateX(-1px);
+}
+
+#lp-hint {
+  font-size: 0.75rem;
+  color: #888;
+  letter-spacing: 0.04em;
+}
+
+#lp-hint strong { color: var(--gold); }
+
+#lp-attempts {
+  font-size: 1.2rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+}
+
 /* ═══════════════════════════════════════════════════════════
    Scrollbar (if ever needed)
    ═══════════════════════════════════════════════════════════ */

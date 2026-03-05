@@ -41,6 +41,97 @@ window.Player = (function () {
   let footT = 0;
   let bobT  = 0;   // head-bob accumulator
 
+  // ── Lockpick minigame state ────────────────────────────
+  let _lpActive   = false;
+  let _lpDoor     = null;
+  let _lpNeedle   = 0;      // 0..1 position of needle
+  let _lpDir      = 1;      // needle sweep direction
+  let _lpSpeed    = 0.7;    // fractions per second
+  let _lpZone     = { start: 0.38, end: 0.58 };
+  let _lpAttempts = 3;
+  let _lpNeedleEl = null;
+  let _lpAttEl    = null;
+
+  function _updateLPAttempts() {
+    if (_lpAttEl) _lpAttEl.textContent = '●'.repeat(_lpAttempts) + '○'.repeat(3 - _lpAttempts);
+  }
+
+  function _startLockpick(d) {
+    _lpActive   = true;
+    _lpDoor     = d;
+    _lpNeedle   = 0;
+    _lpDir      = 1;
+    _lpSpeed    = 0.6 + Math.random() * 0.45;
+    const sz    = 0.12 + Math.random() * 0.1;
+    _lpZone     = { start: 0.18 + Math.random() * 0.52, end: 0 };
+    _lpZone.end = Math.min(0.94, _lpZone.start + sz);
+    _lpAttempts = 3;
+
+    const overlay = document.getElementById('lockpick-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    _lpNeedleEl = document.getElementById('lp-needle');
+    _lpAttEl    = document.getElementById('lp-attempts');
+
+    const zoneEl = document.getElementById('lp-zone');
+    if (zoneEl) {
+      zoneEl.style.left  = (_lpZone.start * 100) + '%';
+      zoneEl.style.width = ((_lpZone.end - _lpZone.start) * 100) + '%';
+    }
+    _updateLPAttempts();
+  }
+
+  function _attemptLockpick() {
+    if (!_lpActive) return;
+    const inZone = _lpNeedle >= _lpZone.start && _lpNeedle <= _lpZone.end;
+    if (inZone) {
+      _lpActive = false;
+      document.getElementById('lockpick-overlay').classList.add('hidden');
+      _lpDoor.open    = true;
+      _lpDoor.opening = true;
+      UI.SFX.door();
+      UI.showAlert('Lockpick successful!', 2000);
+      if (_lpDoor.keyRequired === 'yellow') UI.completeObjective('gallery');
+      if (_lpDoor.keyRequired === 'blue')   UI.completeObjective('vault');
+    } else {
+      _lpAttempts--;
+      UI.SFX.alert();
+      Guards.notifyNoise(pos.x, pos.z, 5);
+      if (_lpAttempts <= 0) {
+        _lpActive = false;
+        document.getElementById('lockpick-overlay').classList.add('hidden');
+        UI.showAlert('Lockpick failed! Guard heard you.', 2500);
+        Guards.notifyNoise(pos.x, pos.z, 8);
+        if (window.Guards) Guards.triggerAlarmLevel(1);
+      } else {
+        _updateLPAttempts();
+        // Randomise zone + speed each failed attempt
+        _lpSpeed    = 0.65 + Math.random() * 0.55;
+        const sz    = 0.10 + Math.random() * 0.09;
+        _lpZone.start = 0.14 + Math.random() * 0.55;
+        _lpZone.end   = Math.min(0.94, _lpZone.start + sz);
+        const zoneEl = document.getElementById('lp-zone');
+        if (zoneEl) {
+          zoneEl.style.left  = (_lpZone.start * 100) + '%';
+          zoneEl.style.width = ((_lpZone.end - _lpZone.start) * 100) + '%';
+        }
+      }
+    }
+  }
+
+  function _cancelLockpick() {
+    _lpActive = false;
+    const overlay = document.getElementById('lockpick-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  function tickLockpick(dt) {
+    if (!_lpActive) return;
+    _lpNeedle += _lpDir * _lpSpeed * dt;
+    if (_lpNeedle >= 1) { _lpNeedle = 1; _lpDir = -1; }
+    if (_lpNeedle <= 0) { _lpNeedle = 0; _lpDir  =  1; }
+    if (_lpNeedleEl) _lpNeedleEl.style.left = (_lpNeedle * 100) + '%';
+  }
+
   const camPos     = new THREE.Vector3(0, 5, -5);
   const _camTarget = new THREE.Vector3();
 
@@ -113,6 +204,7 @@ window.Player = (function () {
     }
 
     if (e.code === 'KeyE') {
+      if (_lpActive) { _attemptLockpick(); return; }
       handleInteract();
     }
 
@@ -126,6 +218,7 @@ window.Player = (function () {
     }
 
     if (e.code === 'Escape') {
+      if (_lpActive) { _cancelLockpick(); return; }
       if (UI.companionMenuOpen) {
         UI.closeCompanionMenu();
         return;
@@ -323,6 +416,7 @@ window.Player = (function () {
   function update(dt) {
     const G = window.G;
     if (!G || G.phase !== 'playing') return;
+    tickLockpick(dt);
     if (state === 'caught') return;
 
     // Slide timer
@@ -510,9 +604,8 @@ window.Player = (function () {
           if (d.keyRequired === 'yellow') UI.completeObjective('gallery');
           if (d.keyRequired === 'blue')   UI.completeObjective('vault');
         } else {
-          const name = d.keyRequired.charAt(0).toUpperCase() + d.keyRequired.slice(1);
-          UI.showAlert('Need the ' + name + ' keycard!', 2000);
-          UI.SFX.alert();
+          // No keycard — offer lockpicking
+          _startLockpick(d);
         }
         return;
       }
@@ -522,11 +615,18 @@ window.Player = (function () {
   // ── Distract (Q key) ───────────────────────────────────
   function handleDistract() {
     if (!window.Guards) return;
-    // Throw coin forward: noise source 5 units ahead
-    const noiseX = pos.x + Math.sin(yaw) * 5;
-    const noiseZ = pos.z + Math.cos(yaw) * 5;
-    if (window.G) window.G._noiseEvent = { x: noiseX, z: noiseZ };
-    Guards.notifyNoise(noiseX, noiseZ, 8);
+    const G = window.G;
+    if (!G) return;
+    if (G.distractCount <= 0) { UI.showAlert('No coins left!', 1500); return; }
+    G.distractCount--;
+    UI.updateDistractCount(G.distractCount);
+
+    const noiseX = pos.x + Math.sin(yaw) * 7;
+    const noiseZ = pos.z + Math.cos(yaw) * 7;
+    G._noiseEvent  = { x: noiseX, z: noiseZ };
+    G._throwEvent  = { ox: pos.x, oy: pos.y + 1.4, oz: pos.z,
+                       vx: Math.sin(yaw) * 10, vy: 4, vz: Math.cos(yaw) * 10 };
+    Guards.notifyNoise(noiseX, noiseZ, 9);
     UI.SFX.interact();
   }
 
@@ -566,7 +666,7 @@ window.Player = (function () {
       const _dx = d.x - pos.x, _dz = d.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
         const locked = d.keyRequired && !G.inventory[d.keyRequired];
-        UI.showPrompt(locked ? 'Need ' + d.keyRequired + ' keycard' : '[E] Open door');
+        UI.showPrompt(locked ? '[E] Lockpick door (risky)' : '[E] Open door');
         found = true; break;
       }
     }
