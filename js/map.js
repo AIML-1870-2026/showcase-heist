@@ -45,6 +45,12 @@ window.GameMap = (function () {
   const _tileTex    = makeTileTex('#d8cdb8', '#b0a898', 2);
   const _ceilTex    = makeTileTex('#f4f2ee', '#dedad4', 3);
   const _baseMat    = new THREE.MeshStandardMaterial({ color: 0xddd8cc, roughness: 0.7, metalness: 0.0 });
+  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0xc4b89a, roughness: 0.55, metalness: 0.0 });
+  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xece7de, roughness: 0.78, metalness: 0.05 });
+  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x2c1e0e, roughness: 0.6,  metalness: 0.08 });
+  const _handleMat  = new THREE.MeshStandardMaterial({ color: 0xb08020, roughness: 0.2,  metalness: 0.9  });
+  const _stripeMat  = new THREE.MeshStandardMaterial({ color: 0x1a0800, roughness: 0.95, metalness: 0.05 });
+  const _chipMat    = new THREE.MeshStandardMaterial({ color: 0xc8a020, roughness: 0.25, metalness: 0.85 });
 
   // ── Materials ──────────────────────────────────────────
   const M = {
@@ -107,10 +113,16 @@ window.GameMap = (function () {
   function wall(scene, cx, cz, w, d) {
     box(scene, w, WALL_H, d, cx, WALL_H / 2, cz, M.wall);
     addWallAABB(cx, cz, w + 0.02, d + 0.02);
-    // Baseboard trim — slightly proud of the wall face
+    // Baseboard trim
     const bw = w > d ? w : 0.08;
     const bd = w > d ? 0.08 : d;
     box(scene, bw, 0.22, bd, cx, 0.11, cz, _baseMat);
+    // Wainscoting panel (lower 1.15 units — darker painted wood tone)
+    box(scene, w, 1.15, d, cx, 0.575, cz, _wainMat);
+    // Chair rail — thin proud strip capping the wainscoting
+    box(scene, w + 0.02, 0.07, d + 0.02, cx, 1.19, cz, _moldMat);
+    // Crown molding at ceiling junction
+    box(scene, w + 0.02, 0.13, d + 0.02, cx, WALL_H - 0.065, cz, _moldMat);
   }
 
   function floor(scene, cx, cz, w, d) {
@@ -167,8 +179,15 @@ window.GameMap = (function () {
   }
 
   function pillar(scene, x, z) {
-    box(scene, 1.2, WALL_H, 1.2, x, WALL_H / 2, z, M.pillar);
-    addWallAABB(x, z, 1.2, 1.2);
+    // Shaft (slightly inset from base/capital)
+    box(scene, 1.1, WALL_H - 0.36, 1.1, x, (WALL_H - 0.36) / 2 + 0.18, z, M.pillar);
+    addWallAABB(x, z, 1.5, 1.5);
+    // Base plinth + torus band
+    box(scene, 1.5, 0.2,  1.5, x, 0.10, z, _moldMat);
+    box(scene, 1.3, 0.12, 1.3, x, 0.30, z, _baseMat);
+    // Capital flange + neck band
+    box(scene, 1.5, 0.2,  1.5, x, WALL_H - 0.10, z, _moldMat);
+    box(scene, 1.3, 0.12, 1.3, x, WALL_H - 0.30, z, _baseMat);
   }
 
   function displayCase(scene, x, z) {
@@ -195,20 +214,107 @@ window.GameMap = (function () {
   }
 
   function keycard(scene, key, x, z) {
-    const mesh = box(scene, 0.3, 0.05, 0.5, x, 0.75, z, M.keycards[key]);
-    // Float animation handled in main loop via small userData flag
-    mesh.userData.float = true;
-    keycardPickups.push({ mesh, key, x, z, collected: false });
+    const group = new THREE.Group();
+    group.position.set(x, 0.75, z);
+
+    // Card body — proper ID card proportions (86mm × 54mm scaled to game units)
+    const card = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.02, 0.86), M.keycards[key]);
+    card.castShadow = true;
+    group.add(card);
+
+    // Magnetic stripe — dark brown band near one short edge
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.024, 0.1), _stripeMat);
+    stripe.position.set(0, 0, 0.34);
+    group.add(stripe);
+
+    // EMV chip — gold rectangle in upper-left area
+    const chip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.11), _chipMat);
+    chip.position.set(-0.12, 0, 0.18);
+    group.add(chip);
+
+    // Holographic strip — thin iridescent bar opposite the stripe
+    const holoMat = new THREE.MeshStandardMaterial({
+      color: 0xddddff, roughness: 0.08, metalness: 0.9,
+      emissive: 0x6644cc, emissiveIntensity: 0.35,
+    });
+    const holo = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.022, 0.07), holoMat);
+    holo.position.set(0, 0, -0.28);
+    group.add(holo);
+
+    // Clip hole marker — small dark notch on corner
+    const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+    const hole = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.026, 0.07), holeMat);
+    hole.position.set(-0.22, 0, -0.36);
+    group.add(hole);
+
+    scene.add(group);
+    // tickFloatItems will drive group.position.y and group.rotation.y each frame
+    keycardPickups.push({ mesh: group, key, x, z, collected: false });
   }
 
   function door(scene, cx, cz, keyRequired) {
-    // Doors span Z (NS orientation, 3 units wide on X)
-    const mesh = box(scene, 3, WALL_H, WALL_T, cx, WALL_H / 2, cz, M.door);
-    // Color tint by key required
-    if (keyRequired === 'yellow') mesh.material = new THREE.MeshLambertMaterial({ color: 0xb8960a });
-    if (keyRequired === 'blue')   mesh.material = new THREE.MeshLambertMaterial({ color: 0x2255aa });
+    const doorColor = keyRequired === 'yellow' ? 0x8a6e10
+                    : keyRequired === 'blue'   ? 0x1a3870
+                    : 0x5a4530;
+    const doorMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.62, metalness: 0.08 });
+    const panelMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.5, metalness: 0.06 });
+
+    // ── Animated door group (tickDoors animates scale.y + position.y on this) ──
+    const doorGroup = new THREE.Group();
+    doorGroup.position.set(cx, WALL_H / 2, cz);
+    scene.add(doorGroup);
+
+    // Door slab
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(3, WALL_H, WALL_T), doorMat);
+    slab.castShadow = true; slab.receiveShadow = true;
+    doorGroup.add(slab);
+
+    // Raised upper panel
+    const upPanel = new THREE.Mesh(new THREE.BoxGeometry(2.35, 2.1, 0.07), panelMat);
+    upPanel.position.set(0, 1.15, -(WALL_T / 2 + 0.035));
+    doorGroup.add(upPanel);
+
+    // Raised lower panel
+    const loPanel = new THREE.Mesh(new THREE.BoxGeometry(2.35, 2.4, 0.07), panelMat);
+    loPanel.position.set(0, -1.5, -(WALL_T / 2 + 0.035));
+    doorGroup.add(loPanel);
+
+    // Mid rail (horizontal divider between panels)
+    const railMesh = new THREE.Mesh(new THREE.BoxGeometry(3, 0.18, WALL_T + 0.08), panelMat);
+    railMesh.position.set(0, -0.12, 0);
+    doorGroup.add(railMesh);
+
+    // Brass handle knob
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), _handleMat);
+    knob.position.set(1.08, 0, -(WALL_T / 2 + 0.14));
+    doorGroup.add(knob);
+
+    // Handle backplate (thin rectangle behind knob)
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.05), _handleMat);
+    plate.position.set(1.08, 0, -(WALL_T / 2 + 0.06));
+    doorGroup.add(plate);
+
+    // ── Static door frame (does not animate) ──
+    const FT = 0.22;  // frame thickness
+    const FD = WALL_T + 0.14;  // frame depth (proud of wall both sides)
+    // Left jamb
+    box(scene, FT, WALL_H + 0.12, FD, cx - 1.61, WALL_H / 2, cz, _frameMat);
+    // Right jamb
+    box(scene, FT, WALL_H + 0.12, FD, cx + 1.61, WALL_H / 2, cz, _frameMat);
+    // Header beam
+    box(scene, 3 + FT * 2, 0.22, FD, cx, WALL_H + 0.11, cz, _frameMat);
+
+    // Key-type indicator LED panel on left jamb face (glowing dot)
+    const indColor = keyRequired === 'yellow' ? 0xf0c040 : 0x4a9eff;
+    if (keyRequired) {
+      const indMat = new THREE.MeshStandardMaterial({
+        color: indColor, emissive: indColor, emissiveIntensity: 1.2, roughness: 0.3,
+      });
+      box(scene, 0.07, 0.28, 0.07, cx - 1.61, 1.35, cz - FD / 2 + 0.04, indMat);
+    }
+
     addWallAABB(cx, cz, 3, WALL_T + 0.1);
-    doors.push({ mesh, x: cx, z: cz, keyRequired, open: false, opening: false, openProgress: 0 });
+    doors.push({ mesh: doorGroup, x: cx, z: cz, keyRequired, open: false, opening: false, openProgress: 0 });
   }
 
   // ── Build museum ───────────────────────────────────────
