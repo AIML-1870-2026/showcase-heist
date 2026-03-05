@@ -187,12 +187,12 @@ window.GameMap = (function () {
   function wall(scene, cx, cz, w, d) {
     box(scene, w, WALL_H, d, cx, WALL_H / 2, cz, M.wall);
     addWallAABB(cx, cz, w + 0.02, d + 0.02);
-    // Baseboard trim
-    const bw = w > d ? w : 0.08;
-    const bd = w > d ? 0.08 : d;
+    // Baseboard trim — protrude slightly past the wall face to avoid z-fighting
+    const bw = w > d ? w + 0.04 : 0.08;
+    const bd = w > d ? 0.08 : d + 0.04;
     box(scene, bw, 0.22, bd, cx, 0.11, cz, _baseMat);
-    // Wainscoting panel (lower 1.15 units — darker painted wood tone)
-    box(scene, w, 1.15, d, cx, 0.575, cz, _wainMat);
+    // Wainscoting panel — protrude slightly so it doesn't clip into the wall surface
+    box(scene, w + 0.04, 1.15, d + 0.04, cx, 0.575, cz, _wainMat);
     // Chair rail — thin proud strip capping the wainscoting
     box(scene, w + 0.02, 0.07, d + 0.02, cx, 1.19, cz, _moldMat);
     // Crown molding at ceiling junction
@@ -642,6 +642,16 @@ window.GameMap = (function () {
     wallPainting(scene, -24.9, 3.8, 92, M.paintings[4], true);
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.paintings[3]);
     stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false });
+    // Glowing floor ring — guides player to the stealable painting
+    const paintRingMat = new THREE.MeshBasicMaterial({
+      color: 0xffe066, emissive: 0xffe066, transparent: true, opacity: 0.45,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    const paintRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.1, 32), paintRingMat);
+    paintRing.rotation.x = -Math.PI / 2;
+    paintRing.position.set(-24.5, 0.02, 92);
+    scene.add(paintRing);
+    paintMesh.userData.floorRing = paintRing;  // hidden when painting is taken
 
     // Display cases
     displayCase(scene,  14, 70);

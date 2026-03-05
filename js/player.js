@@ -17,7 +17,7 @@ window.Player = (function () {
   const H_CROUCH     = 0.85;
   const CAM_DIST     = 7;
   const CAM_H_OFFSET = 4;
-  const CAM_LERP     = 0.1;
+  const CAM_LERP     = 0.18;
 
   // ── State ──────────────────────────────────────────────
   let scene, camera;

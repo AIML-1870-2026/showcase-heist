@@ -7,7 +7,7 @@ window.Guards = (function () {
 
   // ── Constants ──────────────────────────────────────────
   const LOD_CONE_DIST2 = 45 * 45;  // hide vision cone beyond 45 units (fog fully opaque at 75)
-  const VISION_ANGLE  = Math.PI / 3;   // 60° total (30° each side)
+  const VISION_ANGLE  = Math.PI / 2.2;  // ~82° total — wider cone, guards feel more present
   const SUSP_TIME     = 3.0;           // seconds suspicious before giving up
   const SEARCH_TIME   = 5.0;           // seconds searching before giving up
   const CATCH_DIST    = 1.0;           // distance to "catch" player
@@ -26,9 +26,9 @@ window.Guards = (function () {
   let DETECT_TIME  = 1.5;
 
   const _DIFF = {
-    easy:   { BASE_SPEED: 2.8, VISION_RANGE: 6,  DETECT_TIME: 2.5 },
-    normal: { BASE_SPEED: 3.5, VISION_RANGE: 8,  DETECT_TIME: 1.5 },
-    hard:   { BASE_SPEED: 4.8, VISION_RANGE: 11, DETECT_TIME: 0.8 },
+    easy:   { BASE_SPEED: 2.8, VISION_RANGE: 7,  DETECT_TIME: 2.5 },
+    normal: { BASE_SPEED: 3.5, VISION_RANGE: 11, DETECT_TIME: 1.5 },
+    hard:   { BASE_SPEED: 4.8, VISION_RANGE: 14, DETECT_TIME: 0.8 },
   };
 
   function setDifficulty(d) {
@@ -579,12 +579,12 @@ window.Guards = (function () {
       this.coneMesh.visible = !tooFar;
       this.beamMesh.visible = !tooFar;
       if (tooFar) return;
-      const ry = -this.facingAngle();
+      // Use smoothYaw so cone matches the body's visual rotation, not the raw facing vector
       this.coneMesh.position.set(this.pos.x, 0, this.pos.z);
-      this.coneMesh.rotation.y = ry;
+      this.coneMesh.rotation.y = this.smoothYaw;
       this.coneMesh.material   = MAT_CONE[this.state] || MAT_CONE.patrol;
       this.beamMesh.position.set(this.pos.x, 0, this.pos.z);
-      this.beamMesh.rotation.y = ry;
+      this.beamMesh.rotation.y = this.smoothYaw;
       this.beamMesh.material   = MAT_BEAM[this.state] || MAT_BEAM.patrol;
     }
 

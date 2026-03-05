@@ -27,18 +27,11 @@
   const composer  = new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene, camera));
 
-  // Ambient occlusion — darkens corners/crevices before bloom
-  const ssaoPass = new THREE.SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
-  ssaoPass.kernelRadius = 16;
-  ssaoPass.minDistance  = 0.001;
-  ssaoPass.maxDistance  = 0.12;
-  composer.addPass(ssaoPass);
-
   const bloomPass = new THREE.UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.8,   // strength
+    0.45,  // strength — reduced from 0.8 to avoid over-glow on surfaces
     0.4,   // radius
-    0.82   // threshold — surfaces need to exceed this luminance to glow
+    0.90   // threshold — raised so only emissive lights bloom, not wall surfaces
   );
   composer.addPass(bloomPass);
 
@@ -346,11 +339,11 @@
       flickerLights.forEach(l => { l.intensity = l._baseIntensity * flicker; });
 
       // Bloom ramps up with alarm
-      bloomPass.strength = 0.8 + Math.abs(Math.sin(alarmPulse * 0.6)) * 0.7;
+      bloomPass.strength = 0.45 + Math.abs(Math.sin(alarmPulse * 0.6)) * 0.6;
     } else {
       light.intensity = 0;
       flickerLights.forEach(l => { l.intensity = l._baseIntensity; });
-      bloomPass.strength = 0.8;
+      bloomPass.strength = 0.45;
     }
   }
 
@@ -576,7 +569,7 @@
     // Pickup flash: brief bloom spike
     if (G._pickupFlash > 0) {
       G._pickupFlash = Math.max(0, G._pickupFlash - dt * 3.5);
-      bloomPass.strength += G._pickupFlash * 1.8;
+      bloomPass.strength += G._pickupFlash * 1.2;
     }
 
     // Chromatic aberration: scales with alarm level, peaks during alarm
@@ -601,6 +594,9 @@
       }
     });
     G.stealables.forEach(st => {
+      if (st.mesh && st.mesh.userData.floorRing) {
+        st.mesh.userData.floorRing.visible = !st.taken;
+      }
       if (!st.taken && st.mesh) {
         st.mesh.position.y = 1.5 + Math.sin(floatT * 1.5 + st.z) * 0.1;
         st.mesh.rotation.y += dt * 0.8;
@@ -803,7 +799,6 @@
     const h = window.innerHeight;
     renderer.setSize(w, h);
     composer.setSize(w, h);
-    ssaoPass.setSize(w, h);
     bloomPass.resolution.set(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
