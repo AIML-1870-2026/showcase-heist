@@ -32,7 +32,6 @@ window.GameMap = (function () {
     ctx.moveTo(0, 0); ctx.lineTo(S, 0);
     ctx.moveTo(0, 0); ctx.lineTo(0, S);
     ctx.stroke();
-    // Inner tile highlight (subtle bevel)
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     ctx.strokeRect(6, 6, S - 12, S - 12);
@@ -42,7 +41,85 @@ window.GameMap = (function () {
     return tex;
   }
 
-  const _tileTex    = makeTileTex('#d8cdb8', '#b0a898', 2);
+  // ── Marble floor texture (sine-turbulence veining) ──────
+  function makeMarbleTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, S, S);
+    grad.addColorStop(0.0, '#eee8de');
+    grad.addColorStop(0.5, '#e8e2d7');
+    grad.addColorStop(1.0, '#ede7dc');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, S, S);
+    const img = ctx.getImageData(0, 0, S, S);
+    const d = img.data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const t = x * 0.013 + y * 0.007
+                + Math.sin(x * 0.041 + y * 0.018) * 3.1
+                + Math.sin(y * 0.032 + x * 0.023) * 2.5
+                + Math.sin((x + y) * 0.019) * 1.7;
+        const vein = Math.abs(Math.sin(t * Math.PI));
+        const dark = vein * vein * 52;
+        const i = (y * S + x) * 4;
+        d[i]   = Math.max(0, d[i]   - dark * 0.58);
+        d[i+1] = Math.max(0, d[i+1] - dark * 0.70);
+        d[i+2] = Math.max(0, d[i+2] - dark * 0.88);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    ctx.strokeStyle = 'rgba(138,128,116,0.40)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex._tileSize = 4;
+    return tex;
+  }
+
+  // ── Procedural painting texture (impressionist brushstrokes) ──
+  function makePaintingTex(hex) {
+    const r0 = (hex >> 16) & 255, g0 = (hex >> 8) & 255, b0 = hex & 255;
+    const W = 160, H = 224;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    // Linen ground
+    ctx.fillStyle = `rgb(${(220 + r0 * 0.04) | 0},${(214 + g0 * 0.04) | 0},${(205 + b0 * 0.04) | 0})`;
+    ctx.fillRect(0, 0, W, H);
+    // Main color wash
+    ctx.fillStyle = `rgba(${r0},${g0},${b0},0.68)`;
+    ctx.fillRect(0, 0, W, H);
+    // Brushstrokes
+    for (let i = 0; i < 44; i++) {
+      const t = i / 44;
+      const dr = Math.sin(i * 1.71) * 42 | 0;
+      const dg = Math.cos(i * 2.31) * 36 | 0;
+      const db = Math.sin(i * 3.13) * 54 | 0;
+      ctx.globalAlpha = 0.22 + Math.abs(Math.sin(t * 13)) * 0.28;
+      ctx.strokeStyle = `rgb(${Math.min(255,Math.max(0,r0+dr))},${Math.min(255,Math.max(0,g0+dg))},${Math.min(255,Math.max(0,b0+db))})`;
+      ctx.lineWidth = 3 + Math.abs(Math.sin(t * 7)) * 14;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const sx = (W * 0.08 + Math.sin(t * 11.3) * W * 0.46 + t * W * 0.84) % W;
+      const sy = (H * 0.06 + Math.cos(t *  9.1) * H * 0.38 + t * H * 0.72) % H;
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(
+        sx + Math.cos(t * 7.9) * 38, sy + Math.sin(t * 6.3) * 32,
+        sx + Math.cos(t * 5.1 + 1) * 52, sy + Math.sin(t * 7.7 + 1) * 44
+      );
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    return new THREE.CanvasTexture(c);
+  }
+
+  const _tileTex    = makeMarbleTex();
   const _ceilTex    = makeTileTex('#f4f2ee', '#dedad4', 3);
   const _baseMat    = new THREE.MeshStandardMaterial({ color: 0xddd8cc, roughness: 0.7, metalness: 0.0 });
   const _wainMat    = new THREE.MeshStandardMaterial({ color: 0xc4b89a, roughness: 0.55, metalness: 0.0 });
@@ -54,7 +131,7 @@ window.GameMap = (function () {
 
   // ── Materials ──────────────────────────────────────────
   const M = {
-    floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.2, metalness: 0.05 }),
+    floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.12, metalness: 0.08 }),
     wall:     new THREE.MeshStandardMaterial({ color: 0xf0ebe2, roughness: 0.85, metalness: 0.0  }),
     ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.9,  metalness: 0.0  }),
     desk:     new THREE.MeshStandardMaterial({ color: 0x7a6348, roughness: 0.7,  metalness: 0.0  }),
@@ -71,13 +148,9 @@ window.GameMap = (function () {
       blue:   new THREE.MeshStandardMaterial({ color: 0x4a9eff, roughness: 0.3, metalness: 0.6 }),
       red:    new THREE.MeshStandardMaterial({ color: 0xe05050, roughness: 0.3, metalness: 0.6 }),
     },
-    paintings: [
-      new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.9, metalness: 0.0 }),
-      new THREE.MeshStandardMaterial({ color: 0x2980b9, roughness: 0.9, metalness: 0.0 }),
-      new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 0.9, metalness: 0.0 }),
-      new THREE.MeshStandardMaterial({ color: 0x8e44ad, roughness: 0.9, metalness: 0.0 }),
-      new THREE.MeshStandardMaterial({ color: 0xe67e22, roughness: 0.9, metalness: 0.0 }),
-    ],
+    paintings: [0xc0392b, 0x2980b9, 0x27ae60, 0x8e44ad, 0xe67e22].map(hex =>
+      new THREE.MeshStandardMaterial({ map: makePaintingTex(hex), roughness: 0.88, metalness: 0.0 })
+    ),
   };
 
   // Collected data returned to main.js
@@ -339,6 +412,122 @@ window.GameMap = (function () {
     doors.push({ mesh: doorGroup, x: cx, z: cz, keyRequired, open: false, opening: false, openProgress: 0 });
   }
 
+  // ── Decorative helpers ─────────────────────────────────
+  const _brassM = new THREE.MeshStandardMaterial({ color: 0xb08020, roughness: 0.22, metalness: 0.88 });
+
+  function ceilingLamp(scene, x, z) {
+    const glassM = new THREE.MeshStandardMaterial({
+      color: 0xfff5e0, roughness: 0.12, metalness: 0.0,
+      transparent: true, opacity: 0.60,
+      emissive: 0xffe8a0, emissiveIntensity: 0.55,
+    });
+    // Hanging rod
+    box(scene, 0.05, 1.1, 0.05, x, WALL_H - 0.55, z, _brassM);
+    // Decorative ring
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.026, 6, 14), _brassM);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, WALL_H - 1.12, z);
+    scene.add(ring);
+    // Frosted globe
+    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), glassM);
+    globe.position.set(x, WALL_H - 1.38, z);
+    scene.add(globe);
+  }
+
+  function wallSconce(scene, wx, y, wz, extX) {
+    const glowM = new THREE.MeshStandardMaterial({
+      color: 0xffe8a0, roughness: 0.12,
+      emissive: 0xffc840, emissiveIntensity: 0.88,
+      transparent: true, opacity: 0.80,
+    });
+    box(scene, 0.06, 0.26, 0.06, wx, y, wz, _brassM);
+    box(scene, 0.20, 0.04, 0.04, wx + 0.10 * extX, y + 0.07, wz, _brassM);
+    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), glowM);
+    globe.position.set(wx + 0.22 * extX, y + 0.07, wz);
+    scene.add(globe);
+  }
+
+  function plantPot(scene, x, z, scale) {
+    scale = scale || 1.0;
+    const potM  = new THREE.MeshStandardMaterial({ color: 0x8a6040, roughness: 0.82, metalness: 0.0 });
+    const leafM = new THREE.MeshStandardMaterial({
+      color: 0x2c5a18, roughness: 0.80, metalness: 0.0,
+      emissive: 0x081406, emissiveIntensity: 0.12,
+    });
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * scale, 0.14 * scale, 0.36 * scale, 10), potM);
+    pot.position.set(x, 0.18 * scale, z);
+    pot.castShadow = true;
+    scene.add(pot);
+    // Foliage cluster (5 overlapping spheres)
+    const offsets = [[0,0.56,0.18],[-0.11,0.46,0.16],[0.10,0.50,0.15],[0.04,0.64,0.16],[-0.06,0.70,0.13]];
+    offsets.forEach(([ox, oy, r]) => {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(r * scale, 7, 5), leafM);
+      leaf.position.set(x + ox * scale, oy * scale, z);
+      leaf.castShadow = true;
+      scene.add(leaf);
+    });
+  }
+
+  function galleryBench(scene, x, z, rotY) {
+    const woodM  = new THREE.MeshStandardMaterial({ color: 0x5c3d22, roughness: 0.72, metalness: 0.0 });
+    const metalM = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.40, metalness: 0.65 });
+    const g = new THREE.Group();
+    // Three seat slats
+    for (let i = -1; i <= 1; i++) {
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.05, 0.14), woodM);
+      slat.position.set(0, 0.46, i * 0.16);
+      g.add(slat);
+    }
+    // Backrest
+    const back = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.36, 0.07), woodM);
+    back.position.set(0, 0.75, 0.24);
+    g.add(back);
+    // Four metal legs
+    [[-0.8, -0.22], [-0.8, 0.22], [0.8, -0.22], [0.8, 0.22]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.44, 6), metalM);
+      leg.position.set(lx, 0.22, lz);
+      g.add(leg);
+    });
+    g.position.set(x, 0, z);
+    if (rotY) g.rotation.y = rotY;
+    scene.add(g);
+  }
+
+  function lobbyFountain(scene, x, z) {
+    const stoneM = new THREE.MeshStandardMaterial({ color: 0xc8c0b0, roughness: 0.58, metalness: 0.06 });
+    const waterM = new THREE.MeshStandardMaterial({
+      color: 0x4488aa, roughness: 0.04, metalness: 0.22,
+      transparent: true, opacity: 0.72,
+    });
+    // Lower basin
+    const outer = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.6, 0.36, 22), stoneM);
+    outer.position.set(x, 0.18, z);
+    outer.castShadow = outer.receiveShadow = true;
+    scene.add(outer);
+    // Water surface in lower basin
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.14, 0.05, 22), waterM);
+    water.position.set(x, 0.335, z);
+    scene.add(water);
+    // Central column
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.38, 1.42, 12), stoneM);
+    col.position.set(x, 0.71, z);
+    col.castShadow = true;
+    scene.add(col);
+    // Upper bowl
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(1.06, 1.16, 0.24, 18), stoneM);
+    bowl.position.set(x, 1.48, z);
+    scene.add(bowl);
+    // Upper water
+    const waterUp = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 0.96, 0.04, 18), waterM);
+    waterUp.position.set(x, 1.61, z);
+    scene.add(waterUp);
+    // Finial
+    const finial = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), _brassM);
+    finial.position.set(x, 1.87, z);
+    scene.add(finial);
+    addWallAABB(x, z, 5.0, 5.0);
+  }
+
   // ── Build museum ───────────────────────────────────────
   function init(scene) {
 
@@ -394,6 +583,21 @@ window.GameMap = (function () {
 
     // Yellow keycard door at corridor entrance
     door(scene, 0, 39.75, 'yellow');
+
+    // Lobby fountain — grand centerpiece
+    lobbyFountain(scene, 0, 26);
+
+    // Ceiling lamps above existing point lights
+    [[-8, 10], [8, 10], [-8, 30], [8, 30]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
+
+    // Corner plants
+    [[-17, 4], [17, 4], [-17, 36], [17, 36]].forEach(([px, pz]) => plantPot(scene, px, pz, 1.4));
+
+    // Wall sconces flanking paintings
+    wallSconce(scene, -19.75, 2.9,  4,  1);  // west wall, near z=8 painting
+    wallSconce(scene, -19.75, 2.9, 18,  1);  // west wall, between paintings
+    wallSconce(scene,  19.75, 2.9,  8, -1);  // east wall
+    wallSconce(scene,  19.75, 2.9, 28, -1);  // east wall beside painting
 
     // ════════════════════════════════
     //  CORRIDOR 1  cx=0  cz=47.5  10×15
@@ -508,6 +712,22 @@ window.GameMap = (function () {
     // Blue keycard door
     door(scene, 0, 99.75, 'blue');
 
+    // Gallery ceiling lamps above point lights
+    [[-10, 65], [10, 65], [0, 80], [-10, 95], [10, 95]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
+
+    // Museum benches (center of gallery)
+    galleryBench(scene, -6, 82, 0);
+    galleryBench(scene,  6, 82, 0);
+    galleryBench(scene,  5, 68, Math.PI / 2);
+
+    // Corner plants
+    [[-22, 58], [22, 58], [-22, 98], [22, 98]].forEach(([px, pz]) => plantPot(scene, px, pz, 1.1));
+
+    // Wall sconces between paintings
+    wallSconce(scene, -24.75, 2.9, 82,  1);  // west wall between paintings
+    wallSconce(scene,  24.75, 2.9, 70, -1);  // east wall
+    wallSconce(scene,  24.75, 2.9, 88, -1);  // east wall
+
     // ════════════════════════════════
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
     //  Maintenance / service passage
@@ -604,6 +824,18 @@ window.GameMap = (function () {
         new THREE.Vector3(-16, 0, 118),
       ],
     });
+
+    // Crown Vault pillars (architectural grandeur)
+    [-12, 12].forEach(px => {
+      pillar(scene, px, 127);
+      pillar(scene, px, 152);
+    });
+
+    // Crown Vault ceiling lamps above point lights
+    [[-10, 125], [10, 125], [0, 140], [-10, 155], [10, 155]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
+
+    // Vault corner plants (smaller scale)
+    [[-22, 118], [22, 118], [-22, 158], [22, 158]].forEach(([px, pz]) => plantPot(scene, px, pz, 0.9));
 
     // Cameras — Crown Vault (4 cameras)
     cameraData.push({ x: -14, y: WALL_H - 0.3, z: 125, sweepAngle: Math.PI / 2.5, facingZ:  1 });

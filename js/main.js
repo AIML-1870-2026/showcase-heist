@@ -155,6 +155,40 @@
     scene.add(vaultAccent);
     flickerLights.push(vaultAccent);
 
+    // Gallery painting spotlights — angled museum track lights
+    [
+      // [sx, sz,  tx, ty, tz]  — light pos → painting target
+      [-20, 92,  -24.9, 3.8, 92],   // famous painting (stealable)
+      [-20, 70,  -24.9, 3.5, 70],   // gallery west
+      [ 20, 80,   24.9, 3.5, 80],   // gallery east
+      [ 20, 60,   24.9, 3.5, 60],   // gallery east 2
+    ].forEach(([sx, sz, tx, ty, tz]) => {
+      const spot = new THREE.SpotLight(0xfff0cc, 0.85, 14, Math.PI / 8, 0.38);
+      spot.position.set(sx, 5.5, sz);
+      spot.target.position.set(tx, ty, tz);
+      spot.castShadow = false;
+      spot._baseIntensity = spot.intensity;
+      scene.add(spot);
+      scene.add(spot.target);
+      flickerLights.push(spot);
+    });
+
+    // Lobby painting spotlights
+    [
+      [-16,  8,  -19.9, 3.5,  8],
+      [-16, 28,  -19.9, 3.5, 28],
+      [ 16, 16,   19.9, 3.5, 16],
+    ].forEach(([sx, sz, tx, ty, tz]) => {
+      const spot = new THREE.SpotLight(0xfff0d0, 0.65, 11, Math.PI / 8, 0.38);
+      spot.position.set(sx, 5.5, sz);
+      spot.target.position.set(tx, ty, tz);
+      spot.castShadow = false;
+      spot._baseIntensity = spot.intensity;
+      scene.add(spot);
+      scene.add(spot.target);
+      flickerLights.push(spot);
+    });
+
     // Red alarm light (intensity driven at runtime)
     const alarmLight = new THREE.PointLight(0xff2200, 0, 80);
     alarmLight.position.set(0, 5, 80);
@@ -703,8 +737,47 @@
       };
     });
 
-    $('btn-solo').onclick       = () => startGame('solo');
-    $('btn-coop').onclick       = () => startGame('coop');
+    // Customization screen helpers
+    let _pendingMode = 'solo';
+
+    function showCustomize(mode) {
+      _pendingMode = mode;
+      UI.showScreen(null);
+      $('customize-screen').classList.remove('hidden');
+    }
+
+    function applyCustomization() {
+      const suitSw = document.querySelector('#suit-swatches .color-swatch.active');
+      const eyeSw  = document.querySelector('#eye-swatches .color-swatch.active');
+      const name   = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
+      window.G.playerCustom = {
+        suitColor: suitSw ? Number(suitSw.dataset.color) : 0x1a1a2e,
+        eyeColor:  eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
+        codename:  name,
+      };
+      const nameEl = $('codename-display');
+      if (nameEl) nameEl.textContent = '// ' + name.toUpperCase();
+    }
+
+    // Swatch click handlers
+    document.querySelectorAll('#suit-swatches .color-swatch').forEach(sw => {
+      sw.onclick = () => {
+        document.querySelectorAll('#suit-swatches .color-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+      };
+    });
+    document.querySelectorAll('#eye-swatches .color-swatch').forEach(sw => {
+      sw.onclick = () => {
+        document.querySelectorAll('#eye-swatches .color-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+      };
+    });
+
+    $('btn-solo').onclick = () => showCustomize('solo');
+    $('btn-coop').onclick = () => showCustomize('coop');
+    $('btn-start-heist').onclick = () => { applyCustomization(); startGame(_pendingMode); };
+    $('btn-back-menu').onclick   = () => { $('customize-screen').classList.add('hidden'); UI.showScreen('start'); };
+
     $('btn-resume').onclick     = resumeGame;
     $('btn-restart').onclick    = () => startGame(window.G.mode);
     $('btn-main-menu').onclick  = () => { window.G.phase = 'start'; UI.showScreen('start'); document.exitPointerLock(); };

@@ -254,11 +254,14 @@ window.Player = (function () {
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    const matSuit = new THREE.MeshStandardMaterial({ color: 0x1a1a2a, roughness: 0.75, metalness: 0.15 });
+    const custom   = window.G && window.G.playerCustom || {};
+    const suitHex  = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
+    const eyeHex   = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
+    const matSuit = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.75, metalness: 0.15 });
     const matMask = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.0  });
     const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.7, emissive: 0x443310, emissiveIntensity: 0.4 });
     const matShoe = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.25 });
-    const eyeMat  = new THREE.MeshStandardMaterial({ color: 0xddeeff, emissive: 0x88ccff, emissiveIntensity: 0.9, roughness: 0.2 });
+    const eyeMat  = new THREE.MeshStandardMaterial({ color: eyeHex, emissive: eyeHex, emissiveIntensity: 0.9, roughness: 0.2 });
 
     // ── Leg pivots (at hip, y=1.0) ──────────────────────
     const legPivots = [-0.14, 0.14].map(xOff => {

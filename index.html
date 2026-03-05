@@ -41,6 +41,45 @@
     </div>
   </div>
 
+  <!-- Character Customization -->
+  <div id="customize-screen" class="screen hidden">
+    <div class="screen-content">
+      <h2 style="margin-bottom:4px;">Your Operative</h2>
+      <p style="margin-bottom:20px;color:#888;font-size:0.8rem;">Customize before the heist</p>
+
+      <div class="customize-section">
+        <label class="customize-label">Codename</label>
+        <input id="codename-input" type="text" maxlength="16" placeholder="Ghost" autocomplete="off" spellcheck="false" />
+      </div>
+
+      <div class="customize-section">
+        <label class="customize-label">Suit</label>
+        <div class="swatch-row" id="suit-swatches">
+          <div class="color-swatch active" data-color="0x1a1a2e" style="background:#1a1a2e;" title="Midnight Navy"></div>
+          <div class="color-swatch" data-color="0x5c1a1a" style="background:#5c1a1a;" title="Crimson Shadow"></div>
+          <div class="color-swatch" data-color="0x1a3a1a" style="background:#1a3a1a;" title="Phantom Green"></div>
+          <div class="color-swatch" data-color="0x2a1a4a" style="background:#2a1a4a;" title="Dark Amethyst"></div>
+          <div class="color-swatch" data-color="0x2a1f10" style="background:#2a1f10;" title="Dark Khaki"></div>
+        </div>
+      </div>
+
+      <div class="customize-section">
+        <label class="customize-label">Eye Glow</label>
+        <div class="swatch-row" id="eye-swatches">
+          <div class="color-swatch active" data-color="0x88ccff" style="background:#88ccff;" title="Ice Blue"></div>
+          <div class="color-swatch" data-color="0x44ff88" style="background:#44ff88;" title="Acid Green"></div>
+          <div class="color-swatch" data-color="0xff4444" style="background:#ff4444;" title="Blood Red"></div>
+          <div class="color-swatch" data-color="0xffaa22" style="background:#ffaa22;" title="Amber"></div>
+        </div>
+      </div>
+
+      <div class="menu-buttons" style="margin-top:24px;">
+        <button id="btn-start-heist" class="btn btn-primary">Begin Heist</button>
+        <button id="btn-back-menu" class="btn btn-ghost">Back</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pause Menu -->
   <div id="pause-screen" class="screen hidden">
     <div class="screen-content">
@@ -137,6 +176,9 @@
         <div class="inv-slot" id="slot-crown"   data-label="Crown"></div>
       </div>
     </div>
+
+    <!-- Top-center: Codename -->
+    <div id="codename-display"></div>
 
     <!-- Center: Alert flash -->
     <div id="alert-flash" class="hidden">
