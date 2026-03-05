@@ -771,7 +771,7 @@
 
     $('btn-solo').onclick = () => showCustomize('solo');
     $('btn-coop').onclick = () => showCustomize('coop');
-    $('btn-start-heist').onclick = () => { applyCustomization(); startGame(_pendingMode); };
+    $('btn-start-heist').onclick = () => { applyCustomization(); $('customize-screen').classList.add('hidden'); startGame(_pendingMode); };
     $('btn-back-menu').onclick   = () => { $('customize-screen').classList.add('hidden'); UI.showScreen('start'); };
 
     $('btn-resume').onclick     = resumeGame;
