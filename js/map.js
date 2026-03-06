@@ -379,7 +379,7 @@ window.GameMap = (function () {
     coinPickups.push({ mesh: group, x, z, amount, collected: false, baseY: baseY || 1.1 });
   }
 
-  function door(scene, cx, cz, keyRequired) {
+  function door(scene, cx, cz, keyRequired, rotY) {
     const doorColor = keyRequired === 'yellow' ? 0x6a4a08
                     : keyRequired === 'blue'   ? 0x182840
                     : 0x3c2408;
@@ -389,6 +389,7 @@ window.GameMap = (function () {
     // ── Animated door group (tickDoors animates scale.y + position.y on this) ──
     const doorGroup = new THREE.Group();
     doorGroup.position.set(cx, WALL_H / 2, cz);
+    if (rotY) doorGroup.rotation.y = rotY;
     scene.add(doorGroup);
 
     // Door slab
@@ -424,12 +425,17 @@ window.GameMap = (function () {
     // ── Static door frame (does not animate) ──
     const FT = 0.22;  // frame thickness
     const FD = WALL_T + 0.14;  // frame depth (proud of wall both sides)
-    // Left jamb
-    box(scene, FT, WALL_H + 0.12, FD, cx - 1.61, WALL_H / 2, cz, _frameMat);
-    // Right jamb
-    box(scene, FT, WALL_H + 0.12, FD, cx + 1.61, WALL_H / 2, cz, _frameMat);
-    // Header beam
-    box(scene, 3 + FT * 2, 0.22, FD, cx, WALL_H + 0.11, cz, _frameMat);
+    if (!rotY) {
+      // North/south wall door — gap runs in X
+      box(scene, FT, WALL_H + 0.12, FD, cx - 1.61, WALL_H / 2, cz, _frameMat);
+      box(scene, FT, WALL_H + 0.12, FD, cx + 1.61, WALL_H / 2, cz, _frameMat);
+      box(scene, 3 + FT * 2, 0.22, FD, cx, WALL_H + 0.11, cz, _frameMat);
+    } else {
+      // East/west wall door — gap runs in Z
+      box(scene, FD, WALL_H + 0.12, FT, cx, WALL_H / 2, cz - 1.61, _frameMat);
+      box(scene, FD, WALL_H + 0.12, FT, cx, WALL_H / 2, cz + 1.61, _frameMat);
+      box(scene, FD, 0.22, 3 + FT * 2, cx, WALL_H + 0.11, cz, _frameMat);
+    }
 
     // Key-type indicator LED panel on left jamb face (glowing dot)
     const indColor = keyRequired === 'yellow' ? 0xf0c040 : 0x4a9eff;
@@ -437,10 +443,16 @@ window.GameMap = (function () {
       const indMat = new THREE.MeshStandardMaterial({
         color: indColor, emissive: indColor, emissiveIntensity: 1.2, roughness: 0.3,
       });
-      box(scene, 0.07, 0.28, 0.07, cx - 1.61, 1.35, cz - FD / 2 + 0.04, indMat);
+      if (!rotY) {
+        box(scene, 0.07, 0.28, 0.07, cx - 1.61, 1.35, cz - FD / 2 + 0.04, indMat);
+      } else {
+        box(scene, 0.07, 0.28, 0.07, cx - FD / 2 + 0.04, 1.35, cz - 1.61, indMat);
+      }
     }
 
-    addWallAABB(cx, cz, 3, WALL_T + 0.1);
+    const aabbW = rotY ? WALL_T + 0.1 : 3;
+    const aabbD = rotY ? 3 : WALL_T + 0.1;
+    addWallAABB(cx, cz, aabbW, aabbD);
     doors.push({ mesh: doorGroup, x: cx, z: cz, keyRequired, open: false, opening: false, openProgress: 0 });
   }
 
@@ -677,14 +689,20 @@ window.GameMap = (function () {
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
     // ════════════════════════════════
-    // Skip east wall — replace with stubs so the side room opening works
-    roomWalls(scene, 0, 77.5, 50, 45, { north: true, east: true });
+    // Skip east + west walls — replace with stubs so both side room openings work
+    roomWalls(scene, 0, 77.5, 50, 45, { north: true, east: true, west: true });
 
     // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
     // South stub: Z 55→75.5  (length 20.5, centre 65.25)
     wall(scene, 25, 65.25, WALL_T, 20.5);
     // North stub: Z 78.5→100  (length 21.5, centre 89.25)
     wall(scene, 25, 89.25, WALL_T, 21.5);
+
+    // Gallery west wall stubs — 3-unit gap at Z=77 leading to the Galerie des Sculptures
+    // South stub: Z 55→75.5  (length 20.5, centre 65.25)
+    wall(scene, -25, 65.25, WALL_T, 20.5);
+    // North stub: Z 78.5→100  (length 21.5, centre 89.25)
+    wall(scene, -25, 89.25, WALL_T, 21.5);
 
     // Glowing archway at side-room entrance (opening in X-wall, strips run along Z)
     const sideGlowMat = new THREE.MeshStandardMaterial({
@@ -879,6 +897,93 @@ window.GameMap = (function () {
 
     // Security camera watching the entrance
     cameraData.push({ x: 43, y: WALL_H - 0.3, z: 80, sweepAngle: Math.PI / 2.2, facingZ: -1 });
+
+    // ════════════════════════════════
+    //  GALERIE DES SCULPTURES  (side room off Gallery west wall)
+    //  X -50→-25  Z 67→87  (centre -37.5, 77)
+    // ════════════════════════════════
+    const GWX = -37.5, GWZ = 77, GWW = 25, GWD = 20;
+    floor(scene,   GWX, GWZ, GWW, GWD);
+    ceiling(scene, GWX, GWZ, GWW, GWD);
+    // South wall (Z=67) and north wall (Z=87)
+    wall(scene, GWX, GWZ - GWD / 2, GWW, WALL_T);
+    wall(scene, GWX, GWZ + GWD / 2, GWW, WALL_T);
+    // West wall (X=-50)
+    wall(scene, GWX - GWW / 2, GWZ, WALL_T, GWD);
+    // East wall shared with gallery west-wall stubs — no extra wall needed
+
+    // Door in the opening connecting Gallery to Galerie des Sculptures
+    door(scene, -25, 77, null, Math.PI / 2);
+
+    // Glowing archway at west side-room entrance
+    const westGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xe8d060, emissive: 0xe8d060, emissiveIntensity: 1.1,
+      roughness: 0.2, transparent: true, opacity: 0.88,
+    });
+    box(scene, 0.14, 0.14, 3.8, -25, WALL_H + 0.16, 77, westGlowMat);   // top bar
+    box(scene, 0.14, WALL_H + 0.32, 0.14, -25, WALL_H / 2, 75.1, westGlowMat);  // south strip
+    box(scene, 0.14, WALL_H + 0.32, 0.14, -25, WALL_H / 2, 78.9, westGlowMat);  // north strip
+
+    // Pillars flanking the entrance
+    pillar(scene, -28.5, 70);
+    pillar(scene, -28.5, 84);
+
+    // Sculptures (pedestals with abstract shapes)
+    box(scene, 1.0, 1.0, 1.0, -34, 0.5, 72, M.pedestal);
+    const sculpt1 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0xd4c8b0, roughness: 0.5, metalness: 0.1 }));
+    sculpt1.position.set(-34, 1.55, 72); sculpt1.castShadow = true; scene.add(sculpt1);
+
+    box(scene, 1.0, 1.2, 1.0, -42, 0.6, 72, M.pedestal);
+    const sculpt2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 1.1, 8),
+      new THREE.MeshStandardMaterial({ color: 0xc8b890, roughness: 0.45, metalness: 0.15 }));
+    sculpt2.position.set(-42, 1.75, 72); sculpt2.castShadow = true; scene.add(sculpt2);
+
+    box(scene, 1.0, 1.0, 1.0, -34, 0.5, 82, M.pedestal);
+    const sculpt3 = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.12, 8, 16),
+      new THREE.MeshStandardMaterial({ color: 0xb8c8c0, roughness: 0.4, metalness: 0.2 }));
+    sculpt3.position.set(-34, 1.55, 82); sculpt3.rotation.x = Math.PI / 4;
+    sculpt3.castShadow = true; scene.add(sculpt3);
+
+    box(scene, 1.0, 1.1, 1.0, -42, 0.55, 82, M.pedestal);
+    const sculpt4 = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.0, 8),
+      new THREE.MeshStandardMaterial({ color: 0xd0c0a0, roughness: 0.5, metalness: 0.1 }));
+    sculpt4.position.set(-42, 1.7, 82); sculpt4.castShadow = true; scene.add(sculpt4);
+
+    // Coin cache on a small table
+    box(scene, 1.4, 0.7, 0.9, -46, 0.35, 77, M.desk);
+    coinCache(scene, -46, 77, 3, 1.05);
+
+    // Paintings on west wall
+    wallPainting(scene, -49.9, 3.5, 72, M.paintings[2], true);
+    wallPainting(scene, -49.9, 3.5, 82, M.paintings[3], true);
+
+    // Rug
+    rug(scene, GWX, GWZ, 18, 14, 0x2a1a3a, 0xc8a040);
+
+    // Ceiling lamps
+    ceilingLamp(scene, -32, 72);
+    ceilingLamp(scene, -43, 72);
+    ceilingLamp(scene, -32, 82);
+    ceilingLamp(scene, -43, 82);
+
+    // Wall sconces
+    wallSconce(scene, -49.75, 2.9, 72, 1);
+    wallSconce(scene, -49.75, 2.9, 82, 1);
+
+    // Guard patrol inside the Galerie
+    guardData.push({
+      spawnX: -40, spawnZ: 72,
+      waypoints: [
+        new THREE.Vector3(-40, 0, 72),
+        new THREE.Vector3(-40, 0, 83),
+        new THREE.Vector3(-30, 0, 83),
+        new THREE.Vector3(-30, 0, 72),
+      ],
+    });
+
+    // Security camera watching the entrance
+    cameraData.push({ x: -43, y: WALL_H - 0.3, z: 80, sweepAngle: Math.PI / 2.2, facingZ: 1 });
 
     // ════════════════════════════════
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
