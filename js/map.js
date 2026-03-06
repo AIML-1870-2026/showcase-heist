@@ -1255,89 +1255,250 @@ window.GameMap = (function () {
     // Exit marker on far north wall
     box(scene, 6, 4, 0.15, 0, 2, 164.9, M.exit);
 
-    // ════════════════════════════════
-    //  LOUVRE EXTERIOR  Z 165→240
-    //  Open courtyard with glass pyramid
-    // ════════════════════════════════
-    // Courtyard stone floor (cobblestone-like)
-    const cobbMat = new THREE.MeshStandardMaterial({ color: 0xb0a898, roughness: 0.92, metalness: 0.0 });
-    box(scene, 80, 0.3, 80, 0, -0.15, 200, cobbMat);
+    // ════════════════════════════════════════════════════════
+    //  LOUVRE EXTERIOR — Cour Napoléon  Z 165 → 248
+    // ════════════════════════════════════════════════════════
+    {
+      const PX = 0, PZ = 205;          // pyramid centre
+      const PH = 20, PB = 11;          // pyramid height, half-base
+      const WING_H  = 18;              // facade wall height (3 floors)
+      const MANS_H  = 5;               // mansard roof height
+      const WING_T  = 6;               // facade wall thickness
+      const COURT_W = 42;              // half-width of courtyard (+/-X)
 
-    // Museum facade walls on east and west sides of the courtyard
-    const facadeMat = new THREE.MeshStandardMaterial({ color: 0xd4c8a8, roughness: 0.82, metalness: 0.0 });
-    box(scene, 2, 14, 80, -40, 7, 200, facadeMat);   // west facade
-    box(scene, 2, 14, 80,  40, 7, 200, facadeMat);   // east facade
-    // Facade windows (dark recesses, evenly spaced)
-    const winMat = new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.3, metalness: 0.1 });
-    for (let wz = 172; wz <= 228; wz += 10) {
-      box(scene, 0.15, 3, 1.8, -40, 8, wz, winMat);
-      box(scene, 0.15, 3, 1.8,  40, 8, wz, winMat);
+      // ── Materials ──────────────────────────────────────
+      const mLimestone = new THREE.MeshStandardMaterial({ color: 0xd8c8a0, roughness: 0.84, metalness: 0.0 });
+      const mBase      = new THREE.MeshStandardMaterial({ color: 0xbfae8a, roughness: 0.88, metalness: 0.0 });
+      const mSlate     = new THREE.MeshStandardMaterial({ color: 0x3c3830, roughness: 0.92, metalness: 0.0 });
+      const mCornice   = new THREE.MeshStandardMaterial({ color: 0xcab060, roughness: 0.55, metalness: 0.12 });
+      const mGlass = new THREE.MeshStandardMaterial({
+        color: 0x7ac0e4, roughness: 0.03, metalness: 0.12,
+        transparent: true, opacity: 0.65, side: THREE.DoubleSide,
+      });
+      const mFrame = new THREE.MeshStandardMaterial({ color: 0x909090, roughness: 0.35, metalness: 0.7 });
+      const mWin   = new THREE.MeshStandardMaterial({
+        color: 0x1a2535, roughness: 0.15, metalness: 0.1,
+        emissive: 0x1a2535, emissiveIntensity: 0.4,
+      });
+      const mCobble = new THREE.MeshStandardMaterial({ color: 0xc0b8a8, roughness: 0.95, metalness: 0.0 });
+      const mWater  = new THREE.MeshStandardMaterial({ color: 0x1e4a68, roughness: 0.03, metalness: 0.2, transparent: true, opacity: 0.75 });
+      const mPool   = new THREE.MeshStandardMaterial({ color: 0x8a9090, roughness: 0.8, metalness: 0.05 });
+
+      // ── Courtyard floor ────────────────────────────────
+      // Main paving
+      box(scene, COURT_W*2, 0.28, 84, 0, -0.14, 206, mCobble);
+      // Circular stone ring around pyramid (darker band)
+      const ringFloor = new THREE.Mesh(
+        new THREE.RingGeometry(13.5, 20, 48),
+        new THREE.MeshStandardMaterial({ color: 0xa8a098, roughness: 0.9, metalness: 0.0 })
+      );
+      ringFloor.rotation.x = -Math.PI / 2; ringFloor.position.set(PX, 0.01, PZ);
+      scene.add(ringFloor);
+
+      // ── Wing helper ────────────────────────────────────
+      // Builds a full Louvre wing facade with windows, cornices, mansard
+      function louvreWing(cx, cz, len, axis) {
+        const w = axis === 'Z' ? WING_T : len;
+        const d = axis === 'Z' ? len    : WING_T;
+
+        // Main wall body
+        box(scene, w, WING_H, d, cx, WING_H/2, cz, mLimestone);
+        // Rusticated base band (0→2.5)
+        box(scene, w+0.1, 2.5, d+0.1, cx, 1.25, cz, mBase);
+        // Floor cornice bands at 6, 11.5, WING_H
+        [6, 11.5, WING_H].forEach(h => {
+          const cm = h === WING_H ? mCornice : mBase;
+          box(scene, w+0.25, 0.35, d+0.25, cx, h+0.175, cz, cm);
+        });
+        // Mansard roof
+        box(scene, w, MANS_H, d, cx, WING_H+MANS_H/2, cz, mSlate);
+        // Mansard base band (gold lip at bottom of mansard)
+        box(scene, w+0.15, 0.3, d+0.15, cx, WING_H+0.15, cz, mCornice);
+
+        // Windows — every 5 units along the wing
+        const wStart = axis === 'Z' ? cz - len/2 + 3 : cx - len/2 + 3;
+        const wEnd   = axis === 'Z' ? cz + len/2 - 3 : cx + len/2 - 3;
+        for (let wp = wStart; wp <= wEnd; wp += 5) {
+          // Pilaster strip
+          const pw = axis === 'Z' ? w+0.3 : 0.5;
+          const pd = axis === 'Z' ? 0.5   : d+0.3;
+          box(scene, pw, WING_H, pd, axis === 'Z' ? cx : wp-2.5, WING_H/2, axis === 'Z' ? wp-2.5 : cz, mBase);
+
+          // Three floors of windows
+          [[3.0, 2.8], [8.3, 2.8], [13.6, 2.8]].forEach(([wh, wsize]) => {
+            const wx = axis === 'Z' ? (cx > 0 ? cx - WING_T*0.5 + 0.22 : cx + WING_T*0.5 - 0.22) : wp;
+            const wz = axis === 'Z' ? wp                                                           : (cz > 200 ? cz - WING_T*0.5 + 0.22 : cz + WING_T*0.5 - 0.22);
+            const wd = axis === 'Z' ? 0.25 : 1.6;
+            const wl = axis === 'Z' ? 1.6  : 0.25;
+            // Window glass
+            box(scene, wd, wsize, wl, wx, wh, wz, mWin);
+            // Stone arch surround
+            box(scene, wd+0.05, 0.28, wl+0.25, wx, wh+wsize/2+0.14, wz, mBase);
+          });
+
+          // Dormer on mansard (every 10 units)
+          if (Math.round(wp) % 10 < 5.5) {
+            const dx = axis === 'Z' ? cx : wp;
+            const dz = axis === 'Z' ? wp : cz;
+            box(scene, 1.2, 2.0, 1.2, dx, WING_H+2, dz, mLimestone);
+            // Dormer window
+            box(scene, 0.25, 1.0, 0.8, axis === 'Z' ? (cx > 0 ? cx-WING_T*0.5+0.15 : cx+WING_T*0.5-0.15) : dx, WING_H+2.2, axis === 'Z' ? dz : (cz > 200 ? cz-WING_T*0.5+0.15 : cz+WING_T*0.5-0.15), mWin);
+            // Triangular dormer peak
+            const peakGeo = new THREE.CylinderGeometry(0, 0.9, 1.2, 3);
+            const peak = new THREE.Mesh(peakGeo, mSlate);
+            peak.position.set(dx, WING_H+3.6, dz);
+            peak.rotation.y = Math.PI/6;
+            scene.add(peak);
+          }
+        }
+
+        // Corner pavilion caps (slightly wider/taller at each end)
+        [wStart-2, wEnd+2].forEach(ep => {
+          const epx = axis === 'Z' ? cx : ep;
+          const epz = axis === 'Z' ? ep : cz;
+          box(scene, axis === 'Z' ? w+0.6 : 5, WING_H+1, axis === 'Z' ? 5 : d+0.6, epx, (WING_H+1)/2, epz, mLimestone);
+          box(scene, axis === 'Z' ? w+0.6 : 5, 0.4, axis === 'Z' ? 5 : d+0.6, epx, WING_H+1.2, epz, mCornice);
+          box(scene, axis === 'Z' ? w+0.6 : 5, MANS_H+1, axis === 'Z' ? 5 : d+0.6, epx, WING_H+1+(MANS_H+1)/2, epz, mSlate);
+        });
+      }
+
+      // ── Build three wings of the U ─────────────────────
+      louvreWing(-COURT_W-WING_T/2, 206, 84, 'Z');   // west wing
+      louvreWing( COURT_W+WING_T/2, 206, 84, 'Z');   // east wing
+      louvreWing(0, 248+WING_T/2, COURT_W*2+WING_T*2, 'X');  // north (rear) wing
+
+      // Ground step / entrance plinth at exit door (south edge)
+      box(scene, 12, 0.6, 1.5, 0, 0.3, 166.5, mBase);
+
+      // ── Glass Pyramid (I.M. Pei) ───────────────────────
+      // 4 custom triangular glass faces
+      const pyrApex = [PX, PH, PZ];
+      const pyrBase = [
+        [PX-PB, 0, PZ-PB], [PX+PB, 0, PZ-PB],  // south edge corners
+        [PX+PB, 0, PZ+PB], [PX-PB, 0, PZ+PB],  // north edge corners
+      ];
+      // Each face: two adjacent base corners → apex
+      [
+        [0, 1],  // south face
+        [1, 2],  // east face
+        [2, 3],  // north face
+        [3, 0],  // west face
+      ].forEach(([i, j]) => {
+        const geo = new THREE.BufferGeometry();
+        const b1 = pyrBase[i], b2 = pyrBase[j], ap = pyrApex;
+        geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+          b1[0],b1[1],b1[2], b2[0],b2[1],b2[2], ap[0],ap[1],ap[2],
+          b2[0],b2[1],b2[2], b1[0],b1[1],b1[2], ap[0],ap[1],ap[2],  // back face
+        ]), 3));
+        geo.computeVertexNormals();
+        scene.add(new THREE.Mesh(geo, mGlass));
+      });
+
+      // Pyramid metal edge beams (4 vertical from base corners to apex)
+      pyrBase.forEach(b => {
+        const dx = pyrApex[0]-b[0], dy = pyrApex[1]-b[1], dz = pyrApex[2]-b[2];
+        const len2 = Math.sqrt(dx*dx+dy*dy+dz*dz);
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, len2, 5), mFrame);
+        beam.position.set((b[0]+pyrApex[0])/2, (b[1]+pyrApex[1])/2, (b[2]+pyrApex[2])/2);
+        beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(dx/len2, dy/len2, dz/len2));
+        scene.add(beam);
+      });
+      // Base frame (4 edges of the square base)
+      [[0,1],[1,2],[2,3],[3,0]].forEach(([i,j]) => {
+        const b1 = pyrBase[i], b2 = pyrBase[j];
+        const dx=b2[0]-b1[0], dy=b2[1]-b1[1], dz=b2[2]-b1[2];
+        const l2 = Math.sqrt(dx*dx+dz*dz);
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, l2, 5), mFrame);
+        beam.position.set((b1[0]+b2[0])/2, 0.07, (b1[2]+b2[2])/2);
+        beam.rotation.z = Math.PI/2;
+        beam.rotation.y = Math.atan2(dz, dx);
+        scene.add(beam);
+      });
+      // Horizontal ring struts at 1/4, 1/2, 3/4 height
+      [0.25, 0.5, 0.75].forEach(t => {
+        const y = PH * t, s = 1 - t;
+        const hb = PB * s;
+        [[hb,0],[0,hb],[-hb,0],[0,-hb],[hb,0]].reduce((prev, cur) => {
+          if (!prev) return cur;
+          const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, Math.sqrt((cur[0]-prev[0])**2+(cur[1]-prev[1])**2)*1.42, 4), mFrame);
+          beam.position.set(PX+(prev[0]+cur[0])/2, y, PZ+(prev[1]+cur[1])/2);
+          beam.rotation.z = Math.PI/2;
+          beam.rotation.y = Math.atan2(cur[1]-prev[1], cur[0]-prev[0]);
+          scene.add(beam);
+          return cur;
+        }, null);
+      });
+
+      // ── Pyramid base / reflecting pools ───────────────
+      // Stepped stone base ring
+      box(scene, PB*2+5, 0.6, PB*2+5, PX, 0.3, PZ, mPool);
+      box(scene, PB*2+3, 0.35, PB*2+3, PX, 0.65, PZ, mPool);
+      // Water moat (just inside the outer ring)
+      [[0, PB+3.5], [0, -(PB+3.5)], [PB+3.5, 0], [-(PB+3.5), 0]].forEach(([ox, oz]) => {
+        const w2 = Math.abs(oz) > 0.1 ? PB*2+7 : 4;
+        const d2 = Math.abs(ox) > 0.1 ? PB*2+7 : 4;
+        box(scene, w2, 0.15, d2, PX+ox, 0.42, PZ+oz, mWater);
+      });
+
+      // ── Lampposts along courtyard ──────────────────────
+      function lamppost2(lx, lz) {
+        const poleM = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.5, metalness: 0.6 });
+        const glowM = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 1.5, roughness: 0.2 });
+        box(scene, 0.15, 6, 0.15, lx, 3, lz, poleM);
+        const globe = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 6), glowM);
+        globe.position.set(lx, 6.4, lz); scene.add(globe);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 5), poleM);
+        arm.position.set(lx, 6.0, lz); arm.rotation.z = Math.PI/2; scene.add(arm);
+        const pl = new THREE.PointLight(0xffe8a0, 0.7, 18);
+        pl.position.set(lx, 6.5, lz); scene.add(pl);
+      }
+      // Along the sides of the courtyard
+      for (let lz = 170; lz <= 244; lz += 12) {
+        lamppost2(-COURT_W+2, lz);
+        lamppost2( COURT_W-2, lz);
+      }
+      // Around pyramid base
+      [[PX-18,PZ-18],[PX+18,PZ-18],[PX+18,PZ+18],[PX-18,PZ+18]].forEach(([lx,lz]) => lamppost2(lx,lz));
+
+      // ── Night sky ──────────────────────────────────────
+      const skyGeo = new THREE.SphereGeometry(500, 12, 8);
+      const skyMat = new THREE.MeshBasicMaterial({ color: 0x04060c, side: THREE.BackSide });
+      scene.add(new THREE.Mesh(skyGeo, skyMat));
+      // Moon
+      const moonMat = new THREE.MeshStandardMaterial({ color: 0xeeeedd, emissive: 0xc8c8b0, emissiveIntensity: 0.6, roughness: 0.9 });
+      const moon = new THREE.Mesh(new THREE.SphereGeometry(8, 12, 8), moonMat);
+      moon.position.set(80, 180, 220); scene.add(moon);
+      // Stars
+      const starGeo = new THREE.BufferGeometry();
+      const starPos = [];
+      for (let i = 0; i < 800; i++) {
+        const theta = Math.random()*Math.PI*2, phi = Math.acos(2*Math.random()-1);
+        starPos.push(Math.sin(phi)*Math.cos(theta)*480, Math.abs(Math.cos(phi))*480+20, Math.sin(phi)*Math.sin(theta)*480);
+      }
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+      scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: true })));
+
+      // ── Exterior lighting ──────────────────────────────
+      // Soft moonlight from above
+      const moonLight = new THREE.DirectionalLight(0xc8d8e8, 0.55);
+      moonLight.position.set(60, 120, -40); scene.add(moonLight);
+      // Warm floodlights at pyramid base (4 corners)
+      pyrBase.forEach(b => {
+        const fl = new THREE.SpotLight(0xfff0d0, 1.6, 55, Math.PI/7, 0.5);
+        fl.position.set(b[0]*1.6, 0.8, b[2] > PZ ? PZ+22 : b[2] < PZ ? PZ-22 : b[2]);
+        fl.target.position.set(PX, PH*0.6, PZ);
+        scene.add(fl); scene.add(fl.target);
+      });
+      // Facade uplighting on west and east wings
+      [-COURT_W, COURT_W].forEach(wx => {
+        for (let fz = 174; fz <= 238; fz += 20) {
+          const ul = new THREE.SpotLight(0xffeedd, 1.1, 30, Math.PI/5, 0.6);
+          ul.position.set(wx*0.88, 0.5, fz);
+          ul.target.position.set(wx*1.05, WING_H*0.7, fz);
+          scene.add(ul); scene.add(ul.target);
+        }
+      });
     }
-
-    // Iconic glass pyramid — 4-sided, centred at (0, 0, 205)
-    const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x88ccee, roughness: 0.04, metalness: 0.08,
-      transparent: true, opacity: 0.72,
-      side: THREE.DoubleSide,
-    });
-    const pyramidGeo = new THREE.ConeGeometry(13, 20, 4);
-    const pyramid = new THREE.Mesh(pyramidGeo, glassMat);
-    pyramid.position.set(0, 10, 205);
-    pyramid.rotation.y = Math.PI / 4;   // align flat faces N/S/E/W
-    pyramid.castShadow = false;
-    scene.add(pyramid);
-    // Metal frame lines on pyramid edges
-    const frameMat2 = new THREE.MeshStandardMaterial({ color: 0x888880, roughness: 0.5, metalness: 0.6 });
-    [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(angle => {
-      const edge = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 23, 5), frameMat2);
-      edge.position.set(Math.sin(angle) * 6.5, 10, 205 + Math.cos(angle) * 6.5);
-      edge.rotation.z = angle % Math.PI === 0 ? 0.58 : 0;
-      edge.rotation.x = angle % Math.PI !== 0 ? 0.58 : 0;
-      scene.add(edge);
-    });
-
-    // Small surrounding pyramids (the three smaller ones at the Louvre)
-    [[-18, 198], [18, 198], [0, 220]].forEach(([px, pz]) => {
-      const mini = new THREE.Mesh(new THREE.ConeGeometry(4, 6, 4), glassMat);
-      mini.position.set(px, 3, pz);
-      mini.rotation.y = Math.PI / 4;
-      scene.add(mini);
-    });
-
-    // Pyramid basin / reflecting pool surround (low stone ring)
-    const basinMat = new THREE.MeshStandardMaterial({ color: 0x888078, roughness: 0.75, metalness: 0.04 });
-    box(scene, 32, 0.5, 32, 0, 0.25, 205, basinMat);
-    // Water pool
-    const poolMat = new THREE.MeshStandardMaterial({
-      color: 0x2a5870, roughness: 0.05, metalness: 0.15,
-      transparent: true, opacity: 0.68,
-    });
-    box(scene, 26, 0.12, 26, 0, 0.36, 205, poolMat);
-
-    // Night sky hemisphere
-    const skyGeo = new THREE.SphereGeometry(500, 12, 8);
-    const skyMat = new THREE.MeshBasicMaterial({ color: 0x06080f, side: THREE.BackSide });
-    scene.add(new THREE.Mesh(skyGeo, skyMat));
-
-    // Stars (Points)
-    const starGeo = new THREE.BufferGeometry();
-    const starPos = [];
-    for (let i = 0; i < 600; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi   = Math.acos(2 * Math.random() - 1);
-      starPos.push(Math.sin(phi)*Math.cos(theta)*480, Math.abs(Math.cos(phi))*480 + 20, Math.sin(phi)*Math.sin(theta)*480);
-    }
-    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.5, sizeAttenuation: true });
-    scene.add(new THREE.Points(starGeo, starMat));
-
-    // Exterior floodlights washing over the pyramid
-    const flood1 = new THREE.SpotLight(0xffeedd, 1.8, 80, Math.PI / 5, 0.3);
-    flood1.position.set(-18, 1, 182); flood1.target.position.set(0, 10, 205);
-    scene.add(flood1); scene.add(flood1.target);
-    const flood2 = new THREE.SpotLight(0xffeedd, 1.8, 80, Math.PI / 5, 0.3);
-    flood2.position.set( 18, 1, 182); flood2.target.position.set(0, 10, 205);
-    scene.add(flood2); scene.add(flood2.target);
 
     return {
       walls,

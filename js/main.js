@@ -291,8 +291,8 @@
   // ── Escape cutscene ────────────────────────────────────
   let _escapeTimer   = 0;
   let _escapeElapsed = 0;
-  const _CAM_END = new THREE.Vector3(0, 28, 172);
-  const _LOOK_END = new THREE.Vector3(0, 8, 205);
+  const _CAM_END  = new THREE.Vector3(-18, 32, 174);   // elevated side angle
+  const _LOOK_END = new THREE.Vector3(0, 10, 205);     // looking at pyramid apex area
   function tickEscapeCutscene(dt) {
     _escapeTimer += dt;
     const G = window.G;
