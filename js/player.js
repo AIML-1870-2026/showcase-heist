@@ -257,11 +257,12 @@ window.Player = (function () {
     const custom   = window.G && window.G.playerCustom || {};
     const suitHex  = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
     const eyeHex   = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
-    const matSuit = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.75, metalness: 0.15 });
-    const matMask = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.0  });
-    const matGold = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.7, emissive: 0x443310, emissiveIntensity: 0.4 });
-    const matShoe = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.25 });
-    const eyeMat  = new THREE.MeshStandardMaterial({ color: eyeHex, emissive: eyeHex, emissiveIntensity: 0.9, roughness: 0.2 });
+    const matSuit   = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.82, metalness: 0.05 });
+    const matMask   = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.90, metalness: 0.0  });
+    const matGoggle = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45, metalness: 0.55 });
+    const matGold   = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.7, emissive: 0x443310, emissiveIntensity: 0.4 });
+    const matShoe   = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.25 });
+    const eyeMat    = new THREE.MeshStandardMaterial({ color: eyeHex, emissive: eyeHex, emissiveIntensity: 0.9, roughness: 0.2 });
 
     // ── Leg pivots (at hip, y=1.0) ──────────────────────
     const legPivots = [-0.14, 0.14].map(xOff => {
@@ -294,14 +295,20 @@ window.Player = (function () {
     group.userData.leftLeg  = legPivots[0];
     group.userData.rightLeg = legPivots[1];
 
-    // ── Torso (tapered cylinder) ─────────────────────────
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.21, 0.65, 10), matSuit);
-    torso.position.y = 1.3; torso.castShadow = true;
+    // ── Torso — bulkier hoodie body ──────────────────────
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.24, 0.72, 10), matSuit);
+    torso.position.y = 1.32; torso.castShadow = true;
     group.add(torso);
 
+    // Hoodie kangaroo pocket (front, recessed slightly)
+    const pocketMat = new THREE.MeshStandardMaterial({ color: suitHex, roughness: 0.88, metalness: 0.0 });
+    const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.18, 0.05), pocketMat);
+    pocket.position.set(0, 1.12, -0.28);
+    group.add(pocket);
+
     // Gold belt ring
-    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.215, 0.055, 10), matGold);
-    belt.position.y = 1.0;
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.245, 0.055, 10), matGold);
+    belt.position.y = 0.99;
     group.add(belt);
 
     // ── Arm pivots (at shoulder, y=1.58) ─────────────────
@@ -340,15 +347,40 @@ window.Player = (function () {
     neck.position.y = 1.66;
     group.add(neck);
 
-    // ── Head (sphere balaclava) ───────────────────────────
+    // ── Hoodie hood dome (sits over and behind head, suit colour) ──
+    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.29, 12, 9), matSuit);
+    hood.position.set(0, 1.88, 0.05);   // pushed back so ski mask face shows
+    hood.scale.set(1.0, 0.95, 0.88);    // slightly squashed front-to-back
+    hood.castShadow = true;
+    group.add(hood);
+
+    // ── Head — ski mask (dark, underneath hood) ───────────
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 9), matMask);
     head.position.y = 1.84; head.castShadow = true;
     group.add(head);
 
-    // Glowing eyes
+    // Ski mask nose bridge
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.052, 6, 4), matMask);
+    nose.position.set(0, 1.82, -0.27);
+    group.add(nose);
+
+    // Ski mask chin band (wraps lower face)
+    const chin = new THREE.Mesh(new THREE.CylinderGeometry(0.195, 0.20, 0.09, 10), matMask);
+    chin.position.set(0, 1.67, 0);
+    group.add(chin);
+
+    // Goggle frames around eyes (metallic ring — adds detail)
+    [-0.09, 0.09].forEach(xOff => {
+      const goggle = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.013, 5, 12), matGoggle);
+      goggle.position.set(xOff, 1.87, -0.21);
+      goggle.rotation.y = Math.PI / 2;
+      group.add(goggle);
+    });
+
+    // Glowing eyes (inside goggle rings)
     [-0.09, 0.09].forEach(xOff => {
       const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 6), eyeMat);
-      eye.position.set(xOff, 1.87, -0.21);
+      eye.position.set(xOff, 1.87, -0.22);
       group.add(eye);
     });
 

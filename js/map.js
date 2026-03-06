@@ -120,28 +120,28 @@ window.GameMap = (function () {
   }
 
   const _tileTex    = makeMarbleTex();
-  const _ceilTex    = makeTileTex('#f4f2ee', '#dedad4', 3);
-  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0xddd8cc, roughness: 0.7, metalness: 0.0 });
-  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0xc4b89a, roughness: 0.55, metalness: 0.0 });
-  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xece7de, roughness: 0.78, metalness: 0.05 });
-  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x2c1e0e, roughness: 0.6,  metalness: 0.08 });
+  const _ceilTex    = makeTileTex('#d8c07a', '#b8942e', 3);   // aged parchment plaster
+  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x9a6828, roughness: 0.72, metalness: 0.0 });   // mahogany baseboard
+  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0x5c3010, roughness: 0.62, metalness: 0.0 });   // dark walnut wainscoting
+  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xc8982a, roughness: 0.72, metalness: 0.08 });  // warm gold crown molding
+  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x1e0e04, roughness: 0.65, metalness: 0.06 });  // ebony door frame
   const _handleMat  = new THREE.MeshStandardMaterial({ color: 0xb08020, roughness: 0.2,  metalness: 0.9  });
   const _stripeMat  = new THREE.MeshStandardMaterial({ color: 0x1a0800, roughness: 0.95, metalness: 0.05 });
   const _chipMat    = new THREE.MeshStandardMaterial({ color: 0xc8a020, roughness: 0.25, metalness: 0.85 });
 
   // ── Materials ──────────────────────────────────────────
   const M = {
-    floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.12, metalness: 0.08 }),
-    wall:     new THREE.MeshStandardMaterial({ color: 0xf0ebe2, roughness: 0.85, metalness: 0.0  }),
-    ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.9,  metalness: 0.0  }),
-    desk:     new THREE.MeshStandardMaterial({ color: 0x7a6348, roughness: 0.7,  metalness: 0.0  }),
+    floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.14, metalness: 0.06 }),
+    wall:     new THREE.MeshStandardMaterial({ color: 0xd8c090, roughness: 0.88, metalness: 0.0  }),  // warm honey plaster
+    ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.92, metalness: 0.0  }),
+    desk:     new THREE.MeshStandardMaterial({ color: 0x4a2808, roughness: 0.72, metalness: 0.0  }),  // deep mahogany
     glass:    new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3 }),
-    frame:    new THREE.MeshStandardMaterial({ color: 0x3a2718, roughness: 0.6,  metalness: 0.1  }),
-    door:     new THREE.MeshStandardMaterial({ color: 0x6a5a40, roughness: 0.65, metalness: 0.05 }),
-    pillar:   new THREE.MeshStandardMaterial({ color: 0xe0dbd0, roughness: 0.7,  metalness: 0.0  }),
-    pedestal: new THREE.MeshStandardMaterial({ color: 0xc8c8c8, roughness: 0.4,  metalness: 0.2  }),
+    frame:    new THREE.MeshStandardMaterial({ color: 0x2a1606, roughness: 0.65, metalness: 0.08 }),  // dark ebony frame
+    door:     new THREE.MeshStandardMaterial({ color: 0x3c2008, roughness: 0.68, metalness: 0.04 }),  // old oak door
+    pillar:   new THREE.MeshStandardMaterial({ color: 0xc8a86a, roughness: 0.72, metalness: 0.0  }),  // warm travertine stone
+    pedestal: new THREE.MeshStandardMaterial({ color: 0xc0a070, roughness: 0.45, metalness: 0.15 }),  // warm cream marble
     crown:    new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.2,  metalness: 0.9  }),
-    terminal: new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.5,  metalness: 0.4  }),
+    terminal: new THREE.MeshStandardMaterial({ color: 0x2c1606, roughness: 0.78, metalness: 0.08 }),  // dark walnut cabinet
     exit:     new THREE.MeshStandardMaterial({ color: 0x00ff88, roughness: 0.3,  metalness: 0.0, transparent: true, opacity: 0.7 }),
     keycards: {
       yellow: new THREE.MeshStandardMaterial({ color: 0xf0c040, roughness: 0.3, metalness: 0.6 }),
@@ -380,9 +380,9 @@ window.GameMap = (function () {
   }
 
   function door(scene, cx, cz, keyRequired) {
-    const doorColor = keyRequired === 'yellow' ? 0x8a6e10
-                    : keyRequired === 'blue'   ? 0x1a3870
-                    : 0x5a4530;
+    const doorColor = keyRequired === 'yellow' ? 0x6a4a08
+                    : keyRequired === 'blue'   ? 0x182840
+                    : 0x3c2408;
     const doorMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.62, metalness: 0.08 });
     const panelMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.5, metalness: 0.06 });
 
