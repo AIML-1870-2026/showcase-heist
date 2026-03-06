@@ -689,8 +689,12 @@ window.GameMap = (function () {
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
     // ════════════════════════════════
-    // Skip east + west walls — replace with stubs so both side room openings work
-    roomWalls(scene, 0, 77.5, 50, 45, { north: true, east: true, west: true });
+    // Skip south/east/west walls — replace with stubs so corridor + side room openings work
+    roomWalls(scene, 0, 77.5, 50, 45, { south: true, north: true, east: true, west: true });
+
+    // Gallery south wall stubs — 10-unit gap at X=0 matching corridor width (Z=55)
+    wall(scene, -15, 55, 20, WALL_T);  // west stub: X -25→-5
+    wall(scene,  15, 55, 20, WALL_T);  // east stub: X +5→+25
 
     // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
     // South stub: Z 55→75.5  (length 20.5, centre 65.25)
