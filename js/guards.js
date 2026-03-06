@@ -168,31 +168,40 @@ window.Guards = (function () {
   // ── Guard body mesh ────────────────────────────────────
   function buildGuardMesh(scene) {
     const g = new THREE.Group();
-    const matHat   = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.75, metalness: 0.12 });
-    const matBelt  = new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.4,  metalness: 0.55 });
-    const matBadge = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3,  metalness: 0.8  });
-    const matShoe  = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.3  });
+    const matCap    = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.80, metalness: 0.10 });
+    const matVest   = new THREE.MeshStandardMaterial({ color: 0x16181f, roughness: 0.78, metalness: 0.08 });
+    const matStrap  = new THREE.MeshStandardMaterial({ color: 0x252530, roughness: 0.88, metalness: 0.08 });
+    const matBoot   = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.50, metalness: 0.30 });
+    const matGlove  = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.55, metalness: 0.20 });
+    const matPatch  = new THREE.MeshStandardMaterial({ color: 0xdde0e8, roughness: 0.80, metalness: 0.0  });
+    const matMetal  = new THREE.MeshStandardMaterial({ color: 0x556677, roughness: 0.45, metalness: 0.75 });
+    const matBelt   = new THREE.MeshStandardMaterial({ color: 0x1e1e28, roughness: 0.70, metalness: 0.15 });
 
-    // ── Leg pivots (at hip, y=0.88) ────────────────────
+    // ── Legs ───────────────────────────────────────────
     const legPivots = [-0.14, 0.14].map(xOff => {
       const pivot = new THREE.Group();
       pivot.position.set(xOff, 0.88, 0);
 
-      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.5, 8), MAT_BODY);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.095, 0.50, 7), MAT_BODY);
       thigh.position.y = -0.25; thigh.castShadow = true;
       pivot.add(thigh);
 
-      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.092, 8, 6), MAT_BODY);
-      knee.position.y = -0.5;
-      pivot.add(knee);
+      // Knee pad (box, not sphere)
+      const kneePad = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.10), matVest);
+      kneePad.position.set(0, -0.50, -0.02);
+      pivot.add(kneePad);
 
-      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.42, 8), MAT_BODY);
-      shin.position.y = -0.71; shin.castShadow = true;
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.40, 7), MAT_BODY);
+      shin.position.y = -0.70; shin.castShadow = true;
       pivot.add(shin);
 
-      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.32), matShoe);
-      shoe.position.set(0, -0.94, -0.07);
-      pivot.add(shoe);
+      // Tall boot (shaft wraps lower shin + foot)
+      const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.22, 7), matBoot);
+      bootShaft.position.y = -0.82; bootShaft.castShadow = true;
+      pivot.add(bootShaft);
+      const bootFoot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.10, 0.33), matBoot);
+      bootFoot.position.set(0, -0.94, -0.06); bootFoot.castShadow = true;
+      pivot.add(bootFoot);
 
       g.add(pivot);
       return pivot;
@@ -201,39 +210,74 @@ window.Guards = (function () {
     g.userData.rightLeg = legPivots[1];
 
     // ── Torso ──────────────────────────────────────────
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.22, 0.62, 10), MAT_BODY);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.22, 0.62, 8), MAT_BODY);
     body.position.y = 1.15; body.castShadow = true;
     g.add(body);
     g.userData.bodyMesh = body;
 
-    // Belt + buckle
-    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.225, 0.225, 0.055, 10), matBelt);
+    // Tactical vest (front plate)
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.52, 0.08), matVest);
+    vest.position.set(0, 1.18, -0.23);
+    g.add(vest);
+    // Vest "LOUVRE SÉCURITÉ" name patch
+    const namePatch = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.07, 0.025), matPatch);
+    namePatch.position.set(0, 1.15, -0.268);
+    g.add(namePatch);
+    // Vest top strap / collar
+    const vestTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.07, 0.07), matStrap);
+    vestTop.position.set(0, 1.46, -0.22);
+    g.add(vestTop);
+    // Vest horizontal straps
+    [1.30, 1.10].forEach(y => {
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.026, 0.09), matStrap);
+      s.position.set(0, y, -0.21);
+      g.add(s);
+    });
+    // Walkie-talkie on left shoulder (positive X = left in world after rotation)
+    const radioBody = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.14, 0.05), matVest);
+    radioBody.position.set(0.24, 1.40, -0.18);
+    g.add(radioBody);
+    const radioAnt = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.10, 5), matMetal);
+    radioAnt.position.set(0.24, 1.51, -0.18);
+    g.add(radioAnt);
+
+    // Tactical belt + pouches
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.228, 0.228, 0.055, 8), matBelt);
     belt.position.y = 0.855;
     g.add(belt);
-    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.07), matBadge);
-    buckle.position.set(0, 0.855, -0.228);
-    g.add(buckle);
+    [-0.16, 0.16].forEach(xOff => {
+      const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.07), matVest);
+      pouch.position.set(xOff, 0.855, -0.19);
+      g.add(pouch);
+    });
 
-    // ── Arm pivots (at shoulder, y=1.42) ───────────────
+    // ── Arms ───────────────────────────────────────────
     const armPivots = [-0.32, 0.32].map(xOff => {
       const pivot = new THREE.Group();
       pivot.position.set(xOff, 1.42, 0);
 
-      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.074, 0.38, 8), MAT_BODY);
-      upper.position.y = -0.19; upper.castShadow = true;
+      // Shoulder armor pad
+      const shoulder = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.14), matVest);
+      shoulder.position.set(0, -0.04, 0);
+      pivot.add(shoulder);
+
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.084, 0.076, 0.36, 7), MAT_BODY);
+      upper.position.y = -0.20; upper.castShadow = true;
       pivot.add(upper);
 
-      const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.076, 8, 6), MAT_BODY);
-      elbow.position.y = -0.38;
-      pivot.add(elbow);
+      // Elbow pad (box, not sphere)
+      const elbowPad = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.10), matVest);
+      elbowPad.position.set(0, -0.38, 0.01);
+      pivot.add(elbowPad);
 
-      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.074, 0.065, 0.34, 8), MAT_BODY);
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.066, 0.32, 7), MAT_BODY);
       fore.position.y = -0.55; fore.castShadow = true;
       pivot.add(fore);
 
-      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), MAT_HEAD);
-      hand.position.y = -0.74;
-      pivot.add(hand);
+      // Box glove
+      const glove = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.13), matGlove);
+      glove.position.set(0, -0.73, -0.01);
+      pivot.add(glove);
 
       g.add(pivot);
       return pivot;
@@ -241,34 +285,46 @@ window.Guards = (function () {
     g.userData.leftArm  = armPivots[0];
     g.userData.rightArm = armPivots[1];
 
-    // ── Head ───────────────────────────────────────────
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.13, 8), MAT_HEAD);
+    // Pistol in right hand (negative X arm pivot = right after +PI rotation)
+    const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.10, 0.14), matMetal);
+    gunBody.position.set(0, -0.73, -0.08);
+    armPivots[1].add(gunBody);
+    const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.12, 5), matMetal);
+    gunBarrel.rotation.x = Math.PI / 2;
+    gunBarrel.position.set(0, -0.70, -0.17);
+    armPivots[1].add(gunBarrel);
+
+    // ── Neck ───────────────────────────────────────────
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.12, 7), MAT_HEAD);
     neck.position.y = 1.53;
     g.add(neck);
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.225, 12, 9), MAT_HEAD);
-    head.position.y = 1.67; head.castShadow = true;
+    // ── Head — large low-poly skin face ────────────────
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 7, 5), MAT_HEAD);
+    head.position.set(0, 1.70, -0.02);
+    head.castShadow = true;
     g.add(head);
 
-    // Eyes
-    const matEye = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9, metalness: 0.0 });
-    [-0.08, 0.08].forEach(xOff => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), matEye);
-      eye.position.set(xOff, 1.71, -0.205);
-      g.add(eye);
-    });
-
-    // Hat body (cylinder) + brim disk
-    const hatBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.28, 10), matHat);
-    hatBody.position.y = 1.95;
-    g.add(hatBody);
-    const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 12), matHat);
-    hatBrim.position.y = 1.81;
-    g.add(hatBrim);
-    // Badge on hat
-    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.05), matBadge);
-    badge.position.set(0, 1.87, -0.34);
-    g.add(badge);
+    // ── Tactical baseball cap ───────────────────────────
+    // Front panel (structured, boxy)
+    const capFront = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.22, 0.46), matCap);
+    capFront.position.set(0, 1.92, 0.01);
+    capFront.scale.set(1, 1, 0.85);
+    g.add(capFront);
+    // Dome on top
+    const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), matCap);
+    capDome.position.set(0, 1.96, 0.02);
+    capDome.scale.set(0.96, 0.68, 0.90);
+    capDome.castShadow = true;
+    g.add(capDome);
+    // Brim (extends forward only)
+    const capBrim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.03, 0.22), matCap);
+    capBrim.position.set(0, 1.82, -0.26);
+    g.add(capBrim);
+    // "LOUVRE" patch on front of cap
+    const capPatch = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.025), matPatch);
+    capPatch.position.set(0, 1.93, -0.24);
+    g.add(capPatch);
 
     // Blob shadow — flat dark disc on the floor
     const blobShadow = new THREE.Mesh(
