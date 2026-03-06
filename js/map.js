@@ -82,126 +82,12 @@ window.GameMap = (function () {
     return tex;
   }
 
-  // ── Procedural painting texture (impressionist brushstrokes) ──
-  function makePaintingTex(hex) {
-    const r0 = (hex >> 16) & 255, g0 = (hex >> 8) & 255, b0 = hex & 255;
-    const W = 160, H = 224;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
-    // Linen ground
-    ctx.fillStyle = `rgb(${(220 + r0 * 0.04) | 0},${(214 + g0 * 0.04) | 0},${(205 + b0 * 0.04) | 0})`;
-    ctx.fillRect(0, 0, W, H);
-    // Main color wash
-    ctx.fillStyle = `rgba(${r0},${g0},${b0},0.68)`;
-    ctx.fillRect(0, 0, W, H);
-    // Brushstrokes
-    for (let i = 0; i < 44; i++) {
-      const t = i / 44;
-      const dr = Math.sin(i * 1.71) * 42 | 0;
-      const dg = Math.cos(i * 2.31) * 36 | 0;
-      const db = Math.sin(i * 3.13) * 54 | 0;
-      ctx.globalAlpha = 0.22 + Math.abs(Math.sin(t * 13)) * 0.28;
-      ctx.strokeStyle = `rgb(${Math.min(255,Math.max(0,r0+dr))},${Math.min(255,Math.max(0,g0+dg))},${Math.min(255,Math.max(0,b0+db))})`;
-      ctx.lineWidth = 3 + Math.abs(Math.sin(t * 7)) * 14;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      const sx = (W * 0.08 + Math.sin(t * 11.3) * W * 0.46 + t * W * 0.84) % W;
-      const sy = (H * 0.06 + Math.cos(t *  9.1) * H * 0.38 + t * H * 0.72) % H;
-      ctx.moveTo(sx, sy);
-      ctx.quadraticCurveTo(
-        sx + Math.cos(t * 7.9) * 38, sy + Math.sin(t * 6.3) * 32,
-        sx + Math.cos(t * 5.1 + 1) * 52, sy + Math.sin(t * 7.7 + 1) * 44
-      );
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    return new THREE.CanvasTexture(c);
-  }
-
-  // ── Mona Lisa texture (sfumato portrait — warm darks, hazy greens) ──
-  function makeMonaLisaTex() {
-    const W = 160, H = 224;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
-    // Dark landscape background
-    ctx.fillStyle = '#2a3520';
-    ctx.fillRect(0, 0, W, H);
-    // Sfumato sky haze (upper third)
-    const sky = ctx.createLinearGradient(0, 0, 0, H * 0.45);
-    sky.addColorStop(0, 'rgba(100,120,140,0.55)');
-    sky.addColorStop(1, 'rgba(60,80,50,0)');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, H * 0.45);
-    // Figure silhouette (warm flesh tones, centre)
-    const fig = ctx.createRadialGradient(W*0.5, H*0.38, 8, W*0.5, H*0.38, W*0.38);
-    fig.addColorStop(0, 'rgba(200,160,110,0.92)');
-    fig.addColorStop(0.55, 'rgba(160,110,70,0.62)');
-    fig.addColorStop(1, 'rgba(40,30,20,0)');
-    ctx.fillStyle = fig;
-    ctx.fillRect(0, 0, W, H);
-    // Dark hair / shadow on sides
-    ctx.fillStyle = 'rgba(20,15,10,0.55)';
-    ctx.fillRect(0, 0, W*0.22, H*0.55);
-    ctx.fillRect(W*0.78, 0, W*0.22, H*0.55);
-    // Subtle varnish crackle
-    ctx.strokeStyle = 'rgba(80,55,20,0.18)';
-    ctx.lineWidth = 0.8;
-    for (let i = 0; i < 30; i++) {
-      ctx.beginPath();
-      ctx.moveTo(Math.random()*W, Math.random()*H);
-      ctx.lineTo(Math.random()*W, Math.random()*H);
-      ctx.stroke();
-    }
-    return new THREE.CanvasTexture(c);
-  }
-
-  // ── Monet Water Lilies texture (impressionist — blues, greens, lilac) ──
-  function makeMonetTex() {
-    const W = 224, H = 160;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
-    // Water base
-    ctx.fillStyle = '#1a3a5c';
-    ctx.fillRect(0, 0, W, H);
-    // Reflections — horizontal light bands
-    const refl = ['rgba(80,140,180,0.5)', 'rgba(140,190,160,0.4)', 'rgba(180,160,200,0.35)', 'rgba(60,100,140,0.45)'];
-    for (let i = 0; i < 18; i++) {
-      ctx.fillStyle = refl[i % refl.length];
-      ctx.fillRect(0, i * (H / 18), W, H / 22);
-    }
-    // Lily pads (dark green ellipses)
-    ctx.globalAlpha = 0.85;
-    [[55,90],[120,70],[170,110],[80,130],[200,85],[40,50]].forEach(([px,py]) => {
-      ctx.fillStyle = `rgb(${30+Math.random()*20|0},${80+Math.random()*30|0},${30+Math.random()*20|0})`;
-      ctx.beginPath();
-      ctx.ellipse(px, py, 18+Math.random()*10, 10+Math.random()*6, Math.random()*Math.PI, 0, Math.PI*2);
-      ctx.fill();
-    });
-    // Lily blooms (pink/white)
-    ctx.globalAlpha = 0.9;
-    [[55,90],[120,70],[170,110]].forEach(([px,py]) => {
-      ctx.fillStyle = `rgba(240,200,210,0.85)`;
-      ctx.beginPath();
-      ctx.ellipse(px, py-4, 6, 5, 0, 0, Math.PI*2);
-      ctx.fill();
-    });
-    // Impressionist brushstroke overlay
-    ctx.globalAlpha = 0.22;
-    for (let i = 0; i < 30; i++) {
-      const t = i / 30;
-      ctx.strokeStyle = ['rgba(100,160,200,1)','rgba(160,200,140,1)','rgba(200,180,220,1)'][i%3];
-      ctx.lineWidth = 4 + Math.sin(t * 9) * 8;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(Math.random()*W, Math.random()*H);
-      ctx.quadraticCurveTo(Math.random()*W, Math.random()*H, Math.random()*W, Math.random()*H);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    return new THREE.CanvasTexture(c);
+  // ── Load real painting texture from URL (public domain, Wikimedia Commons) ──
+  const _loader = new THREE.TextureLoader();
+  function loadPaintingTex(url) {
+    const tex = _loader.load(url);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
   }
 
   // ── Painting placard (canvas-texture label beneath a painting) ──
@@ -260,11 +146,28 @@ window.GameMap = (function () {
       blue:   new THREE.MeshStandardMaterial({ color: 0x4a9eff, roughness: 0.3, metalness: 0.6 }),
       red:    new THREE.MeshStandardMaterial({ color: 0xe05050, roughness: 0.3, metalness: 0.6 }),
     },
-    paintings: [0xc0392b, 0x2980b9, 0x27ae60, 0x8e44ad, 0xe67e22].map(hex =>
-      new THREE.MeshStandardMaterial({ map: makePaintingTex(hex), roughness: 0.88, metalness: 0.0 })
-    ),
-    monaLisa: new THREE.MeshStandardMaterial({ map: makeMonaLisaTex(), roughness: 0.88, metalness: 0.0 }),
-    monet:    new THREE.MeshStandardMaterial({ map: makeMonetTex(),    roughness: 0.88, metalness: 0.0 }),
+    paintings: [
+      // 0: The Starry Night — Van Gogh, 1889
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/300px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
+      // 1: The Great Wave off Kanagawa — Hokusai, 1831
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/300px-Tsunami_by_hokusai_19th_century.jpg',
+      // 2: The Birth of Venus — Botticelli, 1485
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/300px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
+      // 3: Girl with a Pearl Earring — Vermeer, 1665
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/240px-1665_Girl_with_a_Pearl_Earring.jpg',
+      // 4: The Night Watch — Rembrandt, 1642
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/The_Night_Watch_-_HD.jpg/300px-The_Night_Watch_-_HD.jpg',
+    ].map(url => new THREE.MeshStandardMaterial({ map: loadPaintingTex(url), roughness: 0.88, metalness: 0.0 })),
+    // La Joconde — Leonardo da Vinci, c. 1503
+    monaLisa: new THREE.MeshStandardMaterial({
+      map: loadPaintingTex('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/240px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg'),
+      roughness: 0.88, metalness: 0.0,
+    }),
+    // Les Nymphéas — Claude Monet, c. 1906
+    monet: new THREE.MeshStandardMaterial({
+      map: loadPaintingTex('https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/300px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg'),
+      roughness: 0.88, metalness: 0.0,
+    }),
   };
 
   // Collected data returned to main.js
@@ -884,8 +787,11 @@ window.GameMap = (function () {
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
+    placard(scene, -24.9, 2.6, 70, 'The Starry Night', 'Vincent van Gogh, 1889', true);
     wallPainting(scene,  24.9, 3.5, 80, M.paintings[1], false);
+    placard(scene,  24.9, 2.6, 80, 'The Great Wave', 'Katsushika Hokusai, 1831', false);
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
+    placard(scene,  24.9, 2.6, 60, 'The Birth of Venus', 'Sandro Botticelli, 1485', false);
 
     // Hack terminal
     terminal(scene, 20, 78);
@@ -1221,9 +1127,13 @@ window.GameMap = (function () {
 
     // Vault wall paintings
     wallPainting(scene, -24.9, 3.5, 125, M.paintings[0], true);
+    placard(scene, -24.9, 2.6, 125, 'The Starry Night', 'Vincent van Gogh, 1889', true);
     wallPainting(scene, -24.9, 3.5, 150, M.paintings[1], true);
+    placard(scene, -24.9, 2.6, 150, 'The Great Wave', 'Katsushika Hokusai, 1831', true);
     wallPainting(scene,  24.9, 3.5, 130, M.paintings[2], false);
+    placard(scene,  24.9, 2.6, 130, 'The Birth of Venus', 'Sandro Botticelli, 1485', false);
     wallPainting(scene,  24.9, 3.5, 155, M.paintings[3], false);
+    placard(scene,  24.9, 2.6, 155, 'Girl with a Pearl Earring', 'Johannes Vermeer, 1665', false);
     wallSconce(scene, -24.75, 2.9, 125,  1);
     wallSconce(scene, -24.75, 2.9, 150,  1);
     wallSconce(scene,  24.75, 2.9, 130, -1);
