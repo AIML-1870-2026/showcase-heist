@@ -820,7 +820,7 @@
       if (G.phase === 'won') Music.stop();
     }
 
-    composer.render();
+    renderer.render(scene, camera);
   }
 
   // ── Boot ───────────────────────────────────────────────
