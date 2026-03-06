@@ -1271,15 +1271,11 @@ window.GameMap = (function () {
       const mBase      = new THREE.MeshStandardMaterial({ color: 0xbfae8a, roughness: 0.88, metalness: 0.0 });
       const mSlate     = new THREE.MeshStandardMaterial({ color: 0x3c3830, roughness: 0.92, metalness: 0.0 });
       const mCornice   = new THREE.MeshStandardMaterial({ color: 0xcab060, roughness: 0.55, metalness: 0.12 });
-      const mGlass = new THREE.MeshStandardMaterial({
-        color: 0x7ac0e4, roughness: 0.03, metalness: 0.12,
-        transparent: true, opacity: 0.65, side: THREE.DoubleSide,
+      const mGlass = new THREE.MeshBasicMaterial({
+        color: 0x88ccee, transparent: true, opacity: 0.55, side: THREE.DoubleSide,
       });
       const mFrame = new THREE.MeshStandardMaterial({ color: 0x909090, roughness: 0.35, metalness: 0.7 });
-      const mWin   = new THREE.MeshStandardMaterial({
-        color: 0x1a2535, roughness: 0.15, metalness: 0.1,
-        emissive: 0x1a2535, emissiveIntensity: 0.4,
-      });
+      const mWin   = new THREE.MeshBasicMaterial({ color: 0x2a3a50 });
       const mCobble = new THREE.MeshStandardMaterial({ color: 0xc0b8a8, roughness: 0.95, metalness: 0.0 });
       const mWater  = new THREE.MeshStandardMaterial({ color: 0x1e4a68, roughness: 0.03, metalness: 0.2, transparent: true, opacity: 0.75 });
       const mPool   = new THREE.MeshStandardMaterial({ color: 0x8a9090, roughness: 0.8, metalness: 0.05 });
@@ -1315,41 +1311,18 @@ window.GameMap = (function () {
         // Mansard base band (gold lip at bottom of mansard)
         box(scene, w+0.15, 0.3, d+0.15, cx, WING_H+0.15, cz, mCornice);
 
-        // Windows — every 5 units along the wing
-        const wStart = axis === 'Z' ? cz - len/2 + 3 : cx - len/2 + 3;
-        const wEnd   = axis === 'Z' ? cz + len/2 - 3 : cx + len/2 - 3;
-        for (let wp = wStart; wp <= wEnd; wp += 5) {
-          // Pilaster strip
-          const pw = axis === 'Z' ? w+0.3 : 0.5;
-          const pd = axis === 'Z' ? 0.5   : d+0.3;
-          box(scene, pw, WING_H, pd, axis === 'Z' ? cx : wp-2.5, WING_H/2, axis === 'Z' ? wp-2.5 : cz, mBase);
-
-          // Three floors of windows
+        // Windows — every 8 units along the wing (reduced bay count for performance)
+        const wStart = axis === 'Z' ? cz - len/2 + 5 : cx - len/2 + 5;
+        const wEnd   = axis === 'Z' ? cz + len/2 - 5 : cx + len/2 - 5;
+        for (let wp = wStart; wp <= wEnd; wp += 8) {
+          // Three floors of windows (window + arch in one pass)
           [[3.0, 2.8], [8.3, 2.8], [13.6, 2.8]].forEach(([wh, wsize]) => {
             const wx = axis === 'Z' ? (cx > 0 ? cx - WING_T*0.5 + 0.22 : cx + WING_T*0.5 - 0.22) : wp;
-            const wz = axis === 'Z' ? wp                                                           : (cz > 200 ? cz - WING_T*0.5 + 0.22 : cz + WING_T*0.5 - 0.22);
-            const wd = axis === 'Z' ? 0.25 : 1.6;
-            const wl = axis === 'Z' ? 1.6  : 0.25;
-            // Window glass
+            const wz = axis === 'Z' ? wp : (cz > 200 ? cz - WING_T*0.5 + 0.22 : cz + WING_T*0.5 - 0.22);
+            const wd = axis === 'Z' ? 0.25 : 1.8;
+            const wl = axis === 'Z' ? 1.8  : 0.25;
             box(scene, wd, wsize, wl, wx, wh, wz, mWin);
-            // Stone arch surround
-            box(scene, wd+0.05, 0.28, wl+0.25, wx, wh+wsize/2+0.14, wz, mBase);
           });
-
-          // Dormer on mansard (every 10 units)
-          if (Math.round(wp) % 10 < 5.5) {
-            const dx = axis === 'Z' ? cx : wp;
-            const dz = axis === 'Z' ? wp : cz;
-            box(scene, 1.2, 2.0, 1.2, dx, WING_H+2, dz, mLimestone);
-            // Dormer window
-            box(scene, 0.25, 1.0, 0.8, axis === 'Z' ? (cx > 0 ? cx-WING_T*0.5+0.15 : cx+WING_T*0.5-0.15) : dx, WING_H+2.2, axis === 'Z' ? dz : (cz > 200 ? cz-WING_T*0.5+0.15 : cz+WING_T*0.5-0.15), mWin);
-            // Triangular dormer peak
-            const peakGeo = new THREE.CylinderGeometry(0, 0.9, 1.2, 3);
-            const peak = new THREE.Mesh(peakGeo, mSlate);
-            peak.position.set(dx, WING_H+3.6, dz);
-            peak.rotation.y = Math.PI/6;
-            scene.add(peak);
-          }
         }
 
         // Corner pavilion caps (slightly wider/taller at each end)
@@ -1440,25 +1413,21 @@ window.GameMap = (function () {
         box(scene, w2, 0.15, d2, PX+ox, 0.42, PZ+oz, mWater);
       });
 
-      // ── Lampposts along courtyard ──────────────────────
-      function lamppost2(lx, lz) {
+      // ── Lampposts along courtyard (emissive only — no PointLights) ───
+      {
         const poleM = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.5, metalness: 0.6 });
-        const glowM = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 1.5, roughness: 0.2 });
-        box(scene, 0.15, 6, 0.15, lx, 3, lz, poleM);
-        const globe = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 6), glowM);
-        globe.position.set(lx, 6.4, lz); scene.add(globe);
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 5), poleM);
-        arm.position.set(lx, 6.0, lz); arm.rotation.z = Math.PI/2; scene.add(arm);
-        const pl = new THREE.PointLight(0xffe8a0, 0.7, 18);
-        pl.position.set(lx, 6.5, lz); scene.add(pl);
+        const glowM = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 2.0, roughness: 0.2 });
+        function lamppost2(lx, lz) {
+          box(scene, 0.15, 6, 0.15, lx, 3, lz, poleM);
+          const globe = new THREE.Mesh(new THREE.SphereGeometry(0.4, 7, 5), glowM);
+          globe.position.set(lx, 6.4, lz); scene.add(globe);
+        }
+        for (let lz = 170; lz <= 244; lz += 14) {
+          lamppost2(-COURT_W+2, lz);
+          lamppost2( COURT_W-2, lz);
+        }
+        [[PX-18,PZ-18],[PX+18,PZ-18],[PX+18,PZ+18],[PX-18,PZ+18]].forEach(([lx,lz]) => lamppost2(lx,lz));
       }
-      // Along the sides of the courtyard
-      for (let lz = 170; lz <= 244; lz += 12) {
-        lamppost2(-COURT_W+2, lz);
-        lamppost2( COURT_W-2, lz);
-      }
-      // Around pyramid base
-      [[PX-18,PZ-18],[PX+18,PZ-18],[PX+18,PZ+18],[PX-18,PZ+18]].forEach(([lx,lz]) => lamppost2(lx,lz));
 
       // ── Night sky ──────────────────────────────────────
       const skyGeo = new THREE.SphereGeometry(500, 12, 8);
@@ -1478,26 +1447,15 @@ window.GameMap = (function () {
       starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
       scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: true })));
 
-      // ── Exterior lighting ──────────────────────────────
-      // Soft moonlight from above
-      const moonLight = new THREE.DirectionalLight(0xc8d8e8, 0.55);
-      moonLight.position.set(60, 120, -40); scene.add(moonLight);
-      // Warm floodlights at pyramid base (4 corners)
-      pyrBase.forEach(b => {
-        const fl = new THREE.SpotLight(0xfff0d0, 1.6, 55, Math.PI/7, 0.5);
-        fl.position.set(b[0]*1.6, 0.8, b[2] > PZ ? PZ+22 : b[2] < PZ ? PZ-22 : b[2]);
-        fl.target.position.set(PX, PH*0.6, PZ);
-        scene.add(fl); scene.add(fl.target);
-      });
-      // Facade uplighting on west and east wings
-      [-COURT_W, COURT_W].forEach(wx => {
-        for (let fz = 174; fz <= 238; fz += 20) {
-          const ul = new THREE.SpotLight(0xffeedd, 1.1, 30, Math.PI/5, 0.6);
-          ul.position.set(wx*0.88, 0.5, fz);
-          ul.target.position.set(wx*1.05, WING_H*0.7, fz);
-          scene.add(ul); scene.add(ul.target);
-        }
-      });
+      // ── Exterior lighting — one DirectionalLight only ──
+      // Moonlight (single cheap directional, no shadows)
+      const moonLight = new THREE.DirectionalLight(0xc8d8f0, 0.9);
+      moonLight.position.set(60, 120, -40);
+      moonLight.castShadow = false;
+      scene.add(moonLight);
+      // Warm ambient fill so facade/pyramid aren't too dark
+      const extAmbient = new THREE.AmbientLight(0x3a3020, 0.8);
+      scene.add(extAmbient);
     }
 
     return {
