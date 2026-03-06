@@ -17,8 +17,8 @@
 
   // ── Scene & camera ─────────────────────────────────────
   const scene  = new THREE.Scene();
-  scene.background = new THREE.Color(0x120d06);
-  scene.fog        = new THREE.Fog(0x160e06, 16, 72);
+  scene.background = new THREE.Color(0x0c1018);
+  scene.fog        = new THREE.Fog(0x0c1220, 18, 72);
 
   const camera = new THREE.PerspectiveCamera(70, 1, 0.5, 200);
   camera.position.set(0, 5, -5);
@@ -60,11 +60,11 @@
   let sun = null;            // directional light — updated each frame to follow player
 
   function setupLighting() {
-    // Ambient — warm candlelight glow throughout
-    scene.add(new THREE.AmbientLight(0xffcc88, 0.62));
+    // Ambient — cool moonlit glow throughout
+    scene.add(new THREE.AmbientLight(0x8cb8d8, 0.58));
 
     // Directional (museum overhead style) — smaller frustum, higher-res map, follows player
-    sun = new THREE.DirectionalLight(0xffe0a0, 0.72);
+    sun = new THREE.DirectionalLight(0xd0e0f8, 0.65);
     sun.position.set(15, 25, 10);
     sun.castShadow = true;
     sun.shadow.mapSize.width  = 2048;
@@ -80,40 +80,40 @@
     scene.add(sun);
     scene.add(sun.target);
 
-    // Lobby — deep amber chandelier pools
+    // Lobby — cool blue-white overhead pools
     [ [-8, 4.5, 10], [8, 4.5, 10], [-8, 4.5, 30], [8, 4.5, 30] ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0xff9830, 0.80, 26);
+      const pt = new THREE.PointLight(0x90b0d8, 0.70, 26);
       pt.position.set(x, y, z);
       pt._baseIntensity = pt.intensity;
       scene.add(pt);
       flickerLights.push(pt);
     });
 
-    // Gallery — warm amber lantern glow (was blue-white)
+    // Gallery — cool blue-gray overhead glow
     [ [-10, 5, 65], [10, 5, 65], [0, 5, 80], [-10, 5, 95], [10, 5, 95] ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0xffb060, 0.65, 22);
+      const pt = new THREE.PointLight(0xa0b8d8, 0.58, 22);
       pt.position.set(x, y, z);
       pt._baseIntensity = pt.intensity;
       scene.add(pt);
       flickerLights.push(pt);
     });
 
-    // Crown Vault — deep fire-amber torchlight
+    // Crown Vault — cool deep blue tactical light
     [ [-10, 4.5, 125], [10, 4.5, 125], [0, 4.5, 140], [-10, 4.5, 155], [10, 4.5, 155] ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0xff7820, 0.80, 26);
+      const pt = new THREE.PointLight(0x7090c0, 0.72, 26);
       pt.position.set(x, y, z);
       pt._baseIntensity = pt.intensity;
       scene.add(pt);
       flickerLights.push(pt);
     });
-    // Warm golden accent on crown pedestal
-    const vaultAccent = new THREE.PointLight(0xffcc44, 0.55, 16);
+    // Cool blue accent on crown pedestal
+    const vaultAccent = new THREE.PointLight(0x90b0e0, 0.45, 16);
     vaultAccent.position.set(0, 3, 140);
     vaultAccent._baseIntensity = vaultAccent.intensity;
     scene.add(vaultAccent);
     flickerLights.push(vaultAccent);
 
-    // Gallery painting spotlights — warm oil-lamp style
+    // Gallery painting spotlights — cool gallery lighting
     [
       // [sx, sz,  tx, ty, tz]  — light pos → painting target
       [-20, 92,  -24.9, 3.8, 92],   // famous painting (stealable)
@@ -121,7 +121,7 @@
       [ 20, 80,   24.9, 3.5, 80],   // gallery east
       [ 20, 60,   24.9, 3.5, 60],   // gallery east 2
     ].forEach(([sx, sz, tx, ty, tz]) => {
-      const spot = new THREE.SpotLight(0xffdd88, 0.95, 14, Math.PI / 8, 0.38);
+      const spot = new THREE.SpotLight(0xd0e4ff, 0.85, 14, Math.PI / 8, 0.38);
       spot.position.set(sx, 5.5, sz);
       spot.target.position.set(tx, ty, tz);
       spot.castShadow = false;
@@ -137,7 +137,7 @@
       [-16, 28,  -19.9, 3.5, 28],
       [ 16, 16,   19.9, 3.5, 16],
     ].forEach(([sx, sz, tx, ty, tz]) => {
-      const spot = new THREE.SpotLight(0xffd070, 0.75, 11, Math.PI / 8, 0.38);
+      const spot = new THREE.SpotLight(0xc8d8f8, 0.65, 11, Math.PI / 8, 0.38);
       spot.position.set(sx, 5.5, sz);
       spot.target.position.set(tx, ty, tz);
       spot.castShadow = false;
