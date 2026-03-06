@@ -270,20 +270,38 @@ window.GameMap = (function () {
   }
 
   function pillar(scene, x, z) {
-    // Shaft (slightly inset from base/capital)
-    box(scene, 1.1, WALL_H - 0.36, 1.1, x, (WALL_H - 0.36) / 2 + 0.18, z, M.pillar);
+    // Shaft — octagonal column (much less blocky than a box)
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.55, WALL_H - 0.36, 8), M.pillar);
+    shaft.position.set(x, (WALL_H - 0.36) / 2 + 0.18, z);
+    shaft.castShadow = shaft.receiveShadow = true;
+    scene.add(shaft);
     addWallAABB(x, z, 1.5, 1.5);
-    // Base plinth + torus band
-    box(scene, 1.5, 0.2,  1.5, x, 0.10, z, _moldMat);
-    box(scene, 1.3, 0.12, 1.3, x, 0.30, z, _baseMat);
+    // Base plinth + astragal band
+    box(scene, 1.55, 0.22, 1.55, x, 0.11, z, _moldMat);
+    box(scene, 1.35, 0.13, 1.35, x, 0.31, z, _baseMat);
+    // Decorative torus ring at mid-shaft
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.042, 6, 12), _moldMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, (WALL_H - 0.36) / 2 + 0.18, z);
+    scene.add(ring);
     // Capital flange + neck band
-    box(scene, 1.5, 0.2,  1.5, x, WALL_H - 0.10, z, _moldMat);
-    box(scene, 1.3, 0.12, 1.3, x, WALL_H - 0.30, z, _baseMat);
+    box(scene, 1.55, 0.22, 1.55, x, WALL_H - 0.11, z, _moldMat);
+    box(scene, 1.35, 0.13, 1.35, x, WALL_H - 0.31, z, _baseMat);
   }
 
   function displayCase(scene, x, z) {
-    box(scene, 1.2, 0.8, 1.2, x, 0.4, z, M.desk);
-    box(scene, 1.0, 1.2, 1.0, x, 1.4, z, M.glass);
+    // Base cabinet with stepped plinth
+    box(scene, 1.35, 0.14, 1.35, x, 0.07, z, _baseMat);   // plinth lip
+    box(scene, 1.2,  0.80, 1.2,  x, 0.54, z, M.desk);     // main cabinet body
+    // Glass vitrine
+    box(scene, 1.0,  1.20, 1.0,  x, 1.40, z, M.glass);
+    // Slim metal corner posts
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x6a7888, roughness: 0.30, metalness: 0.70 });
+    [[-0.50, -0.50], [-0.50, 0.50], [0.50, -0.50], [0.50, 0.50]].forEach(([ox, oz]) => {
+      box(scene, 0.065, 1.28, 0.065, x + ox, 1.44, z + oz, postMat);
+    });
+    // Lid cap
+    box(scene, 1.08, 0.048, 1.08, x, 2.064, z, postMat);
     addWallAABB(x, z, 1.2, 1.2);
   }
 
@@ -953,27 +971,65 @@ window.GameMap = (function () {
     pillar(scene, -28.5, 70);
     pillar(scene, -28.5, 84);
 
-    // Sculptures (pedestals with abstract shapes)
-    box(scene, 1.0, 1.0, 1.0, -34, 0.5, 72, M.pedestal);
-    const sculpt1 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8),
-      new THREE.MeshStandardMaterial({ color: 0xd4c8b0, roughness: 0.5, metalness: 0.1 }));
-    sculpt1.position.set(-34, 1.55, 72); sculpt1.castShadow = true; scene.add(sculpt1);
+    // ── Sculptures — multi-part forms on tiered pedestals ──
+    const sMat1 = new THREE.MeshStandardMaterial({ color: 0xc8c0b4, roughness: 0.55, metalness: 0.06 });
+    const sMat2 = new THREE.MeshStandardMaterial({ color: 0xb8a888, roughness: 0.50, metalness: 0.08 });
+    const sMat3 = new THREE.MeshStandardMaterial({ color: 0xc0b8ac, roughness: 0.52, metalness: 0.08 });
+    const sMat4 = new THREE.MeshStandardMaterial({ color: 0x9898a8, roughness: 0.42, metalness: 0.22 });
 
-    box(scene, 1.0, 1.2, 1.0, -42, 0.6, 72, M.pedestal);
-    const sculpt2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 1.1, 8),
-      new THREE.MeshStandardMaterial({ color: 0xc8b890, roughness: 0.45, metalness: 0.15 }));
-    sculpt2.position.set(-42, 1.75, 72); sculpt2.castShadow = true; scene.add(sculpt2);
+    // Sculpture 1 — Classical Bust (torso → neck → head)
+    box(scene, 1.35, 0.12, 1.35, -34, 0.06, 72, _baseMat);   // plinth lip
+    box(scene, 1.0,  0.90, 1.0,  -34, 0.57, 72, M.pedestal); // pedestal, top=1.02
+    { const g = new THREE.Group(); g.position.set(-34, 1.02, 72);
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.30, 0.36, 10), sMat1);
+      torso.position.y = 0.18; g.add(torso);
+      const neck  = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.14, 8), sMat1);
+      neck.position.y = 0.43; g.add(neck);
+      const head  = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 8), sMat1);
+      head.position.y = 0.67; g.add(head);
+      g.castShadow = true; scene.add(g); }
 
-    box(scene, 1.0, 1.0, 1.0, -34, 0.5, 82, M.pedestal);
-    const sculpt3 = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.12, 8, 16),
-      new THREE.MeshStandardMaterial({ color: 0xb8c8c0, roughness: 0.4, metalness: 0.2 }));
-    sculpt3.position.set(-34, 1.55, 82); sculpt3.rotation.x = Math.PI / 4;
-    sculpt3.castShadow = true; scene.add(sculpt3);
+    // Sculpture 2 — Greek Amphora (stacked cylinders for vase profile)
+    box(scene, 1.35, 0.12, 1.35, -42, 0.06, 72, _baseMat);
+    box(scene, 1.0,  1.10, 1.0,  -42, 0.61, 72, M.pedestal); // top=1.16
+    { const g = new THREE.Group(); g.position.set(-42, 1.16, 72);
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.06, 10), sMat2);
+      foot.position.y = 0.03; g.add(foot);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.11, 0.28, 12), sMat2);
+      body.position.y = 0.20; g.add(body);
+      const shldr= new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.30, 0.20, 12), sMat2);
+      shldr.position.y = 0.44; g.add(shldr);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, 0.16, 10), sMat2);
+      neck.position.y = 0.62; g.add(neck);
+      const rim  = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.05, 10), sMat2);
+      rim.position.y = 0.73; g.add(rim);
+      g.castShadow = true; scene.add(g); }
 
-    box(scene, 1.0, 1.1, 1.0, -42, 0.55, 82, M.pedestal);
-    const sculpt4 = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.0, 8),
-      new THREE.MeshStandardMaterial({ color: 0xd0c0a0, roughness: 0.5, metalness: 0.1 }));
-    sculpt4.position.set(-42, 1.7, 82); sculpt4.castShadow = true; scene.add(sculpt4);
+    // Sculpture 3 — Standing Figure (lower body → torso → shoulders → head)
+    box(scene, 1.35, 0.12, 1.35, -34, 0.06, 82, _baseMat);
+    box(scene, 1.0,  0.90, 1.0,  -34, 0.57, 82, M.pedestal); // top=1.02
+    { const g = new THREE.Group(); g.position.set(-34, 1.02, 82);
+      const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.10, 0.38, 8), sMat3);
+      lower.position.y = 0.19; g.add(lower);
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.32, 8), sMat3);
+      torso.position.y = 0.54; g.add(torso);
+      const shldr = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.08, 8), sMat3);
+      shldr.position.y = 0.74; g.add(shldr);
+      const neck  = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 0.11, 8), sMat3);
+      neck.position.y = 0.84; g.add(neck);
+      const head  = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), sMat3);
+      head.position.y = 1.04; g.add(head);
+      g.castShadow = true; scene.add(g); }
+
+    // Sculpture 4 — Obelisk (square shaft + pyramid cap)
+    box(scene, 1.35, 0.12, 1.35, -42, 0.06, 82, _baseMat);
+    box(scene, 1.0,  1.00, 1.0,  -42, 0.56, 82, M.pedestal); // top=1.06
+    { const g = new THREE.Group(); g.position.set(-42, 1.06, 82);
+      const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.72, 0.22), sMat4);
+      shaft.position.y = 0.36; g.add(shaft);
+      const tip   = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.13, 0.28, 4), sMat4);
+      tip.position.y = 0.86; g.add(tip);
+      g.castShadow = true; scene.add(g); }
 
     // Coin cache on a small table
     box(scene, 1.4, 0.7, 0.9, -46, 0.35, 77, M.desk);
@@ -1061,8 +1117,10 @@ window.GameMap = (function () {
     // Hack terminal
     terminal(scene, -20, 132);
 
-    // Crown on pedestal
-    box(scene, 1.4, 1.0, 1.4, 0, 0.5, 140, M.pedestal);
+    // Crown on tiered pedestal
+    box(scene, 2.2, 0.26, 2.2, 0, 0.13, 140, _baseMat);   // lowest tier
+    box(scene, 1.8, 0.22, 1.8, 0, 0.37, 140, _moldMat);   // second tier
+    box(scene, 1.4, 0.50, 1.4, 0, 0.75, 140, M.pedestal); // top column, top=1.00
     const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
     crownMesh.userData.float = true;
     stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false });
