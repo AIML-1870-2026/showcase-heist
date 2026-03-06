@@ -119,6 +119,118 @@ window.GameMap = (function () {
     return new THREE.CanvasTexture(c);
   }
 
+  // ── Mona Lisa texture (sfumato portrait — warm darks, hazy greens) ──
+  function makeMonaLisaTex() {
+    const W = 160, H = 224;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    // Dark landscape background
+    ctx.fillStyle = '#2a3520';
+    ctx.fillRect(0, 0, W, H);
+    // Sfumato sky haze (upper third)
+    const sky = ctx.createLinearGradient(0, 0, 0, H * 0.45);
+    sky.addColorStop(0, 'rgba(100,120,140,0.55)');
+    sky.addColorStop(1, 'rgba(60,80,50,0)');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H * 0.45);
+    // Figure silhouette (warm flesh tones, centre)
+    const fig = ctx.createRadialGradient(W*0.5, H*0.38, 8, W*0.5, H*0.38, W*0.38);
+    fig.addColorStop(0, 'rgba(200,160,110,0.92)');
+    fig.addColorStop(0.55, 'rgba(160,110,70,0.62)');
+    fig.addColorStop(1, 'rgba(40,30,20,0)');
+    ctx.fillStyle = fig;
+    ctx.fillRect(0, 0, W, H);
+    // Dark hair / shadow on sides
+    ctx.fillStyle = 'rgba(20,15,10,0.55)';
+    ctx.fillRect(0, 0, W*0.22, H*0.55);
+    ctx.fillRect(W*0.78, 0, W*0.22, H*0.55);
+    // Subtle varnish crackle
+    ctx.strokeStyle = 'rgba(80,55,20,0.18)';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i < 30; i++) {
+      ctx.beginPath();
+      ctx.moveTo(Math.random()*W, Math.random()*H);
+      ctx.lineTo(Math.random()*W, Math.random()*H);
+      ctx.stroke();
+    }
+    return new THREE.CanvasTexture(c);
+  }
+
+  // ── Monet Water Lilies texture (impressionist — blues, greens, lilac) ──
+  function makeMonetTex() {
+    const W = 224, H = 160;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    // Water base
+    ctx.fillStyle = '#1a3a5c';
+    ctx.fillRect(0, 0, W, H);
+    // Reflections — horizontal light bands
+    const refl = ['rgba(80,140,180,0.5)', 'rgba(140,190,160,0.4)', 'rgba(180,160,200,0.35)', 'rgba(60,100,140,0.45)'];
+    for (let i = 0; i < 18; i++) {
+      ctx.fillStyle = refl[i % refl.length];
+      ctx.fillRect(0, i * (H / 18), W, H / 22);
+    }
+    // Lily pads (dark green ellipses)
+    ctx.globalAlpha = 0.85;
+    [[55,90],[120,70],[170,110],[80,130],[200,85],[40,50]].forEach(([px,py]) => {
+      ctx.fillStyle = `rgb(${30+Math.random()*20|0},${80+Math.random()*30|0},${30+Math.random()*20|0})`;
+      ctx.beginPath();
+      ctx.ellipse(px, py, 18+Math.random()*10, 10+Math.random()*6, Math.random()*Math.PI, 0, Math.PI*2);
+      ctx.fill();
+    });
+    // Lily blooms (pink/white)
+    ctx.globalAlpha = 0.9;
+    [[55,90],[120,70],[170,110]].forEach(([px,py]) => {
+      ctx.fillStyle = `rgba(240,200,210,0.85)`;
+      ctx.beginPath();
+      ctx.ellipse(px, py-4, 6, 5, 0, 0, Math.PI*2);
+      ctx.fill();
+    });
+    // Impressionist brushstroke overlay
+    ctx.globalAlpha = 0.22;
+    for (let i = 0; i < 30; i++) {
+      const t = i / 30;
+      ctx.strokeStyle = ['rgba(100,160,200,1)','rgba(160,200,140,1)','rgba(200,180,220,1)'][i%3];
+      ctx.lineWidth = 4 + Math.sin(t * 9) * 8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(Math.random()*W, Math.random()*H);
+      ctx.quadraticCurveTo(Math.random()*W, Math.random()*H, Math.random()*W, Math.random()*H);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    return new THREE.CanvasTexture(c);
+  }
+
+  // ── Painting placard (canvas-texture label beneath a painting) ──
+  function placard(scene, x, y, z, title, artist, isWestWall) {
+    const W = 256, H = 72;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#1e1206';
+    ctx.fillRect(0, 0, W, H);
+    // Gold border
+    ctx.strokeStyle = '#c8a040';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(4, 4, W-8, H-8);
+    ctx.fillStyle = '#e8c870';
+    ctx.font = 'bold italic 20px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(title, W/2, 28);
+    ctx.fillStyle = '#c8a858';
+    ctx.font = '14px serif';
+    ctx.fillText(artist, W/2, 50);
+    const mat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) });
+    const offset = isWestWall ? 0.12 : -0.12;
+    const pw = 1.4, ph = 0.4;
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(offset)*2, ph, pw), mat);
+    mesh.position.set(x + offset, y, z);
+    scene.add(mesh);
+  }
+
   const _tileTex    = makeMarbleTex();
   const _ceilTex    = makeTileTex('#d8c07a', '#b8942e', 3);   // aged parchment plaster
   const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x9a6828, roughness: 0.72, metalness: 0.0 });   // mahogany baseboard
@@ -151,6 +263,8 @@ window.GameMap = (function () {
     paintings: [0xc0392b, 0x2980b9, 0x27ae60, 0x8e44ad, 0xe67e22].map(hex =>
       new THREE.MeshStandardMaterial({ map: makePaintingTex(hex), roughness: 0.88, metalness: 0.0 })
     ),
+    monaLisa: new THREE.MeshStandardMaterial({ map: makeMonaLisaTex(), roughness: 0.88, metalness: 0.0 }),
+    monet:    new THREE.MeshStandardMaterial({ map: makeMonetTex(),    roughness: 0.88, metalness: 0.0 }),
   };
 
   // Collected data returned to main.js
@@ -728,10 +842,11 @@ window.GameMap = (function () {
     laserData.push({ type: 'low', x1:   8, x2:  20, y: 0.5, z: 67 });
     laserData.push({ type: 'low', x1: -20, x2:  20, y: 0.5, z: 74 });
 
-    // Famous painting on west wall of gallery
-    wallPainting(scene, -24.9, 3.8, 92, M.paintings[4], true);
-    const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.paintings[3]);
+    // La Joconde (Mona Lisa) — main stealable painting on west wall of gallery
+    wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
+    const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
     stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false });
+    placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', true);
     // Glowing floor ring — guides player to the stealable painting
     const paintRingMat = new THREE.MeshBasicMaterial({
       color: 0xffe066, emissive: 0xffe066, transparent: true, opacity: 0.45,
@@ -958,9 +1073,14 @@ window.GameMap = (function () {
     box(scene, 1.4, 0.7, 0.9, -46, 0.35, 77, M.desk);
     coinCache(scene, -46, 77, 3, 1.05);
 
-    // Paintings on west wall
+    // Paintings on west wall — Monet as bonus stealable at z=77 (landscape, wider canvas)
     wallPainting(scene, -49.9, 3.5, 72, M.paintings[2], true);
     wallPainting(scene, -49.9, 3.5, 82, M.paintings[3], true);
+    // Les Nymphéas — Monet bonus stealable, centred between the two decorative paintings
+    wallPainting(scene, -49.9, 3.5, 77, M.monet, true);
+    const monetMesh = box(scene, 0.05, 1.4, 2.1, -49.75, 3.5, 77, M.monet);
+    stealables.push({ mesh: monetMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas' });
+    placard(scene, -49.9, 2.6, 77, 'Les Nymphéas', 'Claude Monet, c. 1906', true);
 
     // Rug
     rug(scene, GWX, GWZ, 18, 14, 0x2a1a3a, 0xc8a040);
