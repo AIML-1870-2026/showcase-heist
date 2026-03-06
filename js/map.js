@@ -326,6 +326,38 @@ window.GameMap = (function () {
     keycardPickups.push({ mesh: group, key, x, z, collected: false });
   }
 
+  // ── Flat rug on the floor ──────────────────────────────
+  function rug(scene, cx, cz, w, d, mainColor, accentColor) {
+    const mainMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.96, metalness: 0.0 });
+    box(scene, w, 0.022, d, cx, 0.012, cz, mainMat);
+    if (accentColor !== undefined) {
+      const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.96, metalness: 0.0 });
+      const BW = 0.18;
+      box(scene, w, 0.024, BW, cx, 0.013, cz - d / 2 + BW / 2, accentMat);
+      box(scene, w, 0.024, BW, cx, 0.013, cz + d / 2 - BW / 2, accentMat);
+      box(scene, BW, 0.024, d - BW * 2, cx - w / 2 + BW / 2, 0.013, cz, accentMat);
+      box(scene, BW, 0.024, d - BW * 2, cx + w / 2 - BW / 2, 0.013, cz, accentMat);
+    }
+  }
+
+  // Glowing archway strips around a door (Z-axis door — north/south wall)
+  function doorGlow(scene, cx, cz, color) {
+    const glowMat = new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: 1.3,
+      roughness: 0.2, transparent: true, opacity: 0.92,
+    });
+    box(scene, 3.8, 0.14, 0.14, cx, WALL_H + 0.16, cz, glowMat);
+    box(scene, 0.14, WALL_H + 0.32, 0.14, cx - 1.9, WALL_H / 2, cz, glowMat);
+    box(scene, 0.14, WALL_H + 0.32, 0.14, cx + 1.9, WALL_H / 2, cz, glowMat);
+  }
+
+  // Painting on a north/south wall (frame + canvas oriented along X)
+  function wallPaintingNS(scene, x, y, z, mat, isSouthWall) {
+    const offset = isSouthWall ? 0.15 : -0.15;
+    box(scene, 2.4, 1.6, Math.abs(offset) + 0.02, x, y, z, M.frame);
+    box(scene, 2.1, 1.4, 0.08, x, y, z + offset, mat);
+  }
+
   function coinCache(scene, x, z, amount, baseY) {
     const group = new THREE.Group();
     group.position.set(x, baseY || 1.1, z);
@@ -599,6 +631,26 @@ window.GameMap = (function () {
     wallSconce(scene,  19.75, 2.9,  8, -1);  // east wall
     wallSconce(scene,  19.75, 2.9, 28, -1);  // east wall beside painting
 
+    // Corner accent pillars at actual lobby corners
+    pillar(scene, -18,  3);
+    pillar(scene,  18,  3);
+    pillar(scene, -18, 37);
+    pillar(scene,  18, 37);
+
+    // Lobby central rug (burgundy with gold border)
+    rug(scene, 0, 20, 18, 14, 0x6b1a1a, 0xc8a040);
+
+    // Additional paintings — south wall and east wall
+    wallPaintingNS(scene, -10, 3.5, 0.10, M.paintings[3], true);
+    wallPaintingNS(scene,  10, 3.5, 0.10, M.paintings[4], true);
+    wallPainting(scene, 19.9, 3.5,  4, M.paintings[3], false);
+    wallPainting(scene, 19.9, 3.5, 28, M.paintings[4], false);
+    wallSconce(scene,  19.75, 2.9,  4, -1);
+    wallSconce(scene,  19.75, 2.9, 28, -1);
+
+    // Glowing archway at yellow keycard door so the exit is obvious
+    doorGlow(scene, 0, 39.75, 0xf0c040);
+
     // ════════════════════════════════
     //  CORRIDOR 1  cx=0  cz=47.5  10×15
     //  Guard checkpoint / break room
@@ -625,7 +677,23 @@ window.GameMap = (function () {
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
     // ════════════════════════════════
-    roomWalls(scene, 0, 77.5, 50, 45, { north: true });
+    // Skip east wall — replace with stubs so the side room opening works
+    roomWalls(scene, 0, 77.5, 50, 45, { north: true, east: true });
+
+    // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
+    // South stub: Z 55→75.5  (length 20.5, centre 65.25)
+    wall(scene, 25, 65.25, WALL_T, 20.5);
+    // North stub: Z 78.5→100  (length 21.5, centre 89.25)
+    wall(scene, 25, 89.25, WALL_T, 21.5);
+
+    // Glowing archway at side-room entrance (opening in X-wall, strips run along Z)
+    const sideGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xe8d060, emissive: 0xe8d060, emissiveIntensity: 1.1,
+      roughness: 0.2, transparent: true, opacity: 0.88,
+    });
+    box(scene, 0.14, 0.14, 3.8, 25, WALL_H + 0.16, 77, sideGlowMat);  // top bar
+    box(scene, 0.14, WALL_H + 0.32, 0.14, 25, WALL_H / 2, 75.1, sideGlowMat);  // south strip
+    box(scene, 0.14, WALL_H + 0.32, 0.14, 25, WALL_H / 2, 78.9, sideGlowMat);  // north strip
 
     // Gallery pillars
     [-12, 0, 12].forEach(x => {
@@ -738,6 +806,80 @@ window.GameMap = (function () {
     wallSconce(scene,  24.75, 2.9, 70, -1);  // east wall
     wallSconce(scene,  24.75, 2.9, 88, -1);  // east wall
 
+    // Gallery central rug (deep blue with gold border)
+    rug(scene, 0, 77, 22, 28, 0x0a1a4a, 0xc8a040);
+
+    // Gallery south wall paintings (Z≈55)
+    wallPaintingNS(scene, -14, 3.5, 55.10, M.paintings[3], true);
+    wallPaintingNS(scene,  14, 3.5, 55.10, M.paintings[4], true);
+    wallSconce(scene, -14, 2.9, 55.5, 0);
+    wallSconce(scene,  14, 2.9, 55.5, 0);
+
+    // Gallery corner accent pillars
+    pillar(scene, -22, 58);
+    pillar(scene,  22, 58);
+    pillar(scene, -22, 98);
+
+    // Glowing archway at blue keycard door
+    doorGlow(scene, 0, 99.75, 0x4a9eff);
+
+    // ════════════════════════════════
+    //  SALON DES ANTIQUITÉS  (side room off Gallery east wall)
+    //  X 25→50  Z 67→87  (centre 37.5, 77)
+    // ════════════════════════════════
+    const SAX = 37.5, SAZ = 77, SAW = 25, SAD = 20;
+    floor(scene,   SAX, SAZ, SAW, SAD);
+    ceiling(scene, SAX, SAZ, SAW, SAD);
+    // South wall (Z=67) and north wall (Z=87)
+    wall(scene, SAX, SAZ - SAD / 2, SAW, WALL_T);
+    wall(scene, SAX, SAZ + SAD / 2, SAW, WALL_T);
+    // East wall (X=50)
+    wall(scene, SAX + SAW / 2, SAZ, WALL_T, SAD);
+    // West wall shared with gallery east-wall stubs — no extra wall needed
+
+    // Pillars flanking the entrance (just inside the room)
+    pillar(scene, 28.5, 70);
+    pillar(scene, 28.5, 84);
+
+    // Paintings on east wall of side room
+    wallPainting(scene, 49.9, 3.5, 71, M.paintings[0], false);
+    wallPainting(scene, 49.9, 3.5, 83, M.paintings[1], false);
+    // Painting on south wall
+    wallPaintingNS(scene, 38, 3.5, 67.10, M.paintings[2], true);
+    // Painting on north wall
+    wallPaintingNS(scene, 38, 3.5, 86.90, M.paintings[3], false);
+
+    // Side-room rug (dark forest green with gold border)
+    rug(scene, SAX, SAZ, 18, 14, 0x1a3a1a, 0xc8a040);
+
+    // Display case with coin cache
+    displayCase(scene, 42, 77);
+    coinCache(scene, 42, 77, 4, 1.55);
+
+    // Ceiling lamps
+    ceilingLamp(scene, 32, 72);
+    ceilingLamp(scene, 43, 72);
+    ceilingLamp(scene, 32, 82);
+    ceilingLamp(scene, 43, 82);
+
+    // Wall sconces
+    wallSconce(scene, 49.75, 2.9, 72, -1);
+    wallSconce(scene, 49.75, 2.9, 82, -1);
+
+    // Guard patrol inside the Salon
+    guardData.push({
+      spawnX: 40, spawnZ: 72,
+      waypoints: [
+        new THREE.Vector3(40, 0, 72),
+        new THREE.Vector3(40, 0, 83),
+        new THREE.Vector3(30, 0, 83),
+        new THREE.Vector3(30, 0, 72),
+      ],
+    });
+
+    // Security camera watching the entrance
+    cameraData.push({ x: 43, y: WALL_H - 0.3, z: 80, sweepAngle: Math.PI / 2.2, facingZ: -1 });
+
     // ════════════════════════════════
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
     //  Maintenance / service passage
@@ -760,7 +902,17 @@ window.GameMap = (function () {
     // ════════════════════════════════
     //  CROWN VAULT  cx=0  cz=137.5  50×45
     // ════════════════════════════════
-    roomWalls(scene, 0, 137.5, 50, 45, {});
+    // Skip south and north walls — add stubs manually so corridor/exit connect properly
+    roomWalls(scene, 0, 137.5, 50, 45, { south: true, north: true });
+
+    // Vault south wall stubs — 10-unit gap (matches corridor width) at x=0
+    const VS = (50 - 10) / 2;  // stub width = 20
+    wall(scene, -(25 - VS / 2), 115, VS, WALL_T);   // west stub centred at (-15, 115)
+    wall(scene,  (25 - VS / 2), 115, VS, WALL_T);   // east stub centred at ( 15, 115)
+
+    // Vault north wall stubs — 10-unit gap for exit passage
+    wall(scene, -(25 - VS / 2), 160, VS, WALL_T);   // west stub
+    wall(scene,  (25 - VS / 2), 160, VS, WALL_T);   // east stub
 
     // Vault lasers: low + high + crossed
     laserData.push({ type: 'low',  x1: -20, x2:  20, y: 0.5, z: 122 });
@@ -834,6 +986,19 @@ window.GameMap = (function () {
         new THREE.Vector3(-16, 0, 118),
       ],
     });
+
+    // Crown Vault rug near crown pedestal (royal purple with gold border)
+    rug(scene, 0, 140, 14, 10, 0x2a0a4a, 0xc8a040);
+
+    // Vault wall paintings
+    wallPainting(scene, -24.9, 3.5, 125, M.paintings[0], true);
+    wallPainting(scene, -24.9, 3.5, 150, M.paintings[1], true);
+    wallPainting(scene,  24.9, 3.5, 130, M.paintings[2], false);
+    wallPainting(scene,  24.9, 3.5, 155, M.paintings[3], false);
+    wallSconce(scene, -24.75, 2.9, 125,  1);
+    wallSconce(scene, -24.75, 2.9, 150,  1);
+    wallSconce(scene,  24.75, 2.9, 130, -1);
+    wallSconce(scene,  24.75, 2.9, 155, -1);
 
     // Crown Vault pillars (architectural grandeur)
     [-12, 12].forEach(px => {
