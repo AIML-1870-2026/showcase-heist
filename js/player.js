@@ -254,36 +254,49 @@ window.Player = (function () {
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    const custom   = window.G && window.G.playerCustom || {};
-    const suitHex  = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
-    const matSuit   = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.82, metalness: 0.05 });
-    const matGold   = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.7, emissive: 0x443310, emissiveIntensity: 0.4 });
-    const matShoe   = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.55, metalness: 0.25 });
+    const custom  = window.G && window.G.playerCustom || {};
+    const suitHex = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
 
-    // ── Leg pivots (at hip, y=1.0) ──────────────────────
+    const matSuit   = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.82, metalness: 0.05 });
+    const matVest   = new THREE.MeshStandardMaterial({ color: 0x141420, roughness: 0.80, metalness: 0.06 });
+    const matHelmet = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.12 });
+    const matSkin   = new THREE.MeshStandardMaterial({ color: 0xd4a07a, roughness: 0.80, metalness: 0.0  });
+    const matGogF   = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.45, metalness: 0.70 });
+    const matGogL   = new THREE.MeshStandardMaterial({ color: 0x8fafc0, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.80 });
+    const matStrap  = new THREE.MeshStandardMaterial({ color: 0x252535, roughness: 0.90, metalness: 0.10 });
+    const matBoot   = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.50, metalness: 0.30 });
+    const matGold   = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.70, emissive: 0x443310, emissiveIntensity: 0.4 });
+    const matMetal  = new THREE.MeshStandardMaterial({ color: 0x667788, roughness: 0.40, metalness: 0.80 });
+    const matRope   = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.95, metalness: 0.0  });
+
+    // ── Legs ─────────────────────────────────────────────
     const legPivots = [-0.14, 0.14].map(xOff => {
       const pivot = new THREE.Group();
       pivot.position.set(xOff, 1.0, 0);
 
-      // Thigh
-      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.54, 8), matSuit);
-      thigh.position.y = -0.27; thigh.castShadow = true;
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.095, 0.52, 7), matSuit);
+      thigh.position.y = -0.26; thigh.castShadow = true;
       pivot.add(thigh);
 
-      // Knee joint
-      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), matSuit);
-      knee.position.y = -0.54;
-      pivot.add(knee);
+      // Knee pad (flat box, not a sphere joint)
+      const kneePad = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.10), matVest);
+      kneePad.position.set(0, -0.52, -0.02);
+      pivot.add(kneePad);
 
-      // Shin
-      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.44, 8), matSuit);
-      shin.position.y = -0.76; shin.castShadow = true;
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.40, 7), matSuit);
+      shin.position.y = -0.73; shin.castShadow = true;
       pivot.add(shin);
 
-      // Shoe
-      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.09, 0.32), matShoe);
-      shoe.position.set(0, -1.0, -0.07);
-      pivot.add(shoe);
+      // Tall boot shaft covers lower shin
+      const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.22, 7), matBoot);
+      bootShaft.position.y = -0.85;
+      bootShaft.castShadow = true;
+      pivot.add(bootShaft);
+      // Boot foot (slightly forward, flat-bottomed)
+      const bootFoot = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.10, 0.35), matBoot);
+      bootFoot.position.set(0, -0.97, -0.06);
+      bootFoot.castShadow = true;
+      pivot.add(bootFoot);
 
       group.add(pivot);
       return pivot;
@@ -291,46 +304,79 @@ window.Player = (function () {
     group.userData.leftLeg  = legPivots[0];
     group.userData.rightLeg = legPivots[1];
 
-    // ── Torso — bulkier hoodie body ──────────────────────
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.24, 0.72, 10), matSuit);
+    // ── Torso ─────────────────────────────────────────────
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.245, 0.72, 8), matSuit);
     torso.position.y = 1.32; torso.castShadow = true;
     group.add(torso);
 
-    // Hoodie kangaroo pocket (front, recessed slightly)
-    const pocketMat = new THREE.MeshStandardMaterial({ color: suitHex, roughness: 0.88, metalness: 0.0 });
-    const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.18, 0.05), pocketMat);
-    pocket.position.set(0, 1.12, -0.28);
-    group.add(pocket);
+    // Tactical vest front plate
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.56, 0.07), matVest);
+    vest.position.set(0, 1.35, -0.25);
+    group.add(vest);
 
-    // Gold belt ring
-    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.245, 0.055, 10), matGold);
+    // Three horizontal vest straps
+    [1.52, 1.32, 1.13].forEach(y => {
+      const hStrap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.028, 0.09), matStrap);
+      hStrap.position.set(0, y, -0.22);
+      group.add(hStrap);
+    });
+
+    // X-cross diagonal harness
+    const dStrap1 = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.50, 0.055), matStrap);
+    dStrap1.position.set(0.07, 1.35, -0.27);
+    dStrap1.rotation.z = 0.30;
+    group.add(dStrap1);
+    const dStrap2 = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.50, 0.055), matStrap);
+    dStrap2.position.set(-0.07, 1.35, -0.27);
+    dStrap2.rotation.z = -0.30;
+    group.add(dStrap2);
+
+    // Belt + pouches
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.055, 8), matGold);
     belt.position.y = 0.99;
     group.add(belt);
+    [-0.19, 0.19].forEach(xOff => {
+      const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.07), matVest);
+      pouch.position.set(xOff, 0.99, -0.21);
+      group.add(pouch);
+    });
 
-    // ── Arm pivots (at shoulder, y=1.58) ─────────────────
-    const armPivots = [-0.32, 0.32].map(xOff => {
+    // ── Backpack ─────────────────────────────────────────
+    const matPack = new THREE.MeshStandardMaterial({ color: 0x12121c, roughness: 0.88, metalness: 0.05 });
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.40, 0.16), matPack);
+    pack.position.set(0, 1.37, 0.27);
+    pack.castShadow = true;
+    group.add(pack);
+    const packTop = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.13, 0.07), matStrap);
+    packTop.position.set(0, 1.62, 0.32);
+    group.add(packTop);
+    const packPocket = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.13, 0.06), matStrap);
+    packPocket.position.set(0, 1.19, 0.34);
+    group.add(packPocket);
+
+    // ── Arms ─────────────────────────────────────────────
+    const armPivots = [-0.33, 0.33].map(xOff => {
       const pivot = new THREE.Group();
-      pivot.position.set(xOff, 1.58, 0);
+      pivot.position.set(xOff, 1.60, 0);
 
-      // Upper arm
-      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.07, 0.36, 8), matSuit);
-      upper.position.y = -0.18; upper.castShadow = true;
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.077, 0.38, 7), matSuit);
+      upper.position.y = -0.19; upper.castShadow = true;
       pivot.add(upper);
 
-      // Elbow joint
-      const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.072, 8, 6), matSuit);
-      elbow.position.y = -0.36;
-      pivot.add(elbow);
+      // Elbow pad (box, not a sphere joint)
+      const elbowPad = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.10), matVest);
+      elbowPad.position.set(0, -0.38, 0.01);
+      pivot.add(elbowPad);
 
-      // Forearm
-      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.062, 0.32, 8), matSuit);
-      fore.position.y = -0.52; fore.castShadow = true;
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.065, 0.32, 7), matSuit);
+      fore.position.y = -0.55; fore.castShadow = true;
       pivot.add(fore);
 
-      // Glove fist
-      const fist = new THREE.Mesh(new THREE.SphereGeometry(0.068, 8, 6), matShoe);
-      fist.position.y = -0.7;
-      pivot.add(fist);
+      // Box glove (more human than a sphere)
+      const glove = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.10, 0.14), matBoot);
+      glove.position.set(0, -0.74, -0.01);
+      glove.castShadow = true;
+      pivot.add(glove);
 
       group.add(pivot);
       return pivot;
@@ -338,87 +384,64 @@ window.Player = (function () {
     group.userData.leftArm  = armPivots[0];
     group.userData.rightArm = armPivots[1];
 
-    // ── Grappling hook on right arm ───────────────────────
-    const matMetal = new THREE.MeshStandardMaterial({ color: 0x667788, roughness: 0.4, metalness: 0.8 });
-    const matRope  = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.95, metalness: 0.0 });
-    // Handle (horizontal cylinder at fist)
-    const gHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.22, 6), matMetal);
-    gHandle.rotation.z = Math.PI / 2;
-    gHandle.position.set(-0.13, -0.7, 0);
-    armPivots[1].add(gHandle);
-    // Three hook prongs
-    [-0.05, 0, 0.05].forEach(zOff => {
-      const prong = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.005, 0.14, 4), matMetal);
-      prong.position.set(-0.26, -0.68 + zOff * 0.3, zOff);
-      prong.rotation.z = Math.PI / 2 + 0.4;
-      armPivots[1].add(prong);
+    // ── Grappling hook on LEFT arm ────────────────────────
+    // Barrel extending from left glove
+    const gBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 0.30, 6), matMetal);
+    gBarrel.rotation.z = Math.PI / 2;
+    gBarrel.position.set(0.20, -0.74, 0);
+    armPivots[0].add(gBarrel);
+    // Reel/body on barrel
+    const gReel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.065, 8), matMetal);
+    gReel.rotation.z = Math.PI / 2;
+    gReel.position.set(0.08, -0.74, 0);
+    armPivots[0].add(gReel);
+    // Four hook prongs fanning out from tip
+    [-0.055, -0.018, 0.018, 0.055].forEach(zOff => {
+      const prong = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.004, 0.20, 4), matMetal);
+      prong.position.set(0.40 + Math.abs(zOff) * 1.5, -0.74 + zOff * 0.6, zOff);
+      prong.rotation.z = 0.50 + Math.abs(zOff) * 1.5;
+      armPivots[0].add(prong);
     });
-    // Rope coil on belt
-    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.018, 5, 9), matRope);
-    coil.position.set(0.18, 1.02, -0.2);
+    // Rope coil near hip
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.082, 0.022, 5, 10), matRope);
+    coil.position.set(-0.20, 1.01, -0.17);
     coil.rotation.x = Math.PI / 3;
     group.add(coil);
 
     // ── Neck ─────────────────────────────────────────────
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.14, 8), matSuit);
-    neck.position.y = 1.66;
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.12, 7), matSuit);
+    neck.position.y = 1.69;
     group.add(neck);
 
-    // ── Tactical helmet (covers top + back of head) ───────
-    const matHelmet = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.12 });
-    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.265, 10, 8), matHelmet);
-    helmet.position.set(0, 1.895, 0.03);
-    helmet.scale.set(1.0, 0.97, 0.94);
-    helmet.castShadow = true;
-    group.add(helmet);
-
-    // ── Head — exposed skin-tone low-poly face ─────────────
-    const matSkin = new THREE.MeshStandardMaterial({ color: 0xd4a07a, roughness: 0.82, metalness: 0.0 });
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), matSkin);
-    head.position.set(0, 1.83, -0.03);
+    // ── Head — large, low-poly skin-tone face ─────────────
+    // Fewer segments = visible low-poly facets like the reference
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.29, 7, 5), matSkin);
+    head.position.set(0, 1.88, -0.03);
     head.castShadow = true;
     group.add(head);
 
-    // ── Square goggles on forehead ────────────────────────
-    const matGogFrame = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.5, metalness: 0.65 });
-    const matGogLens  = new THREE.MeshStandardMaterial({ color: 0x9ab0c4, roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.75 });
-    [-0.087, 0.087].forEach(xOff => {
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.075, 0.042), matGogFrame);
-      frame.position.set(xOff, 1.955, -0.215);
+    // ── Tactical helmet — dome cap sitting ON TOP of head ─
+    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.31, 8, 6), matHelmet);
+    helmet.position.set(0, 2.05, 0.02);
+    helmet.scale.set(1.0, 0.78, 0.95);  // flat dome
+    helmet.castShadow = true;
+    group.add(helmet);
+
+    // ── Large square goggles resting on helmet forehead ──
+    [-0.097, 0.097].forEach(xOff => {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.092, 0.058), matGogF);
+      frame.position.set(xOff, 2.06, -0.255);
       group.add(frame);
-      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.054, 0.02), matGogLens);
-      lens.position.set(xOff, 1.955, -0.228);
+      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.070, 0.026), matGogL);
+      lens.position.set(xOff, 2.06, -0.270);
       group.add(lens);
     });
-    // Goggle bridge
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.022, 0.03), matGogFrame);
-    bridge.position.set(0, 1.955, -0.22);
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.028, 0.045), matGogF);
+    bridge.position.set(0, 2.06, -0.258);
     group.add(bridge);
-    // Goggle strap (thin box wrapping around back of helmet)
-    const strapG = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.022, 0.015), matGogFrame);
-    strapG.position.set(0, 1.955, 0.0);
-    group.add(strapG);
-
-    // ── Tactical harness straps ───────────────────────────
-    const matStrap = new THREE.MeshStandardMaterial({ color: 0x252535, roughness: 0.9, metalness: 0.1 });
-    const strap1 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.52, 0.055), matStrap);
-    strap1.position.set(0.07, 1.32, -0.27);
-    strap1.rotation.z = 0.32;
-    group.add(strap1);
-    const strap2 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.52, 0.055), matStrap);
-    strap2.position.set(-0.07, 1.32, -0.27);
-    strap2.rotation.z = -0.32;
-    group.add(strap2);
-
-    // ── Backpack ──────────────────────────────────────────
-    const matPack = new THREE.MeshStandardMaterial({ color: 0x14141e, roughness: 0.88, metalness: 0.05 });
-    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.38, 0.15), matPack);
-    pack.position.set(0, 1.33, 0.26);
-    pack.castShadow = true;
-    group.add(pack);
-    const packPocket = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 0.05), matStrap);
-    packPocket.position.set(0, 1.2, 0.325);
-    group.add(packPocket);
+    const gogStrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.028, 0.020), matGogF);
+    gogStrap.position.set(0, 2.06, 0.02);
+    group.add(gogStrap);
 
     sc.add(group);
     return group;
