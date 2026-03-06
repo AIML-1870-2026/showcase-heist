@@ -278,12 +278,36 @@
   // ── Win check ──────────────────────────────────────────
   function checkWin(pos) {
     const G = window.G;
-    if (G.inventory.painting && G.inventory.crown && pos.z >= 160) {
-      G.phase = 'won';
+    if (G.inventory.painting && G.inventory.crown && pos.z >= 163) {
+      G.phase = 'escaping';
+      _escapeTimer = 0;
+      _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
       UI.completeObjective('escape');
-      const elapsed = Math.floor((Date.now() - G._startMs) / 1000);
-      const rating  = calcRating(elapsed, G.guardsAlerted, G.closeCalls);
-      UI.showWin({ time: elapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating });
+      Music.stop();
+      document.exitPointerLock();
+    }
+  }
+
+  // ── Escape cutscene ────────────────────────────────────
+  let _escapeTimer   = 0;
+  let _escapeElapsed = 0;
+  const _CAM_END = new THREE.Vector3(0, 28, 172);
+  const _LOOK_END = new THREE.Vector3(0, 8, 205);
+  function tickEscapeCutscene(dt) {
+    _escapeTimer += dt;
+    const G = window.G;
+
+    // Camera smoothly sweeps to wide shot of the pyramid
+    const t = Math.min(1, _escapeTimer / 3.0);
+    const ease = t * t * (3 - 2 * t);  // smoothstep
+    camera.position.lerp(_CAM_END, ease * dt * 1.8 + dt * 0.3);
+    camera.lookAt(_LOOK_END);
+
+    // After 5 seconds show the win screen
+    if (_escapeTimer >= 5.0 && G.phase === 'escaping') {
+      G.phase = 'won';
+      const rating = calcRating(_escapeElapsed, G.guardsAlerted, G.closeCalls);
+      UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating });
     }
   }
 
@@ -815,10 +839,12 @@
       // In co-op, companion.js handles rescue timer & game over
     }
 
-    // Win check
+    // Win check / escape cutscene
     if (G.phase === 'playing') {
       checkWin(playerPos);
-      if (G.phase === 'won') Music.stop();
+    }
+    if (G.phase === 'escaping') {
+      tickEscapeCutscene(dt);
     }
 
     renderer.render(scene, camera);

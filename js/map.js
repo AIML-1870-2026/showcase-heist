@@ -1255,6 +1255,90 @@ window.GameMap = (function () {
     // Exit marker on far north wall
     box(scene, 6, 4, 0.15, 0, 2, 164.9, M.exit);
 
+    // ════════════════════════════════
+    //  LOUVRE EXTERIOR  Z 165→240
+    //  Open courtyard with glass pyramid
+    // ════════════════════════════════
+    // Courtyard stone floor (cobblestone-like)
+    const cobbMat = new THREE.MeshStandardMaterial({ color: 0xb0a898, roughness: 0.92, metalness: 0.0 });
+    box(scene, 80, 0.3, 80, 0, -0.15, 200, cobbMat);
+
+    // Museum facade walls on east and west sides of the courtyard
+    const facadeMat = new THREE.MeshStandardMaterial({ color: 0xd4c8a8, roughness: 0.82, metalness: 0.0 });
+    box(scene, 2, 14, 80, -40, 7, 200, facadeMat);   // west facade
+    box(scene, 2, 14, 80,  40, 7, 200, facadeMat);   // east facade
+    // Facade windows (dark recesses, evenly spaced)
+    const winMat = new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.3, metalness: 0.1 });
+    for (let wz = 172; wz <= 228; wz += 10) {
+      box(scene, 0.15, 3, 1.8, -40, 8, wz, winMat);
+      box(scene, 0.15, 3, 1.8,  40, 8, wz, winMat);
+    }
+
+    // Iconic glass pyramid — 4-sided, centred at (0, 0, 205)
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x88ccee, roughness: 0.04, metalness: 0.08,
+      transparent: true, opacity: 0.72,
+      side: THREE.DoubleSide,
+    });
+    const pyramidGeo = new THREE.ConeGeometry(13, 20, 4);
+    const pyramid = new THREE.Mesh(pyramidGeo, glassMat);
+    pyramid.position.set(0, 10, 205);
+    pyramid.rotation.y = Math.PI / 4;   // align flat faces N/S/E/W
+    pyramid.castShadow = false;
+    scene.add(pyramid);
+    // Metal frame lines on pyramid edges
+    const frameMat2 = new THREE.MeshStandardMaterial({ color: 0x888880, roughness: 0.5, metalness: 0.6 });
+    [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(angle => {
+      const edge = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 23, 5), frameMat2);
+      edge.position.set(Math.sin(angle) * 6.5, 10, 205 + Math.cos(angle) * 6.5);
+      edge.rotation.z = angle % Math.PI === 0 ? 0.58 : 0;
+      edge.rotation.x = angle % Math.PI !== 0 ? 0.58 : 0;
+      scene.add(edge);
+    });
+
+    // Small surrounding pyramids (the three smaller ones at the Louvre)
+    [[-18, 198], [18, 198], [0, 220]].forEach(([px, pz]) => {
+      const mini = new THREE.Mesh(new THREE.ConeGeometry(4, 6, 4), glassMat);
+      mini.position.set(px, 3, pz);
+      mini.rotation.y = Math.PI / 4;
+      scene.add(mini);
+    });
+
+    // Pyramid basin / reflecting pool surround (low stone ring)
+    const basinMat = new THREE.MeshStandardMaterial({ color: 0x888078, roughness: 0.75, metalness: 0.04 });
+    box(scene, 32, 0.5, 32, 0, 0.25, 205, basinMat);
+    // Water pool
+    const poolMat = new THREE.MeshStandardMaterial({
+      color: 0x2a5870, roughness: 0.05, metalness: 0.15,
+      transparent: true, opacity: 0.68,
+    });
+    box(scene, 26, 0.12, 26, 0, 0.36, 205, poolMat);
+
+    // Night sky hemisphere
+    const skyGeo = new THREE.SphereGeometry(500, 12, 8);
+    const skyMat = new THREE.MeshBasicMaterial({ color: 0x06080f, side: THREE.BackSide });
+    scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+    // Stars (Points)
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = [];
+    for (let i = 0; i < 600; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi   = Math.acos(2 * Math.random() - 1);
+      starPos.push(Math.sin(phi)*Math.cos(theta)*480, Math.abs(Math.cos(phi))*480 + 20, Math.sin(phi)*Math.sin(theta)*480);
+    }
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.5, sizeAttenuation: true });
+    scene.add(new THREE.Points(starGeo, starMat));
+
+    // Exterior floodlights washing over the pyramid
+    const flood1 = new THREE.SpotLight(0xffeedd, 1.8, 80, Math.PI / 5, 0.3);
+    flood1.position.set(-18, 1, 182); flood1.target.position.set(0, 10, 205);
+    scene.add(flood1); scene.add(flood1.target);
+    const flood2 = new THREE.SpotLight(0xffeedd, 1.8, 80, Math.PI / 5, 0.3);
+    flood2.position.set( 18, 1, 182); flood2.target.position.set(0, 10, 205);
+    scene.add(flood2); scene.add(flood2.target);
+
     return {
       walls,
       doors,

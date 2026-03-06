@@ -447,10 +447,29 @@ window.Player = (function () {
     return { x: pos.x + dx * t, z: pos.z + dz * t };
   }
 
+  // ── Victory dance ──────────────────────────────────────
+  let _danceT = 0;
+  function tickDance(dt) {
+    if (!playerMesh) return;
+    _danceT += dt;
+    // Spin
+    playerMesh.rotation.y += dt * 3.5;
+    // Arms raised and waving
+    if (_leftArm)  _leftArm.rotation.x  = -Math.PI / 2 + Math.sin(_danceT * 9) * 0.45;
+    if (_rightArm) _rightArm.rotation.x = -Math.PI / 2 + Math.cos(_danceT * 9) * 0.45;
+    // Legs kicking alternately
+    if (_leftLeg)  _leftLeg.rotation.x  =  Math.sin(_danceT * 9) * 0.6;
+    if (_rightLeg) _rightLeg.rotation.x = -Math.sin(_danceT * 9) * 0.6;
+    // Hop up and down
+    playerMesh.position.set(pos.x, pos.y + Math.abs(Math.sin(_danceT * 7)) * 0.55, pos.z);
+  }
+
   // ── Update ─────────────────────────────────────────────
   function update(dt) {
     const G = window.G;
-    if (!G || G.phase !== 'playing') return;
+    if (!G) return;
+    if (G.phase === 'escaping') { tickDance(dt); return; }
+    if (G.phase !== 'playing') return;
     tickLockpick(dt);
     if (state === 'caught') return;
 
