@@ -745,14 +745,14 @@ window.Guards = (function () {
       if (this._rightArm) this._rightArm.rotation.x  =  walkCycle * armSwing;
 
       // Sync mesh — smoothly lerp yaw toward target angle
-      const targetYaw = -this.facingAngle();
+      const targetYaw = this.facingAngle();
       let delta = targetYaw - this.smoothYaw;
       // Wrap delta to [-π, π] so guards take the short arc
       while (delta >  Math.PI) delta -= Math.PI * 2;
       while (delta < -Math.PI) delta += Math.PI * 2;
       this.smoothYaw += delta * Math.min(1, dt * 12);
       this.mesh.position.copy(this.pos);
-      this.mesh.rotation.y = this.smoothYaw;
+      this.mesh.rotation.y = this.smoothYaw + Math.PI;
       this.updateCone(playerPos);
       this.tickBubble(dt);
       this.tickFlashlight();
