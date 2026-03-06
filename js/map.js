@@ -290,18 +290,38 @@ window.GameMap = (function () {
   }
 
   function displayCase(scene, x, z) {
-    // Base cabinet with stepped plinth
-    box(scene, 1.35, 0.14, 1.35, x, 0.07, z, _baseMat);   // plinth lip
-    box(scene, 1.2,  0.80, 1.2,  x, 0.54, z, M.desk);     // main cabinet body
-    // Glass vitrine
-    box(scene, 1.0,  1.20, 1.0,  x, 1.40, z, M.glass);
-    // Slim metal corner posts
-    const postMat = new THREE.MeshStandardMaterial({ color: 0x6a7888, roughness: 0.30, metalness: 0.70 });
-    [[-0.50, -0.50], [-0.50, 0.50], [0.50, -0.50], [0.50, 0.50]].forEach(([ox, oz]) => {
-      box(scene, 0.065, 1.28, 0.065, x + ox, 1.44, z + oz, postMat);
+    // Stepped stone plinth base
+    box(scene, 1.45, 0.06, 1.45, x, 0.03, z, _baseMat);   // outer lip
+    box(scene, 1.25, 0.12, 1.25, x, 0.12, z, _baseMat);   // second step
+    // Main cabinet body
+    box(scene, 1.15, 0.84, 1.15, x, 0.60, z, M.desk);
+    // Recessed front face panel (decorative inset)
+    const rcpPanel = new THREE.MeshStandardMaterial({ color: 0x1c2535, roughness: 0.80, metalness: 0.06 });
+    box(scene, 0.80, 0.60, 0.02, x, 0.60, z - 0.585, rcpPanel);
+    box(scene, 0.80, 0.60, 0.02, x, 0.60, z + 0.585, rcpPanel);
+    // Interior uplighting strip on top of cabinet (illuminates object inside)
+    const uplightMat = new THREE.MeshStandardMaterial({
+      color: 0xfff6d8, emissive: 0xffe8a0, emissiveIntensity: 1.0, roughness: 0.2,
     });
-    // Lid cap
-    box(scene, 1.08, 0.048, 1.08, x, 2.064, z, postMat);
+    box(scene, 0.88, 0.022, 0.88, x, 1.035, z, uplightMat);
+    // Slim metal corner posts
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x6a7888, roughness: 0.22, metalness: 0.78 });
+    [[-0.495, -0.495], [-0.495, 0.495], [0.495, -0.495], [0.495, 0.495]].forEach(([ox, oz]) => {
+      box(scene, 0.052, 1.22, 0.052, x + ox, 1.46, z + oz, postMat);
+    });
+    // Glass panels — 4 thin sides instead of a solid block
+    const glassPanelMat = new THREE.MeshStandardMaterial({
+      color: 0xc8e8ff, roughness: 0.03, metalness: 0.04,
+      transparent: true, opacity: 0.16,
+    });
+    const gH = 1.18, gY = 1.465;
+    box(scene, 0.95, gH, 0.028, x, gY, z - 0.486, glassPanelMat);   // front
+    box(scene, 0.95, gH, 0.028, x, gY, z + 0.486, glassPanelMat);   // back
+    box(scene, 0.028, gH, 0.95, x - 0.486, gY, z, glassPanelMat);   // left
+    box(scene, 0.028, gH, 0.95, x + 0.486, gY, z, glassPanelMat);   // right
+    // Lid cap with slight chamfer shadow strip
+    box(scene, 1.06, 0.055, 1.06, x, 2.085, z, postMat);
+    box(scene, 0.98, 0.018, 0.98, x, 2.06,  z, rcpPanel);  // thin shadow inset
     addWallAABB(x, z, 1.2, 1.2);
   }
 
@@ -313,10 +333,46 @@ window.GameMap = (function () {
   }
 
   function terminal(scene, x, z) {
-    box(scene, 1.0, 1.6, 0.5, x, 0.8, z, M.terminal);
-    // Screen glow
-    box(scene, 0.8, 0.8, 0.05, x, 1.2, z - 0.28,
-      new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x00ff44, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.1, transparent: true, opacity: 0.85 }));
+    // ── Lower tower/cabinet ──
+    box(scene, 1.0, 1.05, 0.5, x, 0.525, z, M.terminal);
+    // Ventilation grille slots on both sides
+    const ventMat = new THREE.MeshStandardMaterial({ color: 0x0c1018, roughness: 0.96, metalness: 0.06 });
+    box(scene, 0.038, 0.52, 0.30, x - 0.53, 0.52, z, ventMat);
+    box(scene, 0.038, 0.52, 0.30, x + 0.53, 0.52, z, ventMat);
+    // Drive bay slot + power LED strip on front face
+    box(scene, 0.50, 0.032, 0.06, x - 0.10, 0.86, z - 0.27, ventMat);
+    const ledGreen = new THREE.MeshStandardMaterial({ color: 0x00ff44, emissive: 0x00ff44, emissiveIntensity: 2.2, roughness: 0.2 });
+    const ledRed   = new THREE.MeshStandardMaterial({ color: 0xff3300, emissive: 0xff2200, emissiveIntensity: 1.8, roughness: 0.2 });
+    box(scene, 0.032, 0.032, 0.038, x + 0.28, 0.86, z - 0.27, ledGreen);
+    box(scene, 0.032, 0.032, 0.038, x + 0.36, 0.86, z - 0.27, ledRed);
+    // ── Monitor arm / neck ──
+    const neckMat = new THREE.MeshStandardMaterial({ color: 0x18222e, roughness: 0.72, metalness: 0.38 });
+    box(scene, 0.09, 0.52, 0.09, x, 1.31, z - 0.14, neckMat);   // vertical arm
+    box(scene, 0.09, 0.06, 0.20, x, 1.56, z - 0.20, neckMat);   // horizontal pivot
+    // ── Monitor head (bezel housing) ──
+    box(scene, 0.88, 0.62, 0.085, x, 1.80, z - 0.225, neckMat);
+    // Inner bezel edge (slight highlight ring)
+    const bezelEdge = new THREE.MeshStandardMaterial({ color: 0x28384c, roughness: 0.55, metalness: 0.30 });
+    box(scene, 0.80, 0.54, 0.042, x, 1.80, z - 0.265, bezelEdge);
+    // Screen glow (recessed inside bezel)
+    box(scene, 0.70, 0.46, 0.036, x, 1.80, z - 0.284,
+      new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x00dd66, emissiveIntensity: 1.1, roughness: 0.25, metalness: 0.05, transparent: true, opacity: 0.88 }));
+    // ── Keyboard tray ──
+    const keyMat = new THREE.MeshStandardMaterial({ color: 0x141c28, roughness: 0.92, metalness: 0.10 });
+    box(scene, 0.72, 0.032, 0.24, x, 1.078, z - 0.38, keyMat);
+    // Key rows (4 thin raised strips)
+    for (let row = 0; row < 4; row++) {
+      box(scene, 0.64, 0.024, 0.036, x, 1.094, z - 0.30 - row * 0.052, keyMat);
+    }
+    // ── Mouse pad + mouse ──
+    const padMat = new THREE.MeshStandardMaterial({ color: 0x090e18, roughness: 0.97 });
+    box(scene, 0.26, 0.012, 0.20, x + 0.50, 1.076, z - 0.36, padMat);
+    const mouseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.068, 0.035, 8), neckMat);
+    mouseMesh.scale.z = 1.5;
+    mouseMesh.position.set(x + 0.50, 1.094, z - 0.36);
+    scene.add(mouseMesh);
+    // ── Cable (cabinet → monitor arm) ──
+    box(scene, 0.016, 0.56, 0.016, x + 0.06, 1.08, z - 0.12, ventMat);
     addWallAABB(x, z, 1.0, 0.5);
     const t = { mesh: null, x, z, hacked: false };
     terminals.push(t);
@@ -604,6 +660,37 @@ window.GameMap = (function () {
     const finial = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), _brassM);
     finial.position.set(x, 1.87, z);
     scene.add(finial);
+    // ── Water jets ──
+    const jetMat = new THREE.MeshStandardMaterial({
+      color: 0xb8ddf0, emissive: 0x4488aa, emissiveIntensity: 0.55,
+      transparent: true, opacity: 0.52, roughness: 0.06,
+    });
+    // Central upward spout from finial top
+    const jetCtr = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.055, 0.52, 6), jetMat);
+    jetCtr.position.set(x, 2.14, z);
+    scene.add(jetCtr);
+    // Ring of 8 small jets from upper bowl rim, angled outward
+    for (let i = 0; i < 8; i++) {
+      const ang = (i / 8) * Math.PI * 2;
+      const r = 0.70;
+      const jx = x + Math.cos(ang) * r, jz = z + Math.sin(ang) * r;
+      const sjet = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.026, 0.48, 5), jetMat);
+      sjet.position.set(jx, 1.56, jz);
+      sjet.rotation.x = Math.sin(ang) * 0.40;
+      sjet.rotation.z = -Math.cos(ang) * 0.40;
+      scene.add(sjet);
+    }
+    // Cascading arcs from upper bowl down into lower basin
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const r = 1.45;
+      const jx = x + Math.cos(ang) * r, jz = z + Math.sin(ang) * r;
+      const arc = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.88, 5), jetMat);
+      arc.position.set(jx, 0.78, jz);
+      arc.rotation.x = Math.sin(ang) * 0.65;
+      arc.rotation.z = -Math.cos(ang) * 0.65;
+      scene.add(arc);
+    }
     addWallAABB(x, z, 5.0, 5.0);
   }
 
@@ -615,9 +702,37 @@ window.GameMap = (function () {
     // ════════════════════════════════
     roomWalls(scene, 0, 20, 40, 40, { north: true });
 
-    // Reception desk
-    box(scene, 8, 1.2, 2, 0, 0.6, 14, M.desk);
-    box(scene, 8, 0.1, 2, 0, 1.25, 14, M.desk);
+    // Reception desk — curved counter with stone top, dual monitors
+    // Main counter body
+    box(scene, 8.0, 1.10, 2.0, 0, 0.55, 14, M.desk);
+    // Front face recessed panels (3 decorative insets)
+    const rcpInset = new THREE.MeshStandardMaterial({ color: 0x1c2535, roughness: 0.80, metalness: 0.06 });
+    [-2.8, 0, 2.8].forEach(px => {
+      box(scene, 2.0, 0.72, 0.022, px, 0.52, 13.01, rcpInset);
+    });
+    // Counter top slab — cool gray marble finish, slightly overhanging
+    const counterTopMat = new THREE.MeshStandardMaterial({ color: 0x8a96a8, roughness: 0.16, metalness: 0.07 });
+    box(scene, 8.45, 0.075, 2.28, 0, 1.138, 14, counterTopMat);
+    // Front-edge bullnose lip
+    box(scene, 8.45, 0.048, 0.065, 0, 1.103, 12.84, counterTopMat);
+    // ── Left monitor ──
+    const monMat = new THREE.MeshStandardMaterial({ color: 0x18222e, roughness: 0.70, metalness: 0.25 });
+    box(scene, 0.70, 0.56, 0.075, -2.5, 1.49, 13.64, monMat);         // housing
+    box(scene, 0.60, 0.46, 0.038, -2.5, 1.49, 13.61,
+      new THREE.MeshStandardMaterial({ color: 0x001408, emissive: 0x002a14, emissiveIntensity: 0.5, roughness: 0.3 }));
+    box(scene, 0.085, 0.16, 0.085, -2.5, 1.225, 13.68, monMat);       // stand neck
+    box(scene, 0.30, 0.030, 0.20, -2.5, 1.148, 13.68, monMat);        // stand foot
+    box(scene, 0.52, 0.025, 0.17, -2.5, 1.148, 13.44, monMat);        // keyboard
+    // ── Right monitor ──
+    box(scene, 0.70, 0.56, 0.075,  2.5, 1.49, 13.64, monMat);
+    box(scene, 0.60, 0.46, 0.038,  2.5, 1.49, 13.61,
+      new THREE.MeshStandardMaterial({ color: 0x001408, emissive: 0x002a14, emissiveIntensity: 0.5, roughness: 0.3 }));
+    box(scene, 0.085, 0.16, 0.085,  2.5, 1.225, 13.68, monMat);
+    box(scene, 0.30, 0.030, 0.20,  2.5, 1.148, 13.68, monMat);
+    box(scene, 0.52, 0.025, 0.17,  2.5, 1.148, 13.44, monMat);
+    // ── Small "MUSÉE DU LOUVRE" sign on front (thin nameplate) ──
+    const signMat = new THREE.MeshStandardMaterial({ color: 0xc8a040, roughness: 0.30, metalness: 0.70 });
+    box(scene, 2.2, 0.14, 0.028, 0, 0.28, 12.99, signMat);
     addWallAABB(0, 14, 8, 2);
 
     // Decorative pillars
