@@ -784,7 +784,7 @@
 
     const G = window.G;
 
-    if (G.phase !== 'playing') {
+    if (G.phase !== 'playing' && G.phase !== 'escaping') {
       renderer.render(scene, camera);
       return;
     }
@@ -794,6 +794,13 @@
 
     const playerPos   = Player.getPositionRef();
     const playerState = Player.getState();
+
+    if (G.phase === 'escaping') {
+      Player.update(dt);   // runs tickDance only during 'escaping'
+      tickEscapeCutscene(dt);
+      renderer.render(scene, camera);
+      return;
+    }
 
     // Shadow camera follows player for consistent resolution across the full map
     if (sun) {
@@ -839,12 +846,9 @@
       // In co-op, companion.js handles rescue timer & game over
     }
 
-    // Win check / escape cutscene
+    // Win check
     if (G.phase === 'playing') {
       checkWin(playerPos);
-    }
-    if (G.phase === 'escaping') {
-      tickEscapeCutscene(dt);
     }
 
     renderer.render(scene, camera);
