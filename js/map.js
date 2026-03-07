@@ -147,16 +147,16 @@ window.GameMap = (function () {
       red:    new THREE.MeshStandardMaterial({ color: 0xe05050, roughness: 0.3, metalness: 0.6 }),
     },
     paintings: [
-      // 0: The Starry Night — Van Gogh, 1889
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/300px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
-      // 1: The Great Wave off Kanagawa — Hokusai, 1831
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/300px-Tsunami_by_hokusai_19th_century.jpg',
-      // 2: The Birth of Venus — Botticelli, 1485
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/300px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
-      // 3: Girl with a Pearl Earring — Vermeer, 1665
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/240px-1665_Girl_with_a_Pearl_Earring.jpg',
-      // 4: The Night Watch — Rembrandt, 1642
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/The_Night_Watch_-_HD.jpg/300px-The_Night_Watch_-_HD.jpg',
+      // 0: Liberty Leading the People — Eugène Delacroix, 1830 (Louvre)
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Eug%C3%A8ne_Delacroix_-_Le_28_Juillet._La_Libert%C3%A9_guidant_le_peuple.jpg/300px-Eug%C3%A8ne_Delacroix_-_Le_28_Juillet._La_Libert%C3%A9_guidant_le_peuple.jpg',
+      // 1: The Raft of the Medusa — Théodore Géricault, 1818 (Louvre)
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Raft_of_the_Medusa_-_Theodore_Gericault.JPG/300px-Raft_of_the_Medusa_-_Theodore_Gericault.JPG',
+      // 2: The Coronation of Napoleon — Jacques-Louis David, 1807 (Louvre)
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Jacques-Louis_David_-_The_Coronation_of_Napoleon_(1805-1807).jpg/300px-Jacques-Louis_David_-_The_Coronation_of_Napoleon_(1805-1807).jpg',
+      // 3: Oath of the Horatii — Jacques-Louis David, 1784 (Louvre)
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Jacques-Louis_David_-_Oath_of_the_Horatii_-_Google_Art_Project.jpg/300px-Jacques-Louis_David_-_Oath_of_the_Horatii_-_Google_Art_Project.jpg',
+      // 4: The Wedding at Cana — Paolo Veronese, 1563 (Louvre)
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Paolo_Veronese_-_The_Wedding_at_Cana_-_WGA24894.jpg/300px-Paolo_Veronese_-_The_Wedding_at_Cana_-_WGA24894.jpg',
     ].map(url => new THREE.MeshStandardMaterial({ map: loadPaintingTex(url), roughness: 0.88, metalness: 0.0 })),
     // La Joconde — Leonardo da Vinci, c. 1503
     monaLisa: new THREE.MeshStandardMaterial({
@@ -166,6 +166,11 @@ window.GameMap = (function () {
     // Les Nymphéas — Claude Monet, c. 1906
     monet: new THREE.MeshStandardMaterial({
       map: loadPaintingTex('https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/300px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg'),
+      roughness: 0.88, metalness: 0.0,
+    }),
+    // Dr. Harnoor Dhaliwal, PhD — Executive Director, Scott Scholars, UNO
+    harnoor: new THREE.MeshStandardMaterial({
+      map: loadPaintingTex('https://www.unomaha.edu/scott-scholars/staff-and-students/img/harnoor-singh.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
   };
@@ -920,11 +925,13 @@ window.GameMap = (function () {
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
-    placard(scene, -24.9, 2.6, 70, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    placard(scene, -24.9, 2.6, 70, 'Liberty Leading the People', 'Eugène Delacroix, 1830', true);
     wallPainting(scene,  24.9, 3.5, 80, M.paintings[1], false);
-    placard(scene,  24.9, 2.6, 80, 'The Great Wave', 'Katsushika Hokusai, 1831', false);
+    placard(scene,  24.9, 2.6, 80, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
-    placard(scene,  24.9, 2.6, 60, 'The Birth of Venus', 'Sandro Botticelli, 1485', false);
+    placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
+    wallPainting(scene,  24.9, 3.5, 92, M.harnoor, false);
+    placard(scene,  24.9, 2.6, 92, 'Dr. Harnoor Dhaliwal', 'Scott Scholars, UNO', false);
 
     // Hack terminal
     terminal(scene, 20, 78);
@@ -1300,13 +1307,13 @@ window.GameMap = (function () {
 
     // Vault wall paintings
     wallPainting(scene, -24.9, 3.5, 125, M.paintings[0], true);
-    placard(scene, -24.9, 2.6, 125, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    placard(scene, -24.9, 2.6, 125, 'Liberty Leading the People', 'Eugène Delacroix, 1830', true);
     wallPainting(scene, -24.9, 3.5, 150, M.paintings[1], true);
-    placard(scene, -24.9, 2.6, 150, 'The Great Wave', 'Katsushika Hokusai, 1831', true);
+    placard(scene, -24.9, 2.6, 150, 'The Raft of the Medusa', 'Théodore Géricault, 1818', true);
     wallPainting(scene,  24.9, 3.5, 130, M.paintings[2], false);
-    placard(scene,  24.9, 2.6, 130, 'The Birth of Venus', 'Sandro Botticelli, 1485', false);
+    placard(scene,  24.9, 2.6, 130, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
     wallPainting(scene,  24.9, 3.5, 155, M.paintings[3], false);
-    placard(scene,  24.9, 2.6, 155, 'Girl with a Pearl Earring', 'Johannes Vermeer, 1665', false);
+    placard(scene,  24.9, 2.6, 155, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
     wallSconce(scene, -24.75, 2.9, 125,  1);
     wallSconce(scene, -24.75, 2.9, 150,  1);
     wallSconce(scene,  24.75, 2.9, 130, -1);
