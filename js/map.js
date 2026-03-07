@@ -148,29 +148,29 @@ window.GameMap = (function () {
     },
     paintings: [
       // 0: Liberty Leading the People — Eugène Delacroix, 1830 (Louvre)
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Eug%C3%A8ne_Delacroix_-_Le_28_Juillet._La_Libert%C3%A9_guidant_le_peuple.jpg/300px-Eug%C3%A8ne_Delacroix_-_Le_28_Juillet._La_Libert%C3%A9_guidant_le_peuple.jpg',
+      'assets/paintings/liberty.jpg',
       // 1: The Raft of the Medusa — Théodore Géricault, 1818 (Louvre)
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Raft_of_the_Medusa_-_Theodore_Gericault.JPG/300px-Raft_of_the_Medusa_-_Theodore_Gericault.JPG',
+      'assets/paintings/medusa.jpg',
       // 2: The Coronation of Napoleon — Jacques-Louis David, 1807 (Louvre)
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Jacques-Louis_David_-_The_Coronation_of_Napoleon_(1805-1807).jpg/300px-Jacques-Louis_David_-_The_Coronation_of_Napoleon_(1805-1807).jpg',
+      'assets/paintings/napoleon.jpg',
       // 3: Oath of the Horatii — Jacques-Louis David, 1784 (Louvre)
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Jacques-Louis_David_-_Oath_of_the_Horatii_-_Google_Art_Project.jpg/300px-Jacques-Louis_David_-_Oath_of_the_Horatii_-_Google_Art_Project.jpg',
-      // 4: The Wedding at Cana — Paolo Veronese, 1563 (Louvre)
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Paolo_Veronese_-_The_Wedding_at_Cana_-_WGA24894.jpg/300px-Paolo_Veronese_-_The_Wedding_at_Cana_-_WGA24894.jpg',
+      'assets/paintings/horatii.jpg',
+      // 4: The Death of Socrates — Jacques-Louis David, 1787 (Met)
+      'assets/paintings/cana.jpg',
     ].map(url => new THREE.MeshStandardMaterial({ map: loadPaintingTex(url), roughness: 0.88, metalness: 0.0 })),
-    // La Joconde — Leonardo da Vinci, c. 1503
+    // La Joconde — Leonardo da Vinci, c. 1503 (Louvre)
     monaLisa: new THREE.MeshStandardMaterial({
-      map: loadPaintingTex('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/240px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg'),
+      map: loadPaintingTex('assets/paintings/monalisa.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
     // Les Nymphéas — Claude Monet, c. 1906
     monet: new THREE.MeshStandardMaterial({
-      map: loadPaintingTex('https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/300px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg'),
+      map: loadPaintingTex('assets/paintings/waterlilies.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
     // Dr. Harnoor Dhaliwal, PhD — Executive Director, Scott Scholars, UNO
     harnoor: new THREE.MeshStandardMaterial({
-      map: loadPaintingTex('https://www.unomaha.edu/scott-scholars/staff-and-students/img/harnoor-singh.jpg'),
+      map: loadPaintingTex('assets/paintings/harnoor.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
   };
