@@ -905,6 +905,14 @@ window.Player = (function () {
       vel.set(0, 0, 0);
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
+    // Build a standalone mesh for the customize screen preview (not added to game scene)
+    buildPreviewMesh(suitColor, eyeColor) {
+      const prev = window.G && window.G.playerCustom;
+      if (window.G) window.G.playerCustom = { suitColor, eyeColor };
+      const g = buildMesh({ add() {} });
+      if (window.G) window.G.playerCustom = prev;
+      return g;
+    },
   };
 
 }());

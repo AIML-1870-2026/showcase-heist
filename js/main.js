@@ -712,10 +712,68 @@
     // Customization screen helpers
     let _pendingMode = 'solo';
 
+    // ── Character preview (mini Three.js scene) ────────────
+    let _prevRdr = null, _prevScene = null, _prevCam = null, _prevMesh = null, _prevRaf = null;
+
+    function _previewColors() {
+      const ss = document.querySelector('#suit-swatches .color-swatch.active');
+      const es = document.querySelector('#eye-swatches .color-swatch.active');
+      return {
+        suit: ss ? Number(ss.dataset.color) : 0x1a1a2e,
+        eye:  es ? Number(es.dataset.color)  : 0x88ccff,
+      };
+    }
+
+    function _previewUpdate() {
+      if (!_prevScene || !_prevMesh) return;
+      const rot = _prevMesh.rotation.y;
+      _prevScene.remove(_prevMesh);
+      const { suit, eye } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye);
+      _prevMesh.rotation.y = rot;
+      _prevScene.add(_prevMesh);
+    }
+
+    function _previewInit() {
+      const canvas = $('preview-canvas');
+      if (!canvas || _prevRdr) return;
+      _prevRdr = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      _prevRdr.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      _prevRdr.setSize(canvas.width, canvas.height, false);
+      _prevRdr.outputEncoding = THREE.sRGBEncoding;
+      _prevScene = new THREE.Scene();
+      _prevScene.add(new THREE.AmbientLight(0xffffff, 0.55));
+      const key = new THREE.DirectionalLight(0xffffff, 1.1);
+      key.position.set(1.5, 3, 2);
+      _prevScene.add(key);
+      const rim = new THREE.DirectionalLight(0xaabbff, 0.35);
+      rim.position.set(-2, 0.5, -2);
+      _prevScene.add(rim);
+      _prevCam = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 50);
+      _prevCam.position.set(0, 1.2, 4.0);
+      _prevCam.lookAt(0, 1.0, 0);
+      const { suit, eye } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye);
+      _prevScene.add(_prevMesh);
+      (function loop() {
+        _prevRaf = requestAnimationFrame(loop);
+        _prevMesh.rotation.y += 0.008;
+        _prevRdr.render(_prevScene, _prevCam);
+      }());
+    }
+
+    function _previewDestroy() {
+      if (_prevRaf) { cancelAnimationFrame(_prevRaf); _prevRaf = null; }
+      if (_prevRdr) { _prevRdr.dispose(); _prevRdr = null; }
+      _prevScene = null; _prevMesh = null; _prevCam = null;
+    }
+    // ───────────────────────────────────────────────────────
+
     function showCustomize(mode) {
       _pendingMode = mode;
       UI.showScreen(null);
       $('customize-screen').classList.remove('hidden');
+      _previewInit();
     }
 
     function applyCustomization() {
@@ -736,19 +794,21 @@
       sw.onclick = () => {
         document.querySelectorAll('#suit-swatches .color-swatch').forEach(s => s.classList.remove('active'));
         sw.classList.add('active');
+        _previewUpdate();
       };
     });
     document.querySelectorAll('#eye-swatches .color-swatch').forEach(sw => {
       sw.onclick = () => {
         document.querySelectorAll('#eye-swatches .color-swatch').forEach(s => s.classList.remove('active'));
         sw.classList.add('active');
+        _previewUpdate();
       };
     });
 
     $('btn-solo').onclick = () => showCustomize('solo');
     $('btn-coop').onclick = () => showCustomize('coop');
-    $('btn-start-heist').onclick = () => { applyCustomization(); $('customize-screen').classList.add('hidden'); startGame(_pendingMode); };
-    $('btn-back-menu').onclick   = () => { $('customize-screen').classList.add('hidden'); UI.showScreen('start'); };
+    $('btn-start-heist').onclick = () => { applyCustomization(); _previewDestroy(); $('customize-screen').classList.add('hidden'); startGame(_pendingMode); };
+    $('btn-back-menu').onclick   = () => { _previewDestroy(); $('customize-screen').classList.add('hidden'); UI.showScreen('start'); };
 
     $('btn-resume').onclick     = resumeGame;
     $('btn-restart').onclick    = () => startGame(window.G.mode);
