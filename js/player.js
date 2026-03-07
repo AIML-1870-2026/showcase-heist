@@ -254,15 +254,16 @@ window.Player = (function () {
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    const custom  = window.G && window.G.playerCustom || {};
-    const suitHex = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
+    const custom   = window.G && window.G.playerCustom || {};
+    const suitHex  = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
+    const eyeHex   = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
 
     const matSuit   = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.82, metalness: 0.05 });
     const matVest   = new THREE.MeshStandardMaterial({ color: 0x141420, roughness: 0.80, metalness: 0.06 });
     const matHelmet = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.12 });
     const matSkin   = new THREE.MeshStandardMaterial({ color: 0xd4a07a, roughness: 0.80, metalness: 0.0  });
     const matGogF   = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.45, metalness: 0.70 });
-    const matGogL   = new THREE.MeshStandardMaterial({ color: 0x8fafc0, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.80 });
+    const matGogL   = new THREE.MeshStandardMaterial({ color: eyeHex, emissive: eyeHex, emissiveIntensity: 0.9, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85 });
     const matStrap  = new THREE.MeshStandardMaterial({ color: 0x252535, roughness: 0.90, metalness: 0.10 });
     const matBoot   = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.50, metalness: 0.30 });
     const matGold   = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.70, emissive: 0x443310, emissiveIntensity: 0.4 });
@@ -841,10 +842,13 @@ window.Player = (function () {
     jumpCount = 0;
     yaw       = Math.PI;
     pitch     = 0.25;
-    if (playerMesh) {
-      playerMesh.position.set(0, 0, 5);
-      playerMesh.scale.y = 1;
-    }
+    // Rebuild mesh so suit/eye colours from customisation screen take effect
+    if (playerMesh) scene.remove(playerMesh);
+    playerMesh = buildMesh(scene);
+    _leftLeg   = playerMesh.userData.leftLeg;
+    _rightLeg  = playerMesh.userData.rightLeg;
+    _leftArm   = playerMesh.userData.leftArm;
+    _rightArm  = playerMesh.userData.rightArm;
   }
 
   function setCaught() {
