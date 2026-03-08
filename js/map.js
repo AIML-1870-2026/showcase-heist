@@ -740,107 +740,238 @@ window.GameMap = (function () {
     //  Player spawns here and must pick the front lock.
     // ════════════════════════════════
     {
+      // ── Materials ──────────────────────────────────────
       const extFloorMat = new THREE.MeshStandardMaterial({ color: 0xb0aaa0, roughness: 0.94, metalness: 0.0 });
       const mFacade     = new THREE.MeshStandardMaterial({ color: 0xd0c4a0, roughness: 0.85, metalness: 0.0 });
       const mCorniceExt = new THREE.MeshStandardMaterial({ color: 0xb8a870, roughness: 0.55, metalness: 0.12 });
       const mWinExt     = new THREE.MeshBasicMaterial({ color: 0x1a2a3a });
       const mWalkExt    = new THREE.MeshStandardMaterial({ color: 0xd0c8b4, roughness: 0.84, metalness: 0.0 });
       const mStoneDec   = new THREE.MeshStandardMaterial({ color: 0x9a9080, roughness: 0.75, metalness: 0.0 });
+      const mStep       = new THREE.MeshStandardMaterial({ color: 0xc8c0a8, roughness: 0.80, metalness: 0.0 });
+      const mFence      = new THREE.MeshStandardMaterial({ color: 0x181814, roughness: 0.40, metalness: 0.80 });
+      const mLion       = new THREE.MeshStandardMaterial({ color: 0xc8b890, roughness: 0.72, metalness: 0.0  });
+      const mLanternM   = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.40, metalness: 0.75 });
+      const mLanternG   = new THREE.MeshStandardMaterial({ color: 0xffcc55, emissive: 0xffaa22, emissiveIntensity: 2.0, transparent: true, opacity: 0.85 });
+      const mGoldPole   = new THREE.MeshStandardMaterial({ color: 0xc0a840, roughness: 0.30, metalness: 0.70 });
+      const mSlate      = new THREE.MeshStandardMaterial({ color: 0x3c3830, roughness: 0.92, metalness: 0.0 });
 
-      // Cobblestone plaza floor
+      // ── Floor ──────────────────────────────────────────
       box(scene, 40, 0.28, 22, 0, -0.14, -11, extFloorMat);
-      // Central stone walkway leading to entrance door
-      box(scene, 12, 0.29, 22, 0, -0.135, -11, mWalkExt);
+      box(scene, 14, 0.29, 22, 0, -0.135, -11, mWalkExt);  // central stone walkway
 
-      // Extend east/west lobby walls south to close off the plaza
+      // ── Lobby side walls ───────────────────────────────
       box(scene, WALL_T, WALL_H, 22, -20, WALL_H / 2, -11, M.wall);
       addWallAABB(-20, -11, WALL_T + 0.02, 22.02);
       box(scene, WALL_T, WALL_H, 22,  20, WALL_H / 2, -11, M.wall);
       addWallAABB( 20, -11, WALL_T + 0.02, 22.02);
 
-      // South boundary low wall (player starting zone)
-      box(scene, 40, 1.8, WALL_T, 0, 0.9, -22, M.wall);
+      // ── South boundary — iron fence (visual) + collision AABB ──
       addWallAABB(0, -22, 40.02, WALL_T + 0.02);
+      const mFenceFinial = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.28, metalness: 0.75 });
+      for (let fx = -19; fx <= 19; fx += 2) {
+        if (Math.abs(fx) < 3) continue;  // leave gate gap at centre
+        box(scene, 0.16, 2.0, 0.16, fx, 1.0, -22, mFence);  // post
+        const spear = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.28, 4), mFenceFinial);
+        spear.position.set(fx, 2.18, -22); scene.add(spear);
+      }
+      // Horizontal rails (west half + east half, skipping gate)
+      box(scene, 16, 0.07, 0.07, -11, 1.5, -22, mFence);
+      box(scene, 16, 0.07, 0.07, -11, 0.8, -22, mFence);
+      box(scene, 16, 0.07, 0.07,  11, 1.5, -22, mFence);
+      box(scene, 16, 0.07, 0.07,  11, 0.8, -22, mFence);
+      // Gate posts + sphere caps
+      box(scene, 0.24, 2.4, 0.24, -3, 1.2, -22, mFence);
+      box(scene, 0.24, 2.4, 0.24,  3, 1.2, -22, mFence);
+      [-3, 3].forEach(gx => {
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.19, 6, 5), mFenceFinial);
+        cap.position.set(gx, 2.55, -22); scene.add(cap);
+      });
 
-      // ── Museum south facade (limestone overlay + architectural details) ──
-      // Split around the 3-unit door gap (X -1.5→+1.5): stubs centred at ±10.75, width 18.5
-      // Rusticated base band — split
+      // ── Museum south facade ────────────────────────────
+      // Rusticated base — split around door gap
       box(scene, 18.5, 2.4, 0.32, -10.75, 1.2, -0.42, mFacade);
       box(scene, 18.5, 2.4, 0.32,  10.75, 1.2, -0.42, mFacade);
-      // Upper facade panels on east/west stubs
+      // Upper panels
       box(scene, 18.5, WALL_H - 2.4, 0.26, -10.75, 2.4 + (WALL_H - 2.4) / 2, -0.39, mFacade);
       box(scene, 18.5, WALL_H - 2.4, 0.26,  10.75, 2.4 + (WALL_H - 2.4) / 2, -0.39, mFacade);
-      // Cornice bands at 2.5, 4.5, WALL_H — split
+      // Cornice bands — split
       [2.5, 4.5, WALL_H].forEach(h => {
         const cm = h === WALL_H ? mCorniceExt : mFacade;
         box(scene, 18.5, 0.32, 0.50, -10.75, h + 0.16, -0.45, cm);
         box(scene, 18.5, 0.32, 0.50,  10.75, h + 0.16, -0.45, cm);
       });
-      // Window panels on stubs (three per side)
+      // Window panels
       [-16.5, -10.75, -5].forEach(wx => box(scene, 2.6, 2.4, 0.08, wx, 4.0, -0.52, mWinExt));
       [   5,  10.75,  16.5].forEach(wx => box(scene, 2.6, 2.4, 0.08, wx, 4.0, -0.52, mWinExt));
-      // Pilasters (vertical strips) between windows
+      // Pilasters
       [-18.5, -13.5, -7.5, 7.5, 13.5, 18.5].forEach(px => {
         box(scene, 0.45, WALL_H, 0.38, px, WALL_H / 2, -0.44, mFacade);
       });
 
-      // ── Wing extensions beyond east/west walls ──
-      const WNG = 8, WNG_H = WALL_H + 2;
-      // West wing south-facing wall section
+      // ── Wing extensions — WNG=12, corner pavilion towers ──
+      const WNG = 12, WNG_H = WALL_H + 2, PAVH = WALL_H + 5;
+      // West wing
       box(scene, WNG, WNG_H, WALL_T, -(20 + WNG / 2), WNG_H / 2, -0.36, mFacade);
-      // West wing outer (west-facing) wall — thin strip visible from front-left
-      box(scene, WALL_T, WNG_H, 22, -(20 + WNG), WNG_H / 2, -11, mFacade);
-      // West wing cornice
+      box(scene, WALL_T, WNG_H, 22,  -(20 + WNG), WNG_H / 2, -11, mFacade);
       box(scene, WNG + 0.3, 0.32, WALL_T + 0.4, -(20 + WNG / 2), WNG_H + 0.16, -0.46, mCorniceExt);
-      // East wing mirror
+      // West corner pavilion
+      box(scene, 4.5, PAVH, WALL_T + 2.5, -(20 + WNG), PAVH / 2, -0.36, mFacade);
+      box(scene, 4.9, 0.38, WALL_T + 2.9, -(20 + WNG), PAVH + 0.19, -0.36, mCorniceExt);
+      box(scene, 4.5, 3.5,  WALL_T + 2.5, -(20 + WNG), PAVH + 1.75, -0.36, mSlate);
+      // East wing (mirror)
       box(scene, WNG, WNG_H, WALL_T,  (20 + WNG / 2), WNG_H / 2, -0.36, mFacade);
-      box(scene, WALL_T, WNG_H, 22,  (20 + WNG), WNG_H / 2, -11, mFacade);
-      box(scene, WNG + 0.3, 0.32, WALL_T + 0.4,  (20 + WNG / 2), WNG_H + 0.16, -0.46, mCorniceExt);
+      box(scene, WALL_T, WNG_H, 22,   (20 + WNG), WNG_H / 2, -11, mFacade);
+      box(scene, WNG + 0.3, 0.32, WALL_T + 0.4, (20 + WNG / 2), WNG_H + 0.16, -0.46, mCorniceExt);
+      box(scene, 4.5, PAVH, WALL_T + 2.5,  (20 + WNG), PAVH / 2, -0.36, mFacade);
+      box(scene, 4.9, 0.38, WALL_T + 2.9,  (20 + WNG), PAVH + 0.19, -0.36, mCorniceExt);
+      box(scene, 4.5, 3.5,  WALL_T + 2.5,  (20 + WNG), PAVH + 1.75, -0.36, mSlate);
 
-      // Grand entrance pillars flanking the front door (outside face)
+      // ── Colonnade — decorative columns in front of facade ──
+      {
+        const colZ = -2.8;
+        [-17, -12, -7, 7, 12, 17].forEach(cx => {
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.50, WALL_H - 0.3, 8), M.pillar);
+          col.position.set(cx, (WALL_H - 0.3) / 2 + 0.15, colZ); scene.add(col);
+          box(scene, 1.35, 0.20, 1.35, cx, 0.10, colZ, _moldMat);   // base plinth
+          box(scene, 1.20, 0.32, 1.20, cx, WALL_H - 0.05, colZ, _moldMat);  // capital
+        });
+        // Entablature beams connecting column tops (west + east, avoiding door gap)
+        box(scene, 12.5, 0.38, 0.65, -12, WALL_H + 0.09, colZ, mFacade);
+        box(scene, 12.5, 0.38, 0.65,  12, WALL_H + 0.09, colZ, mFacade);
+      }
+
+      // ── Pediment (triangular gable over entrance) ──────
+      {
+        const PW = 8.5, PH = 2.2;
+        const pedGeo = new THREE.BufferGeometry();
+        pedGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+          -PW/2, 0, 0,  PW/2, 0, 0,  0, PH, 0,
+           PW/2, 0, 0, -PW/2, 0, 0,  0, PH, 0,
+        ]), 3));
+        pedGeo.computeVertexNormals();
+        const pedMesh = new THREE.Mesh(pedGeo, mFacade);
+        pedMesh.position.set(0, WALL_H + 0.2, -0.58); scene.add(pedMesh);
+        // Base cornice
+        box(scene, PW + 0.3, 0.28, 0.44, 0, WALL_H + 0.14, -0.58, mCorniceExt);
+        // Sloped sides
+        const sl = Math.sqrt((PW / 2) ** 2 + PH ** 2);
+        const sa = Math.atan2(PH, PW / 2);
+        const sL = new THREE.Mesh(new THREE.BoxGeometry(sl + 0.2, 0.22, 0.38), mCorniceExt);
+        sL.position.set(-PW / 4, WALL_H + PH / 2, -0.58); sL.rotation.z =  sa; scene.add(sL);
+        const sR = new THREE.Mesh(new THREE.BoxGeometry(sl + 0.2, 0.22, 0.38), mCorniceExt);
+        sR.position.set( PW / 4, WALL_H + PH / 2, -0.58); sR.rotation.z = -sa; scene.add(sR);
+      }
+
+      // ── Grand staircase (3 decorative steps leading to door) ──
+      box(scene, 12, 0.18, 0.7, 0, 0.09, -1.7, mStep);  // bottom
+      box(scene, 10, 0.18, 0.7, 0, 0.27, -1.1, mStep);  // middle
+      box(scene,  8, 0.18, 0.7, 0, 0.45, -0.5, mStep);  // top
+
+      // ── Grand entrance pillars flanking the front door ──
       pillar(scene, -5, -3);
       pillar(scene,  5, -3);
 
-      // Gold "MUSÉE DU LOUVRE" nameplate above entrance
+      // ── Gold nameplate ─────────────────────────────────
       const plaqueMat = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.28, metalness: 0.75 });
       box(scene, 5.5, 0.38, 0.14, 0, WALL_H - 0.55, -0.08, plaqueMat);
 
-      // Wall sconces on the entrance pillars
+      // ── Hanging lantern above entrance ────────────────
+      box(scene, 0.07, 1.4, 0.07, 0, WALL_H - 0.55, -1.9, mLanternM);  // rod
+      box(scene, 0.82, 1.0, 0.82, 0, WALL_H - 1.75, -1.9, mLanternM);  // frame
+      box(scene, 0.56, 0.70, 0.07, 0, WALL_H - 1.75, -1.9 - 0.44, mLanternG);  // south glass
+      box(scene, 0.56, 0.70, 0.07, 0, WALL_H - 1.75, -1.9 + 0.44, mLanternG);  // north glass
+      box(scene, 0.07, 0.70, 0.56, -0.44, WALL_H - 1.75, -1.9, mLanternG);  // west glass
+      box(scene, 0.07, 0.70, 0.56,  0.44, WALL_H - 1.75, -1.9, mLanternG);  // east glass
+      box(scene, 0.90, 0.20, 0.90, 0, WALL_H - 1.18, -1.9, mLanternM);  // top cap
+      const lFin = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.30, 6), mLanternM);
+      lFin.position.set(0, WALL_H - 2.37, -1.9); lFin.rotation.x = Math.PI; scene.add(lFin);
+
+      // ── Wall sconces on entrance pillars ───────────────
       wallSconce(scene, -5.22, 2.8, -3,  1);
       wallSconce(scene,  5.22, 2.8, -3, -1);
 
-      // ── Lampposts flanking the approach path ──
+      // ── Ground uplighting — emissive discs at facade base ──
+      const mUplight = new THREE.MeshBasicMaterial({ color: 0xfff4cc, transparent: true, opacity: 0.42 });
+      [-16.5, -10.75, -5, 5, 10.75, 16.5].forEach(ux => {
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(0.85, 8), mUplight);
+        disc.rotation.x = -Math.PI / 2; disc.position.set(ux, 0.02, -1.3); scene.add(disc);
+      });
+
+      // ── Lampposts flanking the approach path ──────────
       {
         const poleM2 = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.5, metalness: 0.6 });
         const glowM2 = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 2.5, roughness: 0.2 });
         function entLamp(lx, lz) {
           box(scene, 0.14, 6.5, 0.14, lx, 3.25, lz, poleM2);
-          box(scene, 0.1, 0.1, 1.0, lx, 6.5, lz + 0.4, poleM2);
+          box(scene, 0.10, 0.10, 1.0, lx, 6.5, lz + 0.4, poleM2);
           const globe = new THREE.Mesh(new THREE.SphereGeometry(0.38, 7, 5), glowM2);
           globe.position.set(lx, 6.8, lz + 0.4); scene.add(globe);
         }
-        entLamp(-10,  -5); entLamp(10,  -5);
-        entLamp(-10, -16); entLamp(10, -16);
+        entLamp(-11, -5); entLamp(11, -5);
+        entLamp(-11, -16); entLamp(11, -16);
       }
 
-      // ── Decorative stone urns on pedestals flanking the walkway ──
+      // ── Flag poles with museum banners ────────────────
       {
-        const mUrn = new THREE.MeshStandardMaterial({ color: 0xb8b0a0, roughness: 0.62, metalness: 0.04 });
-        function stoneUrn(ux, uz) {
-          box(scene, 0.9, 0.65, 0.9, ux, 0.325, uz, mStoneDec);   // pedestal
-          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.20, 0.65, 8), mUrn);
-          body.position.set(ux, 1.0, uz); scene.add(body);
-          const rim = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.055, 5, 10), mUrn);
-          rim.position.set(ux, 1.35, uz); rim.rotation.x = Math.PI / 2; scene.add(rim);
+        const mBannerA = new THREE.MeshBasicMaterial({ color: 0x4a1828, side: THREE.DoubleSide });
+        const mBannerB = new THREE.MeshBasicMaterial({ color: 0x1a3858, side: THREE.DoubleSide });
+        function flagpole(fx, fz, bannerMat) {
+          box(scene, 0.12, 10.5, 0.12, fx, 5.25, fz, mGoldPole);
+          box(scene, 2.2, 0.10, 0.10, fx + 1.06, 9.8, fz, mGoldPole);  // crossbar
+          const banner = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.8), bannerMat);
+          banner.position.set(fx + 1.06, 8.3, fz); scene.add(banner);
+          const finial = new THREE.Mesh(new THREE.SphereGeometry(0.14, 6, 5), mGoldPole);
+          finial.position.set(fx, 10.85, fz); scene.add(finial);
         }
-        stoneUrn(-8,  -4); stoneUrn(8,  -4);
-        stoneUrn(-8, -17); stoneUrn(8, -17);
+        flagpole(-16, -7, mBannerA);
+        flagpole( 16, -7, mBannerB);
       }
 
-      // Ceiling lamp above entrance exterior
-      ceilingLamp(scene, 0, -5);
+      // ── Lion statues on pedestals flanking the walkway ─
+      {
+        function lionStatue(lx, lz) {
+          // Pedestal
+          box(scene, 1.4, 0.28, 2.0, lx, 0.14, lz, mStoneDec);
+          box(scene, 1.1, 1.30, 1.7, lx, 0.79, lz, mStoneDec);
+          box(scene, 1.4, 0.22, 2.0, lx, 1.55, lz, mStoneDec);
+          const BY = 1.66;
+          // Body
+          const body = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.60, 1.45), mLion);
+          body.position.set(lx, BY + 0.30, lz); scene.add(body);
+          // Head (facing south toward approaching player)
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 7, 6), mLion);
+          head.scale.set(1.0, 0.86, 1.12); head.position.set(lx, BY + 0.64, lz - 0.62); scene.add(head);
+          // Mane
+          const mane = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.10, 5, 10), mLion);
+          mane.rotation.y = Math.PI / 2; mane.rotation.z = Math.PI / 2;
+          mane.position.set(lx, BY + 0.60, lz - 0.60); scene.add(mane);
+          // Paws
+          box(scene, 0.22, 0.18, 0.45, lx - 0.24, BY + 0.09, lz - 0.88, mLion);
+          box(scene, 0.22, 0.18, 0.45, lx + 0.24, BY + 0.09, lz - 0.88, mLion);
+        }
+        lionStatue(-9,  -6); lionStatue( 9,  -6);
+        lionStatue(-9, -16); lionStatue( 9, -16);
+      }
 
-      // Baseboard strip along south boundary wall interior face
+      // ── Central fountain in plaza ──────────────────────
+      {
+        const mFW = new THREE.MeshStandardMaterial({ color: 0x1e5070, roughness: 0.05, metalness: 0.15, transparent: true, opacity: 0.75 });
+        const mFJ = new THREE.MeshBasicMaterial({ color: 0xaaddff, transparent: true, opacity: 0.52 });
+        const FZ  = -12;
+        const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.3, 0.58, 12), mStoneDec);
+        basin.position.set(0, 0.29, FZ); scene.add(basin);
+        const water = new THREE.Mesh(new THREE.CircleGeometry(1.9, 12), mFW);
+        water.rotation.x = -Math.PI / 2; water.position.set(0, 0.60, FZ); scene.add(water);
+        const cpil = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.21, 1.3, 8), mStoneDec);
+        cpil.position.set(0, 1.25, FZ); scene.add(cpil);
+        const ubowl = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.55, 0.22, 10), mStoneDec);
+        ubowl.position.set(0, 2.0, FZ); scene.add(ubowl);
+        const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.09, 1.7, 5), mFJ);
+        jet.position.set(0, 2.95, FZ); scene.add(jet);
+        addWallAABB(0, FZ, 2.2, 2.2);
+      }
+
+      // Baseboard strip
       box(scene, 39.6, 0.22, 0.09, 0, 0.11, -21.75, _baseMat);
     }
 
