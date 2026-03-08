@@ -741,8 +741,16 @@ window.GameMap = (function () {
     // ════════════════════════════════
     {
       const extFloorMat = new THREE.MeshStandardMaterial({ color: 0xb0aaa0, roughness: 0.94, metalness: 0.0 });
+      const mFacade     = new THREE.MeshStandardMaterial({ color: 0xd0c4a0, roughness: 0.85, metalness: 0.0 });
+      const mCorniceExt = new THREE.MeshStandardMaterial({ color: 0xb8a870, roughness: 0.55, metalness: 0.12 });
+      const mWinExt     = new THREE.MeshBasicMaterial({ color: 0x1a2a3a });
+      const mWalkExt    = new THREE.MeshStandardMaterial({ color: 0xd0c8b4, roughness: 0.84, metalness: 0.0 });
+      const mStoneDec   = new THREE.MeshStandardMaterial({ color: 0x9a9080, roughness: 0.75, metalness: 0.0 });
+
       // Cobblestone plaza floor
       box(scene, 40, 0.28, 22, 0, -0.14, -11, extFloorMat);
+      // Central stone walkway leading to entrance door
+      box(scene, 12, 0.29, 22, 0, -0.135, -11, mWalkExt);
 
       // Extend east/west lobby walls south to close off the plaza
       box(scene, WALL_T, WALL_H, 22, -20, WALL_H / 2, -11, M.wall);
@@ -753,6 +761,37 @@ window.GameMap = (function () {
       // South boundary low wall (player starting zone)
       box(scene, 40, 1.8, WALL_T, 0, 0.9, -22, M.wall);
       addWallAABB(0, -22, 40.02, WALL_T + 0.02);
+
+      // ── Museum south facade (limestone overlay + architectural details) ──
+      // Rusticated base band — full width
+      box(scene, 39.6, 2.4, 0.32, 0, 1.2, -0.42, mFacade);
+      // Upper facade panels on east/west stubs
+      box(scene, 18.5, WALL_H - 2.4, 0.26, -10.75, 2.4 + (WALL_H - 2.4) / 2, -0.39, mFacade);
+      box(scene, 18.5, WALL_H - 2.4, 0.26,  10.75, 2.4 + (WALL_H - 2.4) / 2, -0.39, mFacade);
+      // Cornice bands at 2.5, 4.5, WALL_H
+      [2.5, 4.5, WALL_H].forEach(h => {
+        box(scene, 40, 0.32, 0.50, 0, h + 0.16, -0.45, h === WALL_H ? mCorniceExt : mFacade);
+      });
+      // Window panels on stubs (three per side)
+      [-16.5, -10.75, -5].forEach(wx => box(scene, 2.6, 2.4, 0.08, wx, 4.0, -0.52, mWinExt));
+      [   5,  10.75,  16.5].forEach(wx => box(scene, 2.6, 2.4, 0.08, wx, 4.0, -0.52, mWinExt));
+      // Pilasters (vertical strips) between windows
+      [-18.5, -13.5, -7.5, 7.5, 13.5, 18.5].forEach(px => {
+        box(scene, 0.45, WALL_H, 0.38, px, WALL_H / 2, -0.44, mFacade);
+      });
+
+      // ── Wing extensions beyond east/west walls ──
+      const WNG = 8, WNG_H = WALL_H + 2;
+      // West wing south-facing wall section
+      box(scene, WNG, WNG_H, WALL_T, -(20 + WNG / 2), WNG_H / 2, -0.36, mFacade);
+      // West wing outer (west-facing) wall — thin strip visible from front-left
+      box(scene, WALL_T, WNG_H, 22, -(20 + WNG), WNG_H / 2, -11, mFacade);
+      // West wing cornice
+      box(scene, WNG + 0.3, 0.32, WALL_T + 0.4, -(20 + WNG / 2), WNG_H + 0.16, -0.46, mCorniceExt);
+      // East wing mirror
+      box(scene, WNG, WNG_H, WALL_T,  (20 + WNG / 2), WNG_H / 2, -0.36, mFacade);
+      box(scene, WALL_T, WNG_H, 22,  (20 + WNG), WNG_H / 2, -11, mFacade);
+      box(scene, WNG + 0.3, 0.32, WALL_T + 0.4,  (20 + WNG / 2), WNG_H + 0.16, -0.46, mCorniceExt);
 
       // Grand entrance pillars flanking the front door (outside face)
       pillar(scene, -5, -3);
@@ -765,6 +804,34 @@ window.GameMap = (function () {
       // Wall sconces on the entrance pillars
       wallSconce(scene, -5.22, 2.8, -3,  1);
       wallSconce(scene,  5.22, 2.8, -3, -1);
+
+      // ── Lampposts flanking the approach path ──
+      {
+        const poleM2 = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.5, metalness: 0.6 });
+        const glowM2 = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 2.5, roughness: 0.2 });
+        function entLamp(lx, lz) {
+          box(scene, 0.14, 6.5, 0.14, lx, 3.25, lz, poleM2);
+          box(scene, 0.1, 0.1, 1.0, lx, 6.5, lz + 0.4, poleM2);
+          const globe = new THREE.Mesh(new THREE.SphereGeometry(0.38, 7, 5), glowM2);
+          globe.position.set(lx, 6.8, lz + 0.4); scene.add(globe);
+        }
+        entLamp(-10,  -5); entLamp(10,  -5);
+        entLamp(-10, -16); entLamp(10, -16);
+      }
+
+      // ── Decorative stone urns on pedestals flanking the walkway ──
+      {
+        const mUrn = new THREE.MeshStandardMaterial({ color: 0xb8b0a0, roughness: 0.62, metalness: 0.04 });
+        function stoneUrn(ux, uz) {
+          box(scene, 0.9, 0.65, 0.9, ux, 0.325, uz, mStoneDec);   // pedestal
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.20, 0.65, 8), mUrn);
+          body.position.set(ux, 1.0, uz); scene.add(body);
+          const rim = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.055, 5, 10), mUrn);
+          rim.position.set(ux, 1.35, uz); rim.rotation.x = Math.PI / 2; scene.add(rim);
+        }
+        stoneUrn(-8,  -4); stoneUrn(8,  -4);
+        stoneUrn(-8, -17); stoneUrn(8, -17);
+      }
 
       // Ceiling lamp above entrance exterior
       ceilingLamp(scene, 0, -5);
