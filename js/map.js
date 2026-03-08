@@ -763,14 +763,18 @@ window.GameMap = (function () {
       addWallAABB(0, -22, 40.02, WALL_T + 0.02);
 
       // ── Museum south facade (limestone overlay + architectural details) ──
-      // Rusticated base band — full width
-      box(scene, 39.6, 2.4, 0.32, 0, 1.2, -0.42, mFacade);
+      // Split around the 3-unit door gap (X -1.5→+1.5): stubs centred at ±10.75, width 18.5
+      // Rusticated base band — split
+      box(scene, 18.5, 2.4, 0.32, -10.75, 1.2, -0.42, mFacade);
+      box(scene, 18.5, 2.4, 0.32,  10.75, 1.2, -0.42, mFacade);
       // Upper facade panels on east/west stubs
       box(scene, 18.5, WALL_H - 2.4, 0.26, -10.75, 2.4 + (WALL_H - 2.4) / 2, -0.39, mFacade);
       box(scene, 18.5, WALL_H - 2.4, 0.26,  10.75, 2.4 + (WALL_H - 2.4) / 2, -0.39, mFacade);
-      // Cornice bands at 2.5, 4.5, WALL_H
+      // Cornice bands at 2.5, 4.5, WALL_H — split
       [2.5, 4.5, WALL_H].forEach(h => {
-        box(scene, 40, 0.32, 0.50, 0, h + 0.16, -0.45, h === WALL_H ? mCorniceExt : mFacade);
+        const cm = h === WALL_H ? mCorniceExt : mFacade;
+        box(scene, 18.5, 0.32, 0.50, -10.75, h + 0.16, -0.45, cm);
+        box(scene, 18.5, 0.32, 0.50,  10.75, h + 0.16, -0.45, cm);
       });
       // Window panels on stubs (three per side)
       [-16.5, -10.75, -5].forEach(wx => box(scene, 2.6, 2.4, 0.08, wx, 4.0, -0.52, mWinExt));
