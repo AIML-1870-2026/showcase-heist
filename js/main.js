@@ -278,13 +278,23 @@
   // ── Win check ──────────────────────────────────────────
   function checkWin(pos) {
     const G = window.G;
-    if (G.inventory.painting && G.inventory.crown && pos.z >= 163) {
+    if (pos.z < 163) return;
+    if (G.inventory.painting && G.inventory.crown) {
       G.phase = 'escaping';
       _escapeTimer = 0;
       _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
       UI.completeObjective('escape');
       Music.stop();
       document.exitPointerLock();
+    } else {
+      // Escaped without the loot
+      const missing = [];
+      if (!G.inventory.painting) missing.push('La Joconde');
+      if (!G.inventory.crown)    missing.push('the Crown');
+      G.phase = 'gameover';
+      Music.stop();
+      document.exitPointerLock();
+      UI.showGameOver('Mission Failed', 'You escaped without ' + missing.join(' or ') + '.');
     }
   }
 
