@@ -82,6 +82,47 @@ window.GameMap = (function () {
     return tex;
   }
 
+  // ── Crown Vault floor — dark obsidian with gold veining ─────────────────────
+  function makeVaultFloorTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0e0c0a';
+    ctx.fillRect(0, 0, S, S);
+    // Gold vein streaks
+    for (let i = 0; i < 12; i++) {
+      ctx.strokeStyle = 'rgba(190,148,32,' + (0.18 + Math.random() * 0.28) + ')';
+      ctx.lineWidth = 0.8 + Math.random() * 1.2;
+      ctx.beginPath();
+      const sx = Math.random() * S, sy = Math.random() * S;
+      ctx.moveTo(sx, sy);
+      ctx.bezierCurveTo(
+        sx + (Math.random() - 0.5) * S * 0.5, sy + (Math.random() - 0.5) * S * 0.5,
+        sx + (Math.random() - 0.5) * S * 0.5, sy + (Math.random() - 0.5) * S * 0.5,
+        sx + (Math.random() - 0.5) * S * 0.9, sy + (Math.random() - 0.5) * S * 0.9
+      );
+      ctx.stroke();
+    }
+    // Gold tile grid
+    ctx.strokeStyle = 'rgba(165,122,18,0.62)';
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i <= S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    // Faint inner highlight lines
+    ctx.strokeStyle = 'rgba(220,175,45,0.20)';
+    ctx.lineWidth = 0.7;
+    for (let i = 7; i < S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
   // ── Load real painting texture from URL (public domain, Wikimedia Commons) ──
   const _loader = new THREE.TextureLoader();
   function loadPaintingTex(url) {
@@ -612,6 +653,162 @@ window.GameMap = (function () {
     addWallAABB(x, z, 5.0, 5.0);
   }
 
+  // ── Painting spotlight: small ceiling track light + visible cone ────────────
+  // wallDir: 'west' | 'east' | 'south' | 'north'
+  function paintingSpotlight(scene, px, py, pz, wallDir) {
+    const trackMat = new THREE.MeshStandardMaterial({ color: 0x888880, roughness: 0.30, metalness: 0.80 });
+    const warmMat  = new THREE.MeshStandardMaterial({
+      color: 0xffe8b0, emissive: 0xffe8b0, emissiveIntensity: 1.15, roughness: 0.25,
+    });
+    const coneMat  = new THREE.MeshBasicMaterial({
+      color: 0xffe8c8, transparent: true, opacity: 0.062,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide,
+    });
+
+    const ceilY = WALL_H - 0.22;
+    let lx = px, lz = pz;
+    if      (wallDir === 'west')  lx = px + 2.5;
+    else if (wallDir === 'east')  lx = px - 2.5;
+    else if (wallDir === 'south') lz = pz + 2.5;
+    else if (wallDir === 'north') lz = pz - 2.5;
+
+    // Track rail (thin ceiling strip)
+    box(scene, 0.06, 0.06, 0.55, lx, ceilY, lz, trackMat);
+    // Light head (small angled box housing)
+    box(scene, 0.19, 0.14, 0.14, lx, ceilY - 0.13, lz, trackMat);
+    // Warm emissive bulb
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.058, 6, 4), warmMat);
+    bulb.position.set(lx, ceilY - 0.23, lz);
+    scene.add(bulb);
+
+    // Cone: tip at light head, base spread toward painting
+    // Horizontal offset and vertical drop from light to painting
+    const hDist = (wallDir === 'west' || wallDir === 'east') ? Math.abs(px - lx) : Math.abs(pz - lz);
+    const vDist = ceilY - py;
+    const coneH = Math.sqrt(hDist * hDist + vDist * vDist) * 0.88;
+    const coneR  = coneH * 0.30;
+    const tilt   = Math.atan2(hDist, vDist);
+
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(coneR, coneH, 12, 1, true), coneMat);
+    // ConeGeometry tip at +Y/2, base at -Y/2. Rotate so tip points toward room centre.
+    if      (wallDir === 'west')  cone.rotation.z = -tilt;
+    else if (wallDir === 'east')  cone.rotation.z =  tilt;
+    else if (wallDir === 'south') cone.rotation.x = -tilt;
+    else if (wallDir === 'north') cone.rotation.x =  tilt;
+
+    // Position at midpoint between light and painting
+    cone.position.set(
+      (lx + px) / 2,
+      (ceilY + py) / 2 - 0.08,
+      (lz + pz) / 2
+    );
+    scene.add(cone);
+  }
+
+  // ── Velvet rope stanchion (gold post + weighted base) ────────────────────
+  function stanchion(scene, x, z) {
+    const goldM = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.22, metalness: 0.88 });
+    const baseM = new THREE.MeshStandardMaterial({ color: 0xa88020, roughness: 0.30, metalness: 0.80 });
+    // Heavy base weight
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.148, 0.065, 12), baseM);
+    base.position.set(x, 0.032, z);
+    scene.add(base);
+    // Post shaft
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.92, 8), goldM);
+    post.position.set(x, 0.49, z);
+    scene.add(post);
+    // Decorative finial cap
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.052, 8, 6), goldM);
+    cap.position.set(x, 0.965, z);
+    scene.add(cap);
+    // Tiny neck band just below cap
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.030, 0.035, 8), baseM);
+    neck.position.set(x, 0.90, z);
+    scene.add(neck);
+  }
+
+  // ── Velvet rope connecting two stanchion tops ────────────────────────────
+  function velvetRope(scene, x1, z1, x2, z2) {
+    const ropeMat = new THREE.MeshStandardMaterial({ color: 0x7a0018, roughness: 0.88, metalness: 0.0 });
+    const dx = x2 - x1, dz = z2 - z1;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    const rope = new THREE.Mesh(new THREE.BoxGeometry(len, 0.032, 0.032), ropeMat);
+    rope.position.set((x1 + x2) / 2, 0.84, (z1 + z2) / 2);
+    rope.rotation.y = Math.atan2(-dz, dx);
+    scene.add(rope);
+  }
+
+  // ── Display case interior contents ───────────────────────────────────────
+  // type: 'ring' | 'coins' | 'gems'
+  function displayCaseContents(scene, x, z, type) {
+    const goldM    = new THREE.MeshStandardMaterial({ color: 0xd4a030, roughness: 0.18, metalness: 0.92, emissive: 0x221500, emissiveIntensity: 0.28 });
+    const rubyM    = new THREE.MeshStandardMaterial({ color: 0xcc2020, roughness: 0.04, metalness: 0.08, emissive: 0x440000, emissiveIntensity: 0.40, transparent: true, opacity: 0.88 });
+    const sapphM   = new THREE.MeshStandardMaterial({ color: 0x1a44cc, roughness: 0.04, metalness: 0.08, emissive: 0x050a44, emissiveIntensity: 0.38, transparent: true, opacity: 0.88 });
+    const emeraldM = new THREE.MeshStandardMaterial({ color: 0x14aa44, roughness: 0.04, metalness: 0.08, emissive: 0x032211, emissiveIntensity: 0.38, transparent: true, opacity: 0.88 });
+    const pearlM   = new THREE.MeshStandardMaterial({ color: 0xf5f0e8, roughness: 0.22, metalness: 0.12 });
+    const cushM    = new THREE.MeshStandardMaterial({ color: 0x600020, roughness: 0.92, metalness: 0.0 });
+    const coinM    = new THREE.MeshStandardMaterial({ color: 0xc8a020, roughness: 0.32, metalness: 0.78 });
+    const Y = 1.44;  // inside glass case — glass runs y≈0.94→2.14
+
+    if (type === 'ring') {
+      // Velvet display cushion
+      box(scene, 0.52, 0.055, 0.32, x, Y - 0.08, z, cushM);
+      // Gold ring with ruby
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.095, 0.020, 8, 16), goldM);
+      ring.position.set(x - 0.10, Y + 0.03, z);
+      ring.rotation.x = Math.PI / 2.8;
+      scene.add(ring);
+      const gem = new THREE.Mesh(new THREE.SphereGeometry(0.038, 7, 5), rubyM);
+      gem.position.set(x - 0.10, Y + 0.115, z);
+      scene.add(gem);
+      // Pearl necklace draped flat
+      const necklace = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.011, 6, 20), pearlM);
+      necklace.position.set(x + 0.13, Y + 0.005, z);
+      necklace.rotation.x = Math.PI / 2.2;
+      scene.add(necklace);
+    }
+
+    if (type === 'coins') {
+      // Velvet tray
+      box(scene, 0.55, 0.042, 0.55, x, Y - 0.09, z, cushM);
+      // Scattered ancient coins (some upright, some flat)
+      const coinDefs = [
+        [-0.17, 0,     -0.14, 0.30,  0.0 ],
+        [ 0.06, 0,      0.16, -0.25, 0.0 ],
+        [ 0.18, 0,     -0.06, 0.15,  0.35],
+        [-0.05, 0.012,  0.0,  0.55,  0.0 ],
+        [ 0.12, 0,      0.20, -0.40, 0.2 ],
+      ];
+      coinDefs.forEach(([ox, oy, oz, rx, rz]) => {
+        const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.011, 10), coinM);
+        coin.position.set(x + ox, Y + oy, z + oz);
+        coin.rotation.set(rx, 0, rz);
+        scene.add(coin);
+      });
+      // Small gold reliquary box at back
+      box(scene, 0.13, 0.075, 0.09, x - 0.15, Y - 0.02, z - 0.18, goldM);
+    }
+
+    if (type === 'gems') {
+      // Velvet display cushion
+      box(scene, 0.52, 0.048, 0.52, x, Y - 0.09, z, cushM);
+      // Gem cluster
+      [
+        [x - 0.14, Y + 0.04, z - 0.10, rubyM,    0.058],
+        [x + 0.08, Y + 0.048, z + 0.09, sapphM,  0.052],
+        [x - 0.04, Y + 0.03, z + 0.19, emeraldM, 0.048],
+        [x + 0.19, Y + 0.025, z - 0.07, goldM,   0.038],
+        [x + 0.01, Y + 0.055, z - 0.04, rubyM,   0.032],
+      ].forEach(([cx, cy, cz, m, r]) => {
+        const gem = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), m);
+        gem.position.set(cx, cy, cz);
+        scene.add(gem);
+      });
+      // Small gold clasp box
+      box(scene, 0.11, 0.065, 0.08, x + 0.08, Y - 0.03, z - 0.19, goldM);
+    }
+  }
+
   // ── Build museum ───────────────────────────────────────
   function init(scene) {
 
@@ -665,8 +862,11 @@ window.GameMap = (function () {
 
     // Lobby paintings (on east and west walls)
     wallPainting(scene, -19.9, 3.5,  8, M.paintings[0], true);
+    paintingSpotlight(scene, -19.9, 3.5,  8, 'west');
     wallPainting(scene, -19.9, 3.5, 28, M.paintings[1], true);
+    paintingSpotlight(scene, -19.9, 3.5, 28, 'west');
     wallPainting(scene,  19.9, 3.5, 16, M.paintings[2], false);
+    paintingSpotlight(scene,  19.9, 3.5, 16, 'east');
 
     // Yellow keycard behind reception desk
     keycard(scene, 'yellow', 0, 16.5);
@@ -726,9 +926,13 @@ window.GameMap = (function () {
 
     // Additional paintings — south wall and east wall
     wallPaintingNS(scene, -10, 3.5, 0.10, M.paintings[3], true);
+    paintingSpotlight(scene, -10, 3.5, 0.10, 'south');
     wallPaintingNS(scene,  10, 3.5, 0.10, M.paintings[4], true);
+    paintingSpotlight(scene,  10, 3.5, 0.10, 'south');
     wallPainting(scene, 19.9, 3.5,  4, M.paintings[3], false);
+    paintingSpotlight(scene,  19.9, 3.5,  4, 'east');
     wallPainting(scene, 19.9, 3.5, 28, M.paintings[4], false);
+    paintingSpotlight(scene,  19.9, 3.5, 28, 'east');
     wallSconce(scene,  19.75, 2.9,  4, -1);
     wallSconce(scene,  19.75, 2.9, 28, -1);
 
@@ -1042,6 +1246,7 @@ window.GameMap = (function () {
 
     // La Joconde (Mona Lisa) — main stealable painting on west wall of gallery
     wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
+    paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
     stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false });
     placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', true);
@@ -1056,9 +1261,18 @@ window.GameMap = (function () {
     scene.add(paintRing);
     paintMesh.userData.floorRing = paintRing;  // hidden when painting is taken
 
+    // Velvet rope barrier around the Mona Lisa
+    stanchion(scene, -21.2, 89.0);
+    stanchion(scene, -21.2, 92.0);
+    stanchion(scene, -21.2, 95.0);
+    velvetRope(scene, -21.2, 89.0, -21.2, 92.0);
+    velvetRope(scene, -21.2, 92.0, -21.2, 95.0);
+
     // Display cases
     displayCase(scene,  14, 70);
+    displayCaseContents(scene,  14, 70, 'coins');
     displayCase(scene, -14, 70);
+    displayCaseContents(scene, -14, 70, 'ring');
     displayCase(scene,   0, 88);
 
     // Blue keycard in display case
@@ -1082,12 +1296,16 @@ window.GameMap = (function () {
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
+    paintingSpotlight(scene, -24.9, 3.5, 70, 'west');
     placard(scene, -24.9, 2.6, 70, 'Liberty Leading the People', 'Eugène Delacroix, 1830', true);
     wallPainting(scene,  24.9, 3.5, 80, M.paintings[1], false);
+    paintingSpotlight(scene,  24.9, 3.5, 80, 'east');
     placard(scene,  24.9, 2.6, 80, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
+    paintingSpotlight(scene,  24.9, 3.5, 60, 'east');
     placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
     wallPainting(scene,  24.9, 3.5, 92, M.harnoor, false);
+    paintingSpotlight(scene,  24.9, 3.5, 92, 'east');
     placard(scene,  24.9, 2.6, 92, 'Dr. Harnoor Dhaliwal', 'Scott Scholars, UNO', false);
 
     // Hack terminal
@@ -1151,7 +1369,9 @@ window.GameMap = (function () {
 
     // Gallery south wall paintings (Z≈55)
     wallPaintingNS(scene, -14, 3.5, 55.10, M.paintings[3], true);
+    paintingSpotlight(scene, -14, 3.5, 55.10, 'south');
     wallPaintingNS(scene,  14, 3.5, 55.10, M.paintings[4], true);
+    paintingSpotlight(scene,  14, 3.5, 55.10, 'south');
     wallSconce(scene, -14, 2.9, 55.5, 0);
     wallSconce(scene,  14, 2.9, 55.5, 0);
 
@@ -1183,17 +1403,22 @@ window.GameMap = (function () {
 
     // Paintings on east wall of side room
     wallPainting(scene, 49.9, 3.5, 71, M.paintings[0], false);
+    paintingSpotlight(scene, 49.9, 3.5, 71, 'east');
     wallPainting(scene, 49.9, 3.5, 83, M.paintings[1], false);
+    paintingSpotlight(scene, 49.9, 3.5, 83, 'east');
     // Painting on south wall
     wallPaintingNS(scene, 38, 3.5, 67.10, M.paintings[2], true);
+    paintingSpotlight(scene, 38, 3.5, 67.10, 'south');
     // Painting on north wall
     wallPaintingNS(scene, 38, 3.5, 86.90, M.paintings[3], false);
+    paintingSpotlight(scene, 38, 3.5, 86.90, 'north');
 
     // Side-room rug (dark forest green with gold border)
     rug(scene, SAX, SAZ, 18, 14, 0x1a3a1a, 0xc8a040);
 
     // Display case with coin cache
     displayCase(scene, 42, 77);
+    displayCaseContents(scene, 42, 77, 'gems');
     coinCache(scene, 42, 77, 4, 1.55);
 
     // Ceiling lamps
@@ -1316,9 +1541,12 @@ window.GameMap = (function () {
 
     // Paintings on west wall — Monet as bonus stealable at z=77 (landscape, wider canvas)
     wallPainting(scene, -49.9, 3.5, 72, M.paintings[2], true);
+    paintingSpotlight(scene, -49.9, 3.5, 72, 'west');
     wallPainting(scene, -49.9, 3.5, 82, M.paintings[3], true);
+    paintingSpotlight(scene, -49.9, 3.5, 82, 'west');
     // Les Nymphéas — Monet bonus stealable, centred between the two decorative paintings
     wallPainting(scene, -49.9, 3.5, 77, M.monet, true);
+    paintingSpotlight(scene, -49.9, 3.5, 77, 'west');
     const monetMesh = box(scene, 0.05, 1.4, 2.1, -49.75, 3.5, 77, M.monet);
     stealables.push({ mesh: monetMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas' });
     placard(scene, -49.9, 2.6, 77, 'Les Nymphéas', 'Claude Monet, c. 1906', true);
@@ -1375,6 +1603,19 @@ window.GameMap = (function () {
     // Skip south and north walls — add stubs manually so corridor/exit connect properly
     roomWalls(scene, 0, 137.5, 50, 45, { south: true, north: true });
 
+    // Crown Vault floor overlay — dark obsidian with gold veining (over standard marble)
+    {
+      const vaultTex = makeVaultFloorTex();
+      vaultTex.repeat.set(50 / 4, 45 / 4);
+      const vaultFloorMat = new THREE.MeshStandardMaterial({
+        map: vaultTex, color: 0x1a1408, roughness: 0.10, metalness: 0.06,
+      });
+      const vaultFloor = new THREE.Mesh(new THREE.BoxGeometry(50, 0.018, 45), vaultFloorMat);
+      vaultFloor.position.set(0, 0.003, 137.5);
+      vaultFloor.receiveShadow = true;
+      scene.add(vaultFloor);
+    }
+
     // Vault south wall stubs — 10-unit gap (matches corridor width) at x=0
     const VS = (50 - 10) / 2;  // stub width = 20
     wall(scene, -(25 - VS / 2), 115, VS, WALL_T);   // west stub centred at (-15, 115)
@@ -1403,6 +1644,16 @@ window.GameMap = (function () {
     const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
     crownMesh.userData.float = true;
     stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false });
+
+    // Velvet rope barrier around the Crown pedestal
+    stanchion(scene, -3.8, 136.5);
+    stanchion(scene,  3.8, 136.5);
+    stanchion(scene, -3.8, 143.5);
+    stanchion(scene,  3.8, 143.5);
+    velvetRope(scene, -3.8, 136.5,  3.8, 136.5);
+    velvetRope(scene, -3.8, 143.5,  3.8, 143.5);
+    velvetRope(scene, -3.8, 136.5, -3.8, 143.5);
+    velvetRope(scene,  3.8, 136.5,  3.8, 143.5);
 
     // Royal Scepter — bonus stealable on its own pedestal
     box(scene, 0.9, 1.1, 0.9, -9, 0.55, 135, M.pedestal);
@@ -1464,12 +1715,16 @@ window.GameMap = (function () {
 
     // Vault wall paintings
     wallPainting(scene, -24.9, 3.5, 125, M.paintings[0], true);
+    paintingSpotlight(scene, -24.9, 3.5, 125, 'west');
     placard(scene, -24.9, 2.6, 125, 'Liberty Leading the People', 'Eugène Delacroix, 1830', true);
     wallPainting(scene, -24.9, 3.5, 150, M.paintings[1], true);
+    paintingSpotlight(scene, -24.9, 3.5, 150, 'west');
     placard(scene, -24.9, 2.6, 150, 'The Raft of the Medusa', 'Théodore Géricault, 1818', true);
     wallPainting(scene,  24.9, 3.5, 130, M.paintings[2], false);
+    paintingSpotlight(scene,  24.9, 3.5, 130, 'east');
     placard(scene,  24.9, 2.6, 130, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
     wallPainting(scene,  24.9, 3.5, 155, M.paintings[3], false);
+    paintingSpotlight(scene,  24.9, 3.5, 155, 'east');
     placard(scene,  24.9, 2.6, 155, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
     wallSconce(scene, -24.75, 2.9, 125,  1);
     wallSconce(scene, -24.75, 2.9, 150,  1);
@@ -1632,7 +1887,7 @@ window.GameMap = (function () {
       // Base frame (4 edges of the square base)
       [[0,1],[1,2],[2,3],[3,0]].forEach(([i,j]) => {
         const b1 = pyrBase[i], b2 = pyrBase[j];
-        const dx=b2[0]-b1[0], dy=b2[1]-b1[1], dz=b2[2]-b1[2];
+        const dx=b2[0]-b1[0], dz=b2[2]-b1[2];
         const l2 = Math.sqrt(dx*dx+dz*dz);
         const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, l2, 5), mFrame);
         beam.position.set((b1[0]+b2[0])/2, 0.07, (b1[2]+b2[2])/2);
