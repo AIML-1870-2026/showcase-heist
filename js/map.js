@@ -629,9 +629,32 @@ window.GameMap = (function () {
     door(scene, 0, 0, 'entry');
     doorGlow(scene, 0, 0, 0x90b0e0);  // cool blue archway
 
-    // Reception desk
-    box(scene, 8, 1.2, 2, 0, 0.6, 14, M.desk);
-    box(scene, 8, 0.1, 2, 0, 1.25, 14, M.desk);
+    // Reception desk — layered museum counter
+    {
+      const _topMat  = new THREE.MeshStandardMaterial({ color: 0xd2cdc2, roughness: 0.14, metalness: 0.06 }); // polished marble top
+      const _fascMat = new THREE.MeshStandardMaterial({ color: 0x1c2535, roughness: 0.80, metalness: 0.04 }); // dark stone fascia
+      const _trimMat = new THREE.MeshStandardMaterial({ color: 0x7a8a9c, roughness: 0.28, metalness: 0.72 }); // brushed steel trim
+      const _scrMat  = new THREE.MeshStandardMaterial({ color: 0x081828, emissive: 0x183858, emissiveIntensity: 0.65, roughness: 0.3, metalness: 0.1 });
+
+      // Main cabinet body (dark stone fascia)
+      box(scene, 8.0,  1.05, 1.85, 0,    0.525, 14.0,  _fascMat);
+      // Polished marble countertop — slight overhang all round
+      box(scene, 8.28, 0.10, 2.12, 0,    1.15,  14.0,  _topMat);
+      // Brushed-steel base trim strip along front face
+      box(scene, 8.0,  0.06, 0.05, 0,    0.03,  13.08, _trimMat);
+      // Raised privacy panel on back edge (staff side)
+      box(scene, 7.8,  0.42, 0.08, 0,    1.41,  14.93, _fascMat);
+      // Front fascia — two recessed lighter insets (left + right)
+      box(scene, 3.5,  0.76, 0.04, -1.9, 0.56,  13.08, _topMat);
+      box(scene, 3.5,  0.76, 0.04,  1.9, 0.56,  13.08, _topMat);
+      // Thin steel divider strip between insets
+      box(scene, 0.06, 0.76, 0.05, 0,    0.56,  13.07, _trimMat);
+      // Flat monitor (screen face + stand arm)
+      box(scene, 0.70, 0.46, 0.04, -1.6, 1.46,  14.62, _scrMat);
+      box(scene, 0.06, 0.06, 0.20, -1.6, 1.18,  14.68, _trimMat);
+      // Thin keyboard slab on counter
+      box(scene, 0.52, 0.02, 0.22, -1.6, 1.16,  14.38, _trimMat);
+    }
     addWallAABB(0, 14, 8, 2);
 
     // Decorative pillars
