@@ -1328,6 +1328,12 @@ window.GameMap = (function () {
       // ── Courtyard floor ────────────────────────────────
       // Main paving
       box(scene, COURT_W*2, 0.28, 84, 0, -0.14, 206, mCobble);
+      // Central stone walkway (lighter paving, Z 165→215)
+      const mWalkway = new THREE.MeshStandardMaterial({ color: 0xd0c8b4, roughness: 0.84, metalness: 0.0 });
+      box(scene, 14, 0.29, 50, 0, -0.135, 189, mWalkway);
+      // Horizontal accent bands across full courtyard width
+      box(scene, COURT_W*2, 0.29, 1.2, 0, -0.135, 175, mWalkway);
+      box(scene, COURT_W*2, 0.29, 1.2, 0, -0.135, 200, mWalkway);
       // Circular stone ring around pyramid (darker band)
       const ringFloor = new THREE.Mesh(
         new THREE.RingGeometry(13.5, 20, 48),
@@ -1447,31 +1453,82 @@ window.GameMap = (function () {
         }, null);
       });
 
-      // ── Pyramid base / reflecting pools ───────────────
-      // Stepped stone base ring
-      box(scene, PB*2+5, 0.6, PB*2+5, PX, 0.3, PZ, mPool);
-      box(scene, PB*2+3, 0.35, PB*2+3, PX, 0.65, PZ, mPool);
-      // Water moat (just inside the outer ring)
-      [[0, PB+3.5], [0, -(PB+3.5)], [PB+3.5, 0], [-(PB+3.5), 0]].forEach(([ox, oz]) => {
-        const w2 = Math.abs(oz) > 0.1 ? PB*2+7 : 4;
-        const d2 = Math.abs(ox) > 0.1 ? PB*2+7 : 4;
-        box(scene, w2, 0.15, d2, PX+ox, 0.42, PZ+oz, mWater);
+      // ── Reflecting pools (rectangular, flanking central path) ──
+      const mPoolEdge = new THREE.MeshStandardMaterial({ color: 0x989080, roughness: 0.88, metalness: 0.0 });
+      // Left pool — stone surround + water surface
+      box(scene, 22, 0.55, 28, -26, 0.275, 186, mPoolEdge);
+      box(scene, 18, 0.18, 24, -26, 0.62,  186, mWater);
+      // Right pool
+      box(scene, 22, 0.55, 28,  26, 0.275, 186, mPoolEdge);
+      box(scene, 18, 0.18, 24,  26, 0.62,  186, mWater);
+      // Fountain jets (translucent cylinders)
+      const mJet = new THREE.MeshBasicMaterial({ color: 0xb8e0ff, transparent: true, opacity: 0.5 });
+      [-33, -26, -19].forEach(jx => {
+        const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, 2.4, 5), mJet);
+        jet.position.set(jx, 1.9, 186); scene.add(jet);
       });
+      [19, 26, 33].forEach(jx => {
+        const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, 2.4, 5), mJet);
+        jet.position.set(jx, 1.9, 186); scene.add(jet);
+      });
+
+      // ── Pyramid base / entrance structure ─────────────
+      // Raised stone plaza around pyramid base
+      box(scene, PB*2+8, 0.65, PB*2+8, PX, 0.325, PZ, mPool);
+      box(scene, PB*2+5, 0.38, PB*2+5, PX, 0.84,  PZ, mPool);
+      // Metallic entrance building at south face of pyramid
+      const mMetal = new THREE.MeshStandardMaterial({ color: 0x505860, roughness: 0.3, metalness: 0.75 });
+      const mEntGlass = new THREE.MeshBasicMaterial({ color: 0x6090b0, transparent: true, opacity: 0.55 });
+      box(scene, 9, 2.2, 4.5, PX, 1.1 + 1.1, PZ - PB - 1.5, mMetal);   // body
+      box(scene, 7, 1.8, 0.12, PX, 1.1 + 0.9, PZ - PB - 3.7, mEntGlass); // glass south face
+      box(scene, 9.4, 0.22, 4.9, PX, 1.1 + 2.2, PZ - PB - 1.5, mMetal); // roof cap
+
+      // ── Winged Victory of Samothrace (simplified sculpture) ──
+      {
+        const mMarble = new THREE.MeshStandardMaterial({ color: 0xcdc8bc, roughness: 0.62, metalness: 0.0 });
+        const sX = -28, sZ = 193;
+        // Pedestal
+        box(scene, 3.4, 0.4, 3.4, sX, 0.2,  sZ, mPool);
+        box(scene, 2.6, 4.0, 2.2, sX, 2.4,  sZ, mPool);
+        box(scene, 3.0, 0.3, 2.6, sX, 4.55, sZ, mPool);
+        // Torso
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.52, 2.2, 6), mMarble);
+        torso.position.set(sX, 5.75, sZ); scene.add(torso);
+        // Head stump
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 6, 5), mMarble);
+        head.position.set(sX, 7.1, sZ); scene.add(head);
+        // Wings (angled flat slabs)
+        const wGeo = new THREE.BoxGeometry(2.6, 0.1, 1.6);
+        const wL = new THREE.Mesh(wGeo, mMarble); wL.position.set(sX-1.1, 6.3, sZ); wL.rotation.z =  0.42; scene.add(wL);
+        const wR = new THREE.Mesh(wGeo, mMarble); wR.position.set(sX+1.1, 6.3, sZ); wR.rotation.z = -0.42; scene.add(wR);
+        // Ground spotlight disc
+        const spotDisc = new THREE.Mesh(new THREE.CircleGeometry(1.6, 12),
+          new THREE.MeshBasicMaterial({ color: 0xfff0cc, transparent: true, opacity: 0.35 }));
+        spotDisc.rotation.x = -Math.PI / 2; spotDisc.position.set(sX, 0.02, sZ); scene.add(spotDisc);
+      }
 
       // ── Lampposts along courtyard (emissive only — no PointLights) ───
       {
         const poleM = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.5, metalness: 0.6 });
-        const glowM = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 2.0, roughness: 0.2 });
+        const glowM = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffe880, emissiveIntensity: 2.5, roughness: 0.2 });
         function lamppost2(lx, lz) {
-          box(scene, 0.15, 6, 0.15, lx, 3, lz, poleM);
-          const globe = new THREE.Mesh(new THREE.SphereGeometry(0.4, 7, 5), glowM);
-          globe.position.set(lx, 6.4, lz); scene.add(globe);
+          box(scene, 0.14, 6.5, 0.14, lx, 3.25, lz, poleM);
+          box(scene, 0.1, 0.1, 1.0, lx, 6.5, lz + 0.4, poleM);  // short arm
+          const globe = new THREE.Mesh(new THREE.SphereGeometry(0.38, 7, 5), glowM);
+          globe.position.set(lx, 6.8, lz + 0.4); scene.add(globe);
         }
-        for (let lz = 170; lz <= 244; lz += 14) {
+        // Outer perimeter along wing walls
+        for (let lz = 170; lz <= 244; lz += 12) {
           lamppost2(-COURT_W+2, lz);
           lamppost2( COURT_W-2, lz);
         }
-        [[PX-18,PZ-18],[PX+18,PZ-18],[PX+18,PZ+18],[PX-18,PZ+18]].forEach(([lx,lz]) => lamppost2(lx,lz));
+        // Along central walkway edges
+        for (let lz = 170; lz <= 212; lz += 14) {
+          lamppost2(-8, lz);
+          lamppost2( 8, lz);
+        }
+        // Flanking pyramid plaza
+        [[PX-20,PZ-18],[PX+20,PZ-18],[PX+20,PZ+18],[PX-20,PZ+18]].forEach(([lx,lz]) => lamppost2(lx,lz));
       }
 
       // ── Night sky ──────────────────────────────────────
