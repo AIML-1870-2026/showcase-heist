@@ -808,8 +808,9 @@ window.Player = (function () {
       if (d.open) continue;
       const _dx = d.x - pos.x, _dz = d.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
-        const locked = d.keyRequired && !G.inventory[d.keyRequired];
-        UI.showPrompt(locked ? '[E] Lockpick door (risky)' : '[E] Open door');
+        const isEntry = d.keyRequired === 'entry';
+        const locked  = d.keyRequired && !G.inventory[d.keyRequired];
+        UI.showPrompt(isEntry ? '[E] Pick the front lock' : locked ? '[E] Lockpick door (risky)' : '[E] Open door');
         found = true; break;
       }
     }
@@ -835,12 +836,12 @@ window.Player = (function () {
   }
 
   function reset() {
-    pos.set(0, 0, 5);
+    pos.set(0, 0, -12);
     vel.set(0, 0, 0);
     state     = 'normal';
     onGround  = true;
     jumpCount = 0;
-    yaw       = Math.PI;
+    yaw       = 0;      // facing north (+Z) into the museum
     pitch     = 0.25;
     // Rebuild mesh so suit/eye colours from customisation screen take effect
     if (playerMesh) scene.remove(playerMesh);

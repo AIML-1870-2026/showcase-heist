@@ -618,7 +618,16 @@ window.GameMap = (function () {
     // ════════════════════════════════
     //  LOBBY  cx=0  cz=20  40×40
     // ════════════════════════════════
-    roomWalls(scene, 0, 20, 40, 40, { north: true });
+    roomWalls(scene, 0, 20, 40, 40, { north: true, south: true });
+
+    // South wall stubs flanking the 3-unit front entrance gap
+    const _enStub = (40 - 3) / 2;  // 18.5
+    wall(scene, -(20 - _enStub / 2), 0, _enStub, WALL_T);  // west stub  centred at (-10.75, 0)
+    wall(scene,  (20 - _enStub / 2), 0, _enStub, WALL_T);  // east stub  centred at ( 10.75, 0)
+
+    // Front entrance door — always requires lock-picking (no key in inventory)
+    door(scene, 0, 0, 'entry');
+    doorGlow(scene, 0, 0, 0x90b0e0);  // cool blue archway
 
     // Reception desk
     box(scene, 8, 1.2, 2, 0, 0.6, 14, M.desk);
@@ -702,6 +711,44 @@ window.GameMap = (function () {
 
     // Glowing archway at yellow keycard door so the exit is obvious
     doorGlow(scene, 0, 39.75, 0xf0c040);
+
+    // ════════════════════════════════
+    //  EXTERIOR ENTRANCE PLAZA  Z=-22→0  X=-20→20
+    //  Player spawns here and must pick the front lock.
+    // ════════════════════════════════
+    {
+      const extFloorMat = new THREE.MeshStandardMaterial({ color: 0xb0aaa0, roughness: 0.94, metalness: 0.0 });
+      // Cobblestone plaza floor
+      box(scene, 40, 0.28, 22, 0, -0.14, -11, extFloorMat);
+
+      // Extend east/west lobby walls south to close off the plaza
+      box(scene, WALL_T, WALL_H, 22, -20, WALL_H / 2, -11, M.wall);
+      addWallAABB(-20, -11, WALL_T + 0.02, 22.02);
+      box(scene, WALL_T, WALL_H, 22,  20, WALL_H / 2, -11, M.wall);
+      addWallAABB( 20, -11, WALL_T + 0.02, 22.02);
+
+      // South boundary low wall (player starting zone)
+      box(scene, 40, 1.8, WALL_T, 0, 0.9, -22, M.wall);
+      addWallAABB(0, -22, 40.02, WALL_T + 0.02);
+
+      // Grand entrance pillars flanking the front door (outside face)
+      pillar(scene, -5, -3);
+      pillar(scene,  5, -3);
+
+      // Gold "MUSÉE DU LOUVRE" nameplate above entrance
+      const plaqueMat = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.28, metalness: 0.75 });
+      box(scene, 5.5, 0.38, 0.14, 0, WALL_H - 0.55, -0.08, plaqueMat);
+
+      // Wall sconces on the entrance pillars
+      wallSconce(scene, -5.22, 2.8, -3,  1);
+      wallSconce(scene,  5.22, 2.8, -3, -1);
+
+      // Ceiling lamp above entrance exterior
+      ceilingLamp(scene, 0, -5);
+
+      // Baseboard strip along south boundary wall interior face
+      box(scene, 39.6, 0.22, 0.09, 0, 0.11, -21.75, _baseMat);
+    }
 
     // ════════════════════════════════
     //  CORRIDOR 1  cx=0  cz=47.5  10×15
