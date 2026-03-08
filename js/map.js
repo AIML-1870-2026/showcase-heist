@@ -715,7 +715,7 @@ window.GameMap = (function () {
     // Guard break table + chair against east wall
     box(scene, 2.0, 0.75, 1.3, 3.5, 0.375, 47.5, M.desk);
     box(scene, 0.65, 0.5,  0.65, 3.5, 0.25, 45.8, M.desk);    // seat
-    box(scene, 0.65, 0.75, 0.1,  3.5, 0.375, 45.5, M.desk);   // backrest
+    box(scene, 0.65, 0.75, 0.1,  3.5, 0.875, 45.5, M.desk);   // backrest
     // Wall locker on west side (guard equipment)
     box(scene, 1.1, 2.3, 0.45, -4.6, 1.15, 43.5, _frameMat);
     box(scene, 0.5, 2.2, 0.06, -4.6, 1.1,  43.27, _moldMat);  // locker door panel
@@ -724,7 +724,7 @@ window.GameMap = (function () {
     box(scene, 1.9, 1.2, 0.05, -4.6, 2.8, 49.45,
       new THREE.MeshStandardMaterial({ color: 0x001a33, emissive: 0x000d1a, emissiveIntensity: 0.4 }));
     // Coin cache — guards left their distraction coin stash on the table
-    coinCache(scene, 3.5, 47.5, 3, 1.1);
+    coinCache(scene, 3.5, 47.5, 3, 0.89);
 
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
@@ -1089,13 +1089,13 @@ window.GameMap = (function () {
 
     // Shelving unit + boxes against west wall
     box(scene, 2.4, 2.6, 0.45, -4.65, 1.3, 107.5, M.desk);
-    box(scene, 0.65, 0.3, 0.38, -4.65, 2.65, 108.2, M.terminal); // small crate on top
-    box(scene, 0.55, 0.28, 0.38, -4.65, 2.65, 106.8, M.terminal);
+    box(scene, 0.65, 0.3, 0.38, -4.65, 2.75, 108.2, M.terminal); // small crate on top
+    box(scene, 0.55, 0.28, 0.38, -4.65, 2.74, 106.8, M.terminal);
     // Utility table on east side
     box(scene, 1.8, 0.75, 1.0, 3.5, 0.375, 109, M.desk);
     box(scene, 0.55, 0.22, 0.35, 3.5, 0.86, 109, M.terminal);    // item on table
     // Coin cache — maintenance crew left spare coins
-    coinCache(scene, 3.5, 109, 2, 1.1);
+    coinCache(scene, 3.5, 109, 2, 0.89);
 
     // ════════════════════════════════
     //  CROWN VAULT  cx=0  cz=137.5  50×45
