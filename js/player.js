@@ -25,7 +25,7 @@ window.Player = (function () {
   let _leftLeg = null, _rightLeg = null;
   let _leftArm = null, _rightArm = null;
 
-  let pos       = new THREE.Vector3(0, 0, 5);
+  let pos       = new THREE.Vector3(0, 0, -16);
   let vel       = new THREE.Vector3(0, 0, 0);
   let onGround  = true;
   let jumpCount = 0;
