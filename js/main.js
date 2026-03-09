@@ -57,6 +57,8 @@
     closeCalls:     0,
     distractCount:  3,
     _usedDistract:  false,
+    takedownCount:  0,
+    loadout:        { smoke: false, lockpick: false, coins: false, vault: false },
     _throwEvent:    null,
     _checkpointReached: { Gallery: false, 'Crown Vault': false },
     _checkpointData:    null,
@@ -71,6 +73,7 @@
     masterThief:  { name: 'Master Thief',  desc: 'Achieved S rating' },
     smokeMaster:  { name: 'Smoke Screen',  desc: 'Used a smoke bomb' },
     vaultCracker: { name: 'Vault Cracker', desc: 'Cracked the Crown Vault safe' },
+    nightcap:     { name: 'Nightcap',      desc: 'Subdued 2 guards without being caught' },
   };
   window.Achievements = {
     unlock(id) {
@@ -744,21 +747,23 @@
     G.alarm        = { level: 0, active: false };
     G.guardsAlerted = 0;
     G.closeCalls    = 0;
-    G.distractCount = 3;
+    G.distractCount = G.loadout.coins  ? 6 : 3;
     G._usedDistract = false;
-    G.smokeCount    = 1;
+    G.smokeCount    = G.loadout.smoke  ? 2 : 1;
+    G.takedownCount = 0;
     G._smokeClouds  = [];
     G._smokeEvent   = null;
     G._stamina      = 1.0;
     G._moneyStolen  = 0;
     G._earnedAchs   = new Set();
     G._throwEvent   = null;
+    G.takedownCount = 0;
     G._checkpointReached = { Gallery: false, 'Crown Vault': false };
     G._checkpointData    = null;
     _prevCaught = false;
     _smokeT     = SMOKE_DUR;
-    UI.updateDistractCount(3);
-    UI.updateSmokeCount(1);
+    UI.updateDistractCount(G.distractCount);
+    UI.updateSmokeCount(G.smokeCount);
 
     // Apply difficulty
     Guards.setDifficulty(G.difficulty);
@@ -947,8 +952,62 @@
 
     $('btn-solo').onclick = () => showCustomize('solo');
     $('btn-coop').onclick = () => showCustomize('coop');
-    $('btn-start-heist').onclick = () => { applyCustomization(); _previewDestroy(); $('customize-screen').classList.add('hidden'); startGame(_pendingMode); };
+    // After customization → go to loadout screen
+    $('btn-start-heist').onclick = () => {
+      applyCustomization();
+      _previewDestroy();
+      $('customize-screen').classList.add('hidden');
+      _openLoadout();
+    };
     $('btn-back-menu').onclick   = () => { _previewDestroy(); $('customize-screen').classList.add('hidden'); UI.showScreen('start'); };
+
+    // ── Loadout screen ──────────────────────────────────────
+    const MAX_LOADOUT = 2;
+    let _selectedLoadout = new Set();
+
+    function _openLoadout() {
+      _selectedLoadout = new Set();
+      document.querySelectorAll('.loadout-item').forEach(el => el.classList.remove('selected'));
+      _updateLoadoutCount();
+      UI.showScreen('loadout');
+    }
+
+    function _updateLoadoutCount() {
+      const el = $('loadout-count');
+      if (el) el.textContent = 'Selected: ' + _selectedLoadout.size + ' / ' + MAX_LOADOUT;
+    }
+
+    document.querySelectorAll('.loadout-item').forEach(el => {
+      el.onclick = () => {
+        const item = el.dataset.item;
+        if (_selectedLoadout.has(item)) {
+          _selectedLoadout.delete(item);
+          el.classList.remove('selected');
+        } else if (_selectedLoadout.size < MAX_LOADOUT) {
+          _selectedLoadout.add(item);
+          el.classList.add('selected');
+        }
+        _updateLoadoutCount();
+      };
+    });
+
+    $('btn-begin-heist').onclick = () => {
+      const G = window.G;
+      G.loadout = {
+        smoke:    _selectedLoadout.has('smoke'),
+        lockpick: _selectedLoadout.has('lockpick'),
+        coins:    _selectedLoadout.has('coins'),
+        vault:    _selectedLoadout.has('vault'),
+      };
+      UI.showScreen(null);
+      startGame(_pendingMode);
+    };
+
+    $('btn-loadout-back').onclick = () => {
+      UI.showScreen(null);
+      $('customize-screen').classList.remove('hidden');
+      _previewInit();
+    };
 
     $('btn-resume').onclick     = resumeGame;
     $('btn-restart').onclick    = () => startGame(window.G.mode);

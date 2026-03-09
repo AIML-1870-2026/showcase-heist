@@ -377,6 +377,67 @@ html, body {
   max-width: 400px;
 }
 
+/* ── Loadout screen ─────────────────────────────────────── */
+#loadout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.loadout-item {
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 6px;
+  padding: 14px 12px;
+  cursor: pointer;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.loadout-item:hover {
+  border-color: rgba(201, 168, 76, 0.5);
+  background: rgba(201, 168, 76, 0.06);
+}
+
+.loadout-item.selected {
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.14);
+}
+
+.loadout-icon {
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: var(--gold);
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+
+.loadout-name {
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: #e8c97a;
+  margin-bottom: 4px;
+}
+
+.loadout-desc {
+  font-size: 0.68rem;
+  color: #777;
+  line-height: 1.4;
+}
+
+.loadout-item.selected .loadout-desc { color: #aaa; }
+
+#loadout-count {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 4px;
+}
+
 /* ── Buttons ────────────────────────────────────────────── */
 .menu-buttons {
   display: flex;

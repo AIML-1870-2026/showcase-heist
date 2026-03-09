@@ -36,7 +36,7 @@
       </div>
       <div class="controls-hint">
         <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Sprint &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
-        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
+        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
       </div>
     </div>
   </div>
@@ -87,6 +87,41 @@
             <button id="btn-back-menu" class="btn btn-ghost">Back</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loadout Selection -->
+  <div id="loadout-screen" class="screen hidden">
+    <div class="screen-content">
+      <h2 style="margin-bottom:4px;">Gear Selection</h2>
+      <p style="color:#888;font-size:0.8rem;margin-bottom:18px;">Choose up to 2 items for your heist</p>
+      <div id="loadout-grid">
+        <div class="loadout-item" data-item="smoke">
+          <div class="loadout-icon">[SMOKE]</div>
+          <div class="loadout-name">Extra Smoke Bomb</div>
+          <div class="loadout-desc">Start with 2 smoke bombs instead of 1</div>
+        </div>
+        <div class="loadout-item" data-item="lockpick">
+          <div class="loadout-icon">[PICK]</div>
+          <div class="loadout-name">Lockpick Kit</div>
+          <div class="loadout-desc">Auto-open all locked doors — no minigame</div>
+        </div>
+        <div class="loadout-item" data-item="coins">
+          <div class="loadout-icon">[COIN]</div>
+          <div class="loadout-name">Coin Cache</div>
+          <div class="loadout-desc">Start with 6 distraction coins instead of 3</div>
+        </div>
+        <div class="loadout-item" data-item="vault">
+          <div class="loadout-icon">[VAULT]</div>
+          <div class="loadout-name">Vault Override</div>
+          <div class="loadout-desc">Crown Vault safe only needs 2 tumblers</div>
+        </div>
+      </div>
+      <div id="loadout-count">Selected: 0 / 2</div>
+      <div class="menu-buttons" style="margin-top:14px;">
+        <button id="btn-begin-heist" class="btn btn-primary">Begin Heist</button>
+        <button id="btn-loadout-back" class="btn btn-ghost">Back</button>
       </div>
     </div>
   </div>

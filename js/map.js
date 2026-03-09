@@ -285,6 +285,11 @@ window.GameMap = (function () {
   const guardData      = [];
   const vents          = [];
 
+  // Pick a random patrol route from multiple options each run
+  function _route(...sets) {
+    return sets[Math.floor(Math.random() * sets.length)];
+  }
+
   // ── Low-level helpers ──────────────────────────────────
   function box(scene, w, h, d, x, y, z, mat) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -1083,24 +1088,28 @@ window.GameMap = (function () {
     // Yellow keycard behind reception desk
     keycard(scene, 'yellow', 0, 16.5);
 
-    // Guard spawns — Lobby (2 guards)
+    // Guard spawns — Lobby (2 guards, randomized routes each run)
     guardData.push({
       spawnX: -8, spawnZ: 4,
-      waypoints: [
-        new THREE.Vector3(-8, 0,  4),
-        new THREE.Vector3(-8, 0, 36),
-        new THREE.Vector3( 8, 0, 36),
-        new THREE.Vector3( 8, 0,  4),
-      ],
+      waypoints: _route(
+        // Route A: outer rectangle
+        [new THREE.Vector3(-8,0,4), new THREE.Vector3(-8,0,36), new THREE.Vector3(8,0,36), new THREE.Vector3(8,0,4)],
+        // Route B: diagonal cross sweep
+        [new THREE.Vector3(-14,0,4), new THREE.Vector3(14,0,36), new THREE.Vector3(14,0,4), new THREE.Vector3(-14,0,36)],
+        // Route C: north-side focus with center pass
+        [new THREE.Vector3(-8,0,4), new THREE.Vector3(0,0,20), new THREE.Vector3(8,0,4), new THREE.Vector3(8,0,36), new THREE.Vector3(-8,0,36)]
+      ),
     });
     guardData.push({
       spawnX: 8, spawnZ: 36,
-      waypoints: [
-        new THREE.Vector3( 8, 0, 36),
-        new THREE.Vector3(-8, 0, 36),
-        new THREE.Vector3(-8, 0,  4),
-        new THREE.Vector3( 8, 0,  4),
-      ],
+      waypoints: _route(
+        // Route A: outer rectangle (counter-clockwise)
+        [new THREE.Vector3(8,0,36), new THREE.Vector3(-8,0,36), new THREE.Vector3(-8,0,4), new THREE.Vector3(8,0,4)],
+        // Route B: east-side tight loop
+        [new THREE.Vector3(8,0,36), new THREE.Vector3(14,0,20), new THREE.Vector3(8,0,4), new THREE.Vector3(0,0,20)],
+        // Route C: south-heavy patrol
+        [new THREE.Vector3(8,0,4), new THREE.Vector3(-8,0,4), new THREE.Vector3(-8,0,20), new THREE.Vector3(8,0,20)]
+      ),
     });
 
     // Security camera — Lobby
@@ -1590,34 +1599,39 @@ window.GameMap = (function () {
     // Hack terminal
     terminal(scene, 20, 78);
 
-    // Guard spawns — Gallery (3 guards)
+    // Guard spawns — Gallery (3 guards, randomized routes each run)
     guardData.push({
       spawnX: -10, spawnZ: 60,
-      waypoints: [
-        new THREE.Vector3(-10, 0, 60),
-        new THREE.Vector3( 10, 0, 60),
-        new THREE.Vector3( 10, 0, 78),
-        new THREE.Vector3(-10, 0, 78),
-      ],
+      waypoints: _route(
+        // Route A: south gallery rectangle
+        [new THREE.Vector3(-10,0,60), new THREE.Vector3(10,0,60), new THREE.Vector3(10,0,78), new THREE.Vector3(-10,0,78)],
+        // Route B: west-wall sweep
+        [new THREE.Vector3(-20,0,60), new THREE.Vector3(-20,0,78), new THREE.Vector3(-5,0,78), new THREE.Vector3(-5,0,60)],
+        // Route C: diagonal through gallery center
+        [new THREE.Vector3(-10,0,60), new THREE.Vector3(10,0,78), new THREE.Vector3(-10,0,78), new THREE.Vector3(10,0,60)]
+      ),
     });
     guardData.push({
       spawnX: 0, spawnZ: 92,
-      waypoints: [
-        new THREE.Vector3(  0, 0, 92),
-        new THREE.Vector3( 16, 0, 92),
-        new THREE.Vector3( 16, 0, 98),
-        new THREE.Vector3(-16, 0, 98),
-        new THREE.Vector3(-16, 0, 92),
-      ],
+      waypoints: _route(
+        // Route A: north gallery sweep
+        [new THREE.Vector3(0,0,92), new THREE.Vector3(16,0,92), new THREE.Vector3(16,0,98), new THREE.Vector3(-16,0,98), new THREE.Vector3(-16,0,92)],
+        // Route B: east-to-center loop
+        [new THREE.Vector3(16,0,90), new THREE.Vector3(16,0,98), new THREE.Vector3(0,0,98), new THREE.Vector3(0,0,90)],
+        // Route C: wide north patrol
+        [new THREE.Vector3(-18,0,88), new THREE.Vector3(18,0,88), new THREE.Vector3(18,0,98), new THREE.Vector3(-18,0,98)]
+      ),
     });
     guardData.push({
       spawnX: -15, spawnZ: 65,
-      waypoints: [
-        new THREE.Vector3(-15, 0, 65),
-        new THREE.Vector3(-15, 0, 75),
-        new THREE.Vector3(  5, 0, 75),
-        new THREE.Vector3(  5, 0, 65),
-      ],
+      waypoints: _route(
+        // Route A: west corridor loop
+        [new THREE.Vector3(-15,0,65), new THREE.Vector3(-15,0,75), new THREE.Vector3(5,0,75), new THREE.Vector3(5,0,65)],
+        // Route B: bench area sweep
+        [new THREE.Vector3(-15,0,68), new THREE.Vector3(0,0,68), new THREE.Vector3(0,0,80), new THREE.Vector3(-15,0,80)],
+        // Route C: tight west-wall post
+        [new THREE.Vector3(-20,0,62), new THREE.Vector3(-20,0,78), new THREE.Vector3(-10,0,78), new THREE.Vector3(-10,0,62)]
+      ),
     });
 
     // Cameras — Gallery
@@ -2004,42 +2018,50 @@ window.GameMap = (function () {
       iRing.rotation.x = -Math.PI / 2; iRing.position.set(9, 0.02, 135); scene.add(iRing);
       ivFig.userData.floorRing = iRing; }
 
-    // Guard spawns — Crown Vault (4 guards)
+    // Guard spawns — Crown Vault (4 guards, randomized routes each run)
     guardData.push({
       spawnX: -10, spawnZ: 120,
-      waypoints: [
-        new THREE.Vector3(-10, 0, 120),
-        new THREE.Vector3( 10, 0, 120),
-        new THREE.Vector3( 10, 0, 138),
-        new THREE.Vector3(-10, 0, 138),
-      ],
+      waypoints: _route(
+        // Route A: south vault rectangle
+        [new THREE.Vector3(-10,0,120), new THREE.Vector3(10,0,120), new THREE.Vector3(10,0,138), new THREE.Vector3(-10,0,138)],
+        // Route B: center focus around crown pedestal
+        [new THREE.Vector3(-10,0,120), new THREE.Vector3(0,0,135), new THREE.Vector3(10,0,120), new THREE.Vector3(0,0,128)],
+        // Route C: west-side sweep
+        [new THREE.Vector3(-16,0,118), new THREE.Vector3(-16,0,140), new THREE.Vector3(-5,0,140), new THREE.Vector3(-5,0,118)]
+      ),
     });
     guardData.push({
       spawnX: 10, spawnZ: 155,
-      waypoints: [
-        new THREE.Vector3( 10, 0, 155),
-        new THREE.Vector3(-10, 0, 155),
-        new THREE.Vector3(-10, 0, 160),
-        new THREE.Vector3( 10, 0, 160),
-      ],
+      waypoints: _route(
+        // Route A: exit corridor pace
+        [new THREE.Vector3(10,0,155), new THREE.Vector3(-10,0,155), new THREE.Vector3(-10,0,160), new THREE.Vector3(10,0,160)],
+        // Route B: east-side tight watch
+        [new THREE.Vector3(16,0,148), new THREE.Vector3(16,0,160), new THREE.Vector3(5,0,160), new THREE.Vector3(5,0,148)],
+        // Route C: wide north exit sweep
+        [new THREE.Vector3(-14,0,150), new THREE.Vector3(14,0,150), new THREE.Vector3(14,0,160), new THREE.Vector3(-14,0,160)]
+      ),
     });
     guardData.push({
       spawnX: -16, spawnZ: 140,
-      waypoints: [
-        new THREE.Vector3(-16, 0, 140),
-        new THREE.Vector3(-16, 0, 158),
-        new THREE.Vector3( 16, 0, 158),
-        new THREE.Vector3( 16, 0, 140),
-      ],
+      waypoints: _route(
+        // Route A: outer perimeter
+        [new THREE.Vector3(-16,0,140), new THREE.Vector3(-16,0,158), new THREE.Vector3(16,0,158), new THREE.Vector3(16,0,140)],
+        // Route B: west wall
+        [new THREE.Vector3(-20,0,118), new THREE.Vector3(-20,0,158), new THREE.Vector3(-10,0,158), new THREE.Vector3(-10,0,118)],
+        // Route C: diagonal vault sweep
+        [new THREE.Vector3(-16,0,118), new THREE.Vector3(16,0,158), new THREE.Vector3(-16,0,158), new THREE.Vector3(16,0,118)]
+      ),
     });
     guardData.push({
       spawnX: 16, spawnZ: 118,
-      waypoints: [
-        new THREE.Vector3( 16, 0, 118),
-        new THREE.Vector3( 16, 0, 130),
-        new THREE.Vector3(-16, 0, 130),
-        new THREE.Vector3(-16, 0, 118),
-      ],
+      waypoints: _route(
+        // Route A: east entry rectangle
+        [new THREE.Vector3(16,0,118), new THREE.Vector3(16,0,130), new THREE.Vector3(-16,0,130), new THREE.Vector3(-16,0,118)],
+        // Route B: east wall sentry
+        [new THREE.Vector3(20,0,118), new THREE.Vector3(20,0,140), new THREE.Vector3(10,0,140), new THREE.Vector3(10,0,118)],
+        // Route C: entry + center loop
+        [new THREE.Vector3(16,0,118), new THREE.Vector3(0,0,130), new THREE.Vector3(-16,0,118), new THREE.Vector3(0,0,122)]
+      ),
     });
 
     // Crown Vault rug near crown pedestal (royal purple with gold border)

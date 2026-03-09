@@ -515,6 +515,7 @@ window.Guards = (function () {
       this.stateT     = 0;
       this.lastKnown  = new THREE.Vector3();
       this.noiseTarget = null;
+      this._subduedTimer = 0;
 
       this.pos        = new THREE.Vector3(data.spawnX, 0, data.spawnZ);
       this.facing     = new THREE.Vector3(0, 0, 1);
@@ -669,6 +670,15 @@ window.Guards = (function () {
       const sees = this._lastSaw;
 
       switch (this.state) {
+
+        case 'subdued': {
+          this._subduedTimer -= dt;
+          if (this._subduedTimer <= 0) this._wakeUp();
+          // Sync mesh position (guard stays flat at last pos)
+          this.mesh.position.x = this.pos.x;
+          this.mesh.position.z = this.pos.z;
+          return; // skip all other update logic
+        }
 
         case 'patrol': {
           // Walk waypoint circuit
@@ -890,6 +900,36 @@ window.Guards = (function () {
       }
     }
 
+    subdue() {
+      this.state          = 'subdued';
+      this._subduedTimer  = 45;
+      this.detectT        = 0;
+      this._path          = [];
+      this._pathIdx       = 0;
+      // Visually slump: tilt sideways and sink slightly
+      this.mesh.rotation.z  = Math.PI / 2;
+      this.mesh.position.y  = 0.5;
+      this.coneMesh.visible = false;
+      this.beamMesh.visible = false;
+      this._flash.intensity = 0;
+      this.bubble.visible   = false;
+      this.detectBar.visible = false;
+    }
+
+    _wakeUp() {
+      this.mesh.rotation.z  = 0;
+      this.mesh.position.y  = 0;
+      this.state            = 'searching';
+      this.stateT           = 0;
+      this._searchPhase     = 'look';
+      this._lookT           = 0;
+      this._lookYawBase     = this.facingAngle();
+      this.lastKnown.copy(this.pos);
+      triggerAlarmLevel(1);
+      if (window.UI) UI.showAlert('Guard waking up — alarm raised!', 2500);
+      if (window.UI) UI.SFX.alert();
+    }
+
     getPosition() { return this.pos.clone(); }
     getState()    { return this.state; }
   }
@@ -940,6 +980,63 @@ window.Guards = (function () {
     // Alerted guards always check (they're chasing) to keep catch logic responsive.
     _visionFrame = (_visionFrame + 1) % 3;
     guards.forEach((g, i) => g.update(dt, playerPos, isCrouching, i % 3 === _visionFrame));
+
+    // Body discovery: patrolling guards that walk near a subdued guard raise alarm
+    guards.forEach((g, i) => {
+      if (g.state !== 'subdued') return;
+      guards.forEach((other, j) => {
+        if (i === j || other.state !== 'patrol') return;
+        const dx = g.pos.x - other.pos.x;
+        const dz = g.pos.z - other.pos.z;
+        if (dx * dx + dz * dz < 5 * 5) {
+          other.state      = 'alerted';
+          other.stateT     = 0;
+          other._pathTimer = 0;
+          other.lastKnown.copy(playerPos);
+          if (window.G) window.G.guardsAlerted++;
+          triggerAlarmLevel(2);
+          if (window.UI) UI.showAlert('Guard found a body!', 3000);
+          if (window.UI) UI.SFX.alert();
+        }
+      });
+    });
+  }
+
+  // Returns true and subdues the guard if player is behind a valid target.
+  function tryTakedown(px, pz, facingX, facingZ) {
+    for (const g of guards) {
+      if (g.state === 'subdued' || g.state === 'alerted') continue;
+      const dx = g.pos.x - px;
+      const dz = g.pos.z - pz;
+      if (dx * dx + dz * dz > 2.0 * 2.0) continue;
+      // Player must be behind guard: vector from guard→player should be opposite to guard facing
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < 0.01) continue;
+      const toPlayerX = -dx / dist; // guard→player, but dx = guard - player so negate
+      const toPlayerZ = -dz / dist;
+      const behindDot = toPlayerX * g.facing.x + toPlayerZ * g.facing.z;
+      if (behindDot > -0.2) continue; // not behind guard
+      g.subdue();
+      return true;
+    }
+    return false;
+  }
+
+  // Returns true if player is behind an eligible guard (for prompt display).
+  function checkTakedownAvailable(px, pz) {
+    for (const g of guards) {
+      if (g.state === 'subdued' || g.state === 'alerted') continue;
+      const dx = g.pos.x - px;
+      const dz = g.pos.z - pz;
+      if (dx * dx + dz * dz > 2.5 * 2.5) continue;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < 0.01) continue;
+      const toPlayerX = -dx / dist;
+      const toPlayerZ = -dz / dist;
+      const behindDot = toPlayerX * g.facing.x + toPlayerZ * g.facing.z;
+      if (behindDot <= -0.2) return true;
+    }
+    return false;
   }
 
   function getGuardPositions() {
@@ -964,6 +1061,8 @@ window.Guards = (function () {
     resetAlarm,
     notifyNoise,
     setDifficulty,
+    tryTakedown,
+    checkTakedownAvailable,
   };
 
 }());

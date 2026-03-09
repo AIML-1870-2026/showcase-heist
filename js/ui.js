@@ -10,6 +10,7 @@ window.UI = (function () {
 
   const screens = {
     start:    $('start-screen'),
+    loadout:  $('loadout-screen'),
     pause:    $('pause-screen'),
     gameover: $('gameover-screen'),
     win:      $('win-screen'),

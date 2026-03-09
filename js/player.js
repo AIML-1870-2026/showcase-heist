@@ -161,7 +161,8 @@ window.Player = (function () {
 
   function _updateSCLabel() {
     const el = document.getElementById('sc-tumbler');
-    if (el) el.textContent = 'Tumbler ' + (_scTumbler + 1) + ' / 3';
+    const total = (window.G && window.G.loadout && window.G.loadout.vault) ? 2 : 3;
+    if (el) el.textContent = 'Tumbler ' + (_scTumbler + 1) + ' / ' + total;
   }
 
   function _cancelSafeCrack() {
@@ -175,7 +176,8 @@ window.Player = (function () {
     const a = ((_scAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     if (a >= _scZone.start && a <= _scZone.end) {
       _scTumbler++;
-      if (_scTumbler >= 3) {
+      const neededTumblers = (window.G && window.G.loadout && window.G.loadout.vault) ? 2 : 3;
+      if (_scTumbler >= neededTumblers) {
         _scActive = false;
         document.getElementById('safe-crack-overlay').classList.add('hidden');
         if (_scStealable) _scStealable.safeCracked = true;
@@ -321,6 +323,10 @@ window.Player = (function () {
 
     if (e.code === 'KeyF') {
       handleSmokeBomb();
+    }
+
+    if (e.code === 'KeyG') {
+      handleTakedown();
     }
 
     if (e.code === 'Tab') {
@@ -886,6 +892,14 @@ window.Player = (function () {
           UI.SFX.door();
           if (d.keyRequired === 'yellow') UI.completeObjective('gallery');
           if (d.keyRequired === 'blue')   UI.completeObjective('vault');
+        } else if (G.loadout && G.loadout.lockpick) {
+          // Lockpick kit — auto-open without minigame
+          d.open    = true;
+          d.opening = true;
+          UI.SFX.door();
+          UI.showAlert('Lockpick Kit: door auto-opened!', 2000);
+          if (d.keyRequired === 'yellow') UI.completeObjective('gallery');
+          if (d.keyRequired === 'blue')   UI.completeObjective('vault');
         } else {
           // No keycard — offer lockpicking
           _startLockpick(d);
@@ -909,6 +923,21 @@ window.Player = (function () {
     UI.SFX.smoke();
     UI.showAlert('Smoke deployed!', 1500);
     if (window.Achievements) Achievements.unlock('smokeMaster');
+  }
+
+  // ── Takedown (G key) ───────────────────────────────────
+  function handleTakedown() {
+    const G = window.G;
+    if (!G || G.phase !== 'playing' || !window.Guards) return;
+    const facingX = Math.sin(yaw);
+    const facingZ = Math.cos(yaw);
+    const success = Guards.tryTakedown(pos.x, pos.z, facingX, facingZ);
+    if (success) {
+      UI.SFX.interact();
+      UI.showAlert('Guard subdued! (45s)', 2000);
+      G.takedownCount = (G.takedownCount || 0) + 1;
+      if (window.Achievements && G.takedownCount >= 2) Achievements.unlock('nightcap');
+    }
   }
 
   // ── Distract (Q key) ───────────────────────────────────
@@ -979,6 +1008,12 @@ window.Player = (function () {
         UI.showPrompt(state === 'crouching' ? '[E] Crawl through vent' : '[Shift+E] Crouch to use vent');
         found = true; break;
       }
+    }
+
+    // Takedown prompt — show when player is sneaking behind an eligible guard
+    if (!found && window.Guards && Guards.checkTakedownAvailable(pos.x, pos.z)) {
+      UI.showPrompt('[G] Takedown guard (non-lethal)');
+      found = true;
     }
 
     if (!found) for (const d of G.doors) {
