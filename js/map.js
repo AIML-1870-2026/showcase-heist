@@ -1248,11 +1248,12 @@ window.GameMap = (function () {
       box(scene, 0.25, 2.5, tunnelLen, -2.125, -2.0, tunnelCZ, tunnelMat);
       // East wall
       box(scene, 0.25, 2.5, tunnelLen,  2.125, -2.0, tunnelCZ, tunnelMat);
-      // Dim orange point lights along tunnel
-      [[0, -2.0, 50], [0, -2.0, 75], [0, -2.0, 100]].forEach(([lx, ly, lz]) => {
-        const pt = new THREE.PointLight(0xff6a00, 0.55, 14);
-        pt.position.set(lx, ly, lz);
-        scene.add(pt);
+      // Tunnel walls use emissive strip lights rather than PointLights (no per-light cost)
+      const tunnelGlowMat = new THREE.MeshBasicMaterial({ color: 0xff6a00, transparent: true, opacity: 0.55 });
+      [50, 75, 100].forEach(lz => {
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.06, 0.3), tunnelGlowMat);
+        strip.position.set(0, -0.8, lz);
+        scene.add(strip);
       });
     }
 
@@ -1548,15 +1549,10 @@ window.GameMap = (function () {
     wall(scene,  15, 55, 20, WALL_T);  // east stub: X +5→+25
 
     // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
-    //   and additional 3-unit gap at Z=71.5 leading to the Conservation Lab (Feature 4)
-    // South section: Z 55→70 (length 15, centre 62.5)
-    wall(scene, 25, 62.5, WALL_T, 15);
-    // Middle stub between lab and salon gaps: Z 73→75.5 (length 2.5, centre 74.25)
-    wall(scene, 25, 74.25, WALL_T, 2.5);
+    // South stub: Z 55→75.5  (length 20.5, centre 65.25)
+    wall(scene, 25, 65.25, WALL_T, 20.5);
     // North stub: Z 78.5→100  (length 21.5, centre 89.25)
     wall(scene, 25, 89.25, WALL_T, 21.5);
-    // Door at lab opening (X=25, Z=71.5) — connects Gallery to Conservation Lab
-    door(scene, 25, 71.5, null, Math.PI / 2);
 
     // Gallery west wall stubs — 3-unit gap at Z=77 leading to the Galerie des Sculptures
     //   and additional 3-unit gap at Z=64 leading to the Power Breaker Room (Feature 7)
@@ -1981,38 +1977,14 @@ window.GameMap = (function () {
     cameraData.push({ x: -43, y: WALL_H - 0.3, z: 80, sweepAngle: Math.PI / 2.2, facingZ: 1 });
 
     // ════════════════════════════════
-    //  CONSERVATION LAB  X 25→55  Z 58→85
-    //  Side room east of Gallery (Feature 4)
+    //  CONSERVATION LAB content — housed inside the Salon des Antiquités (east side room)
+    //  Items placed within the Salon's existing X=28–52, Z=58–100 space
     // ════════════════════════════════
     {
-      const CLX = 40, CLZ = 71.5, CLW = 30, CLD = 27;
-      // Floor and ceiling
-      floor(scene, CLX, CLZ, CLW, CLD);
-      ceiling(scene, CLX, CLZ, CLW, CLD);
-      // East wall (X=55)
-      wall(scene, 55, CLZ, WALL_T, CLD);
-      // North wall (Z=85)
-      wall(scene, CLX, 85, CLW, WALL_T);
-      // South wall (Z=58) — solid, connection is via gallery east wall door at X=25, Z=71.5
-      wall(scene, CLX, 58, CLW, WALL_T);
-
-      // UV light (purple/UV point light)
-      const uvLight = new THREE.PointLight(0x8844ff, 1.5, 18);
-      uvLight.position.set(45, 3, 72);
+      // UV light (emissive-only material used on items; single low-intensity point for ambience)
+      const uvLight = new THREE.PointLight(0x8844ff, 0.7, 22);
+      uvLight.position.set(42, 3, 72);
       scene.add(uvLight);
-
-      // Ceiling lamp
-      ceilingLamp(scene, 36, 65);
-      ceilingLamp(scene, 50, 65);
-      ceilingLamp(scene, 36, 78);
-      ceilingLamp(scene, 50, 78);
-
-      // Lab benches / work tables
-      const labDeskMat = new THREE.MeshStandardMaterial({ color: 0x1a2530, roughness: 0.75, metalness: 0.0 });
-      box(scene, 6, 0.85, 1.2, 36, 0.425, 62, labDeskMat);  // south bench
-      box(scene, 6, 0.85, 1.2, 50, 0.425, 65, labDeskMat);  // east bench
-      box(scene, 6, 0.85, 1.2, 36, 0.425, 79, labDeskMat);  // north bench
-      box(scene, 6, 0.85, 1.2, 50, 0.425, 78, labDeskMat);  // east-north bench
 
       // UV key pickup — glowing green box in the gallery, near the lab entrance
       // at X=30, Z=80 (gallery side)
@@ -2659,13 +2631,7 @@ window.GameMap = (function () {
       box(scene, 0.20, 0.06, 0.80, -0.50, 8.04, -8, hBarMat);  // left leg of H
       box(scene, 0.20, 0.06, 0.80,  0.50, 8.04, -8, hBarMat);  // right leg of H
       box(scene, 1.20, 0.06, 0.20,  0.00, 8.04, -8, hBarMat);  // crossbar of H
-      // Spotlight pointing down at helipad
-      const heliSpot = new THREE.SpotLight(0xffe8a0, 2.2, 20, Math.PI / 5, 0.3);
-      heliSpot.position.set(0, 18, -8);
-      heliSpot.target.position.set(0, 8, -8);
-      heliSpot.castShadow = false;
-      scene.add(heliSpot);
-      scene.add(heliSpot.target);
+      // Helipad lit by its own emissive material — no extra SpotLight needed
     }
 
     // ── Vent shaft grates ─────────────────────────────────────────────────────
