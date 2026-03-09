@@ -1139,8 +1139,8 @@
 
   function buildNavArrow() {
     const mat = new THREE.MeshStandardMaterial({
-      color: 0xffdd55, emissive: 0xffaa00, emissiveIntensity: 0.6,
-      transparent: true, opacity: 0.45, depthWrite: false,
+      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.0,
+      depthTest: false,
     });
     const group = new THREE.Group();
     // Cone: ConeGeometry points in +Y; rotate -90° around X so it points in +Z
@@ -1154,6 +1154,8 @@
     stem.position.z = -0.05;
     group.add(stem);
     group.visible = false;
+    group.renderOrder = 999;
+    group.traverse(o => { if (o.isMesh) o.renderOrder = 999; });
     scene.add(group);
     _navArrow = group;
   }

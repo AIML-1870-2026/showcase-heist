@@ -616,12 +616,13 @@ window.Player = (function () {
 
     // ── Direction arrow — floor-level in FRONT of character ──
     const arrowMat = new THREE.MeshStandardMaterial({
-      color: 0xffd060, emissive: 0xffd060, emissiveIntensity: 0.7,
-      roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.82,
+      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.0,
+      roughness: 0.3, metalness: 0.2, depthTest: false,
     });
     const arrowCone = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.34, 5), arrowMat);
     arrowCone.rotation.x = -Math.PI / 2;   // tip points toward local -Z (character forward)
     arrowCone.position.set(0, 0.10, -0.88); // floor level, in front
+    arrowCone.renderOrder = 999;
     group.add(arrowCone);
 
     sc.add(group);
