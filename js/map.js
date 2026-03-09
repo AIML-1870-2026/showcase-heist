@@ -678,6 +678,68 @@ window.GameMap = (function () {
     });
   }
 
+  // ── Elegant bay tree (Louvre-style topiary in stone urn) ────────────────────
+  function lorTree(scene, x, z) {
+    const urnMat   = new THREE.MeshStandardMaterial({ color: 0x8c9090, roughness: 0.72, metalness: 0.08 });
+    const goldRim  = new THREE.MeshStandardMaterial({ color: 0xc8a040, roughness: 0.28, metalness: 0.75, emissive: 0x806418, emissiveIntensity: 0.20 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a18, roughness: 0.88, metalness: 0.0  });
+    const leafMat  = new THREE.MeshStandardMaterial({ color: 0x2a5518, roughness: 0.80, metalness: 0.0,  emissive: 0x0a1a06, emissiveIntensity: 0.15 });
+    const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.24, 0.55, 12), urnMat);
+    urn.position.set(x, 0.275, z); urn.castShadow = true; scene.add(urn);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.03, 6, 20), goldRim);
+    rim.rotation.x = Math.PI / 2; rim.position.set(x, 0.55, z); scene.add(rim);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 1.8, 7), trunkMat);
+    trunk.position.set(x, 1.45, z); trunk.castShadow = true; scene.add(trunk);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.68, 9, 7), leafMat);
+    ball.position.set(x, 3.08, z); ball.castShadow = true; scene.add(ball);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.28, 7, 5), leafMat);
+    top.position.set(x, 3.92, z); top.castShadow = true; scene.add(top);
+    addWallAABB(x, z, 0.9, 0.9);
+  }
+
+  // ── Room name sign — hanging gold panel above a doorway ─────────────────────
+  function roomLabel(scene, cx, cz, text, rotY) {
+    const W = 512, H = 128;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#110e07';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#c8a040'; ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, W - 12, H - 12);
+    ctx.strokeStyle = '#9a7a20'; ctx.lineWidth = 2;
+    ctx.strokeRect(16, 16, W - 32, H - 32);
+    ctx.fillStyle = '#e8c870';
+    ctx.font = 'bold italic 38px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, W / 2, H / 2);
+    const mat = new THREE.MeshStandardMaterial({
+      map: new THREE.CanvasTexture(cv), roughness: 0.82, metalness: 0.0, side: THREE.DoubleSide,
+    });
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.65, 0.045), mat);
+    sign.position.set(cx, WALL_H - 0.48, cz);
+    if (rotY) sign.rotation.y = rotY;
+    scene.add(sign);
+    const rodMat = new THREE.MeshStandardMaterial({ color: 0xc8a040, roughness: 0.28, metalness: 0.78 });
+    [-0.85, 0.85].forEach(ox => {
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.36, 5), rodMat);
+      rod.position.set(cx + (rotY ? 0 : ox), WALL_H - 0.15, cz + (rotY ? ox : 0));
+      scene.add(rod);
+    });
+  }
+
+  // ── Gold ceiling perimeter trim (Louvre cornice) ────────────────────────────
+  function goldCeilEdge(scene, cx, cz, w, d) {
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xc8a040, roughness: 0.22, metalness: 0.80, emissive: 0x806418, emissiveIntensity: 0.22,
+    });
+    const T = 0.20, yy = WALL_H - 0.10;
+    box(scene, w + T, T, T, cx, yy, cz - d / 2, goldMat);
+    box(scene, w + T, T, T, cx, yy, cz + d / 2, goldMat);
+    box(scene, T, T, d - T, cx - w / 2, yy, cz, goldMat);
+    box(scene, T, T, d - T, cx + w / 2, yy, cz, goldMat);
+  }
+
   function galleryBench(scene, x, z, rotY) {
     const woodM  = new THREE.MeshStandardMaterial({ color: 0x2a3848, roughness: 0.75, metalness: 0.0 });
     const metalM = new THREE.MeshStandardMaterial({ color: 0x607080, roughness: 0.40, metalness: 0.70 });
@@ -1148,6 +1210,28 @@ window.GameMap = (function () {
     // Corner plants
     [[-17, 4], [17, 4], [-17, 36], [17, 36]].forEach(([px, pz]) => plantPot(scene, px, pz, 1.4));
 
+    // Decorative bay trees flanking the fountain
+    lorTree(scene, -14, 22);
+    lorTree(scene,  14, 22);
+
+    // Gold ceiling cornice trim
+    goldCeilEdge(scene, 0, 20, 40, 40);
+
+    // Room labels above doorways
+    roomLabel(scene, 0,  2.0, 'Vestibule');               // entry side
+    roomLabel(scene, 0, 37.8, 'Grande Galerie');           // gallery-side label above yellow door
+
+    // Paintings on the lobby north-wall stubs (flanking yellow door), facing south into lobby
+    wallPaintingNS(scene, -15, 3.5, 39.65, M.paintings[1], false);
+    paintingSpotlight(scene, -15, 3.5, 39.65, 'north');
+    placard(scene, -15, 2.6, 39.65, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
+    wallPaintingNS(scene,  15, 3.5, 39.65, M.paintings[2], false);
+    paintingSpotlight(scene,  15, 3.5, 39.65, 'north');
+    placard(scene,  15, 2.6, 39.65, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
+
+    // Velvet runner carpet toward the gallery door
+    rug(scene, 0, 38, 3, 4, 0x6b1a1a, 0xc8a040);
+
     // Wall sconces flanking paintings
     wallSconce(scene, -19.75, 2.9,  4,  1);  // west wall, near z=8 painting
     wallSconce(scene, -19.75, 2.9, 18,  1);  // west wall, between paintings
@@ -1527,6 +1611,9 @@ window.GameMap = (function () {
     box(scene, 2.2, 1.5, 0.08, -4.6, 2.8, 49.5, M.terminal);
     box(scene, 1.9, 1.2, 0.05, -4.6, 2.8, 49.45,
       new THREE.MeshStandardMaterial({ color: 0x001a33, emissive: 0x000d1a, emissiveIntensity: 0.4 }));
+    // Velvet carpet runner through corridor 1
+    rug(scene, 0, 47.5, 3.5, 14, 0x6b1a1a, 0xc8a040);
+
     // Coin cache — guards left their distraction coin stash on the table
     coinCache(scene, 3.5, 47.5, 3, 0.89);
 
@@ -1766,6 +1853,50 @@ window.GameMap = (function () {
     pillar(scene,  22, 58);
     pillar(scene, -22, 98);
 
+    // Gold ceiling cornice trim
+    goldCeilEdge(scene, 0, 77.5, 50, 45);
+
+    // Room labels
+    roomLabel(scene, 0, 56.5, 'Grande Galerie');              // south entrance label
+    roomLabel(scene, 0, 98.5, 'Galerie des Couronnes');       // north exit toward vault
+
+    // Decorative bay trees in gallery corners and center
+    lorTree(scene, -18, 63);
+    lorTree(scene,  18, 63);
+    lorTree(scene, -18, 91);
+    lorTree(scene,  18, 91);
+
+    // Extra gallery pillars — inner colonnade row
+    pillar(scene, -7, 62);
+    pillar(scene,  7, 62);
+    pillar(scene, -7, 92);
+    pillar(scene,  7, 92);
+
+    // Additional paintings on gallery walls (salon-style density)
+    wallPainting(scene, -24.9, 3.5, 82, M.paintings[2], true);
+    paintingSpotlight(scene, -24.9, 3.5, 82, 'west');
+    placard(scene, -24.9, 2.6, 82, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', true);
+    wallPainting(scene, -24.9, 3.5, 60, M.paintings[4], true);
+    paintingSpotlight(scene, -24.9, 3.5, 60, 'west');
+    placard(scene, -24.9, 2.6, 60, 'Wedding at Cana', 'Paolo Veronese, 1563', true);
+    wallPainting(scene,  24.9, 3.5, 70, M.paintings[3], false);
+    paintingSpotlight(scene,  24.9, 3.5, 70, 'east');
+    placard(scene,  24.9, 2.6, 70, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    wallPainting(scene,  24.9, 3.5, 90, M.paintings[4], false);
+    paintingSpotlight(scene,  24.9, 3.5, 90, 'east');
+    placard(scene,  24.9, 2.6, 90, 'Wedding at Cana', 'Paolo Veronese, 1563', false);
+
+    // Paintings on gallery north-wall stubs (flanking blue door), facing south
+    wallPaintingNS(scene, -15, 3.5, 99.65, M.paintings[3], false);
+    paintingSpotlight(scene, -15, 3.5, 99.65, 'north');
+    placard(scene, -15, 2.6, 99.65, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    wallPaintingNS(scene,  15, 3.5, 99.65, M.paintings[0], false);
+    paintingSpotlight(scene,  15, 3.5, 99.65, 'north');
+    placard(scene,  15, 2.6, 99.65, 'Liberty Leading the People', 'Eugène Delacroix, 1830', false);
+
+    // Velvet carpet runners leading to the blue door
+    rug(scene, 0, 98, 3, 4, 0x0a1a4a, 0xc8a040);
+
     // Glowing archway at blue keycard door
     doorGlow(scene, 0, 99.75, 0x4a9eff);
 
@@ -1798,6 +1929,9 @@ window.GameMap = (function () {
     // Painting on north wall
     wallPaintingNS(scene, 38, 3.5, 86.90, M.paintings[3], false);
     paintingSpotlight(scene, 38, 3.5, 86.90, 'north');
+
+    // Room label for Salon des Antiquités
+    roomLabel(scene, SAX, SAZ, 'Salon des Antiquités', Math.PI / 2);
 
     // Side-room rug (dark forest green with gold border)
     rug(scene, SAX, SAZ, 18, 14, 0x1a3a1a, 0xc8a040);
@@ -2153,6 +2287,9 @@ window.GameMap = (function () {
     wall(scene, -5, 107.5, WALL_T, 15);
     wall(scene,  5, 107.5, WALL_T, 15);
 
+    // Velvet carpet runner through corridor 2
+    rug(scene, 0, 107.5, 3.5, 14, 0x0a1a4a, 0xc8a040);
+
     // Shelving unit + boxes against west wall
     box(scene, 2.4, 2.6, 0.45, -4.65, 1.3, 107.5, M.desk);
     box(scene, 0.65, 0.3, 0.38, -4.65, 2.75, 108.2, M.terminal); // small crate on top
@@ -2310,6 +2447,44 @@ window.GameMap = (function () {
         [new THREE.Vector3(16,0,118), new THREE.Vector3(0,0,130), new THREE.Vector3(-16,0,118), new THREE.Vector3(0,0,122)]
       ),
     });
+
+    // Gold ceiling cornice trim
+    goldCeilEdge(scene, 0, 137.5, 50, 45);
+
+    // Room label above vault entrance
+    roomLabel(scene, 0, 116.5, 'Galerie des Couronnes');
+
+    // Decorative bay trees flanking vault entrance and crown area
+    lorTree(scene, -18, 120);
+    lorTree(scene,  18, 120);
+    lorTree(scene, -18, 155);
+    lorTree(scene,  18, 155);
+
+    // Additional vault pillars — inner colonnade
+    pillar(scene, -7, 127);
+    pillar(scene,  7, 127);
+    pillar(scene, -7, 152);
+    pillar(scene,  7, 152);
+
+    // More paintings on vault walls (salon style)
+    wallPainting(scene, -24.9, 3.5, 137, M.paintings[2], true);
+    paintingSpotlight(scene, -24.9, 3.5, 137, 'west');
+    placard(scene, -24.9, 2.6, 137, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', true);
+    wallPainting(scene,  24.9, 3.5, 143, M.paintings[4], false);
+    paintingSpotlight(scene,  24.9, 3.5, 143, 'east');
+    placard(scene,  24.9, 2.6, 143, 'Wedding at Cana', 'Paolo Veronese, 1563', false);
+
+    // Paintings on vault north wall stubs (facing south, visible from inside vault)
+    wallPaintingNS(scene, -12, 3.5, 159.65, M.paintings[1], false);
+    paintingSpotlight(scene, -12, 3.5, 159.65, 'north');
+    placard(scene, -12, 2.6, 159.65, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
+    wallPaintingNS(scene,  12, 3.5, 159.65, M.paintings[3], false);
+    paintingSpotlight(scene,  12, 3.5, 159.65, 'north');
+    placard(scene,  12, 2.6, 159.65, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+
+    // Extended velvet carpets (runners leading to crown)
+    rug(scene, 0, 124, 6, 10, 0x2a0a4a, 0xc8a040);
+    rug(scene, 0, 150, 6, 10, 0x2a0a4a, 0xc8a040);
 
     // Crown Vault rug near crown pedestal (royal purple with gold border)
     rug(scene, 0, 140, 14, 10, 0x2a0a4a, 0xc8a040);

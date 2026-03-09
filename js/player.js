@@ -558,7 +558,7 @@ window.Player = (function () {
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.028, 0.045), matGogF);
     bridge.position.set(0, 2.06, -0.258);
     group.add(bridge);
-    const gogStrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.060, 0.030), matGogL);
+    const gogStrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.060, 0.030), matStrap);
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
 

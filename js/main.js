@@ -1080,6 +1080,55 @@
     camera.updateProjectionMatrix();
   }
 
+  // ── Nav arrow ──────────────────────────────────────────
+  let _navArrow = null;
+  let _navArrowT = 0;
+
+  const NAV_TARGETS = {
+    yellow:  { x: 0,     z: 16.5  },
+    gallery: { x: 0,     z: 39.75 },
+    painting:{ x: -24.9, z: 92    },
+    blue:    { x: 14,    z: 70    },
+    vault:   { x: 0,     z: 99.75 },
+    crown:   { x: 0,     z: 140   },
+    escape:  { x: 0,     z: 163   },
+  };
+
+  function buildNavArrow() {
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffdd55, emissive: 0xffaa00, emissiveIntensity: 0.6,
+      transparent: true, opacity: 0.45, depthWrite: false,
+    });
+    const group = new THREE.Group();
+    // Cone: ConeGeometry points in +Y; rotate -90° around X so it points in +Z
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 8), mat);
+    cone.rotation.x = -Math.PI / 2;
+    cone.position.z = 0.22;
+    group.add(cone);
+    // Short cylinder stem behind the cone tip
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.30, 6), mat);
+    stem.rotation.x = Math.PI / 2;
+    stem.position.z = -0.05;
+    group.add(stem);
+    group.visible = false;
+    scene.add(group);
+    _navArrow = group;
+  }
+
+  function tickNavArrow(playerPos, dt) {
+    if (!_navArrow) return;
+    _navArrowT += dt;
+    const obj = UI.getCurrentObjective();
+    const target = obj && NAV_TARGETS[obj];
+    if (!target) { _navArrow.visible = false; return; }
+    _navArrow.visible = true;
+    const bob = Math.sin(_navArrowT * 2.5) * 0.08;
+    _navArrow.position.set(playerPos.x, 2.8 + bob, playerPos.z);
+    const dx = target.x - playerPos.x;
+    const dz = target.z - playerPos.z;
+    _navArrow.rotation.y = Math.atan2(dx, dz);
+  }
+
   // ── Main game loop ─────────────────────────────────────
   function loop() {
     requestAnimationFrame(loop);
@@ -1120,6 +1169,7 @@
 
     // World
     updateRoom(playerPos.z);
+    tickNavArrow(playerPos, dt);
     tickAlarmLight(dt);
 
     // Power breaker timer — runs after tickAlarmLight so it overrides alarm flicker
@@ -1191,6 +1241,7 @@
     buildMap();
     Player.init(scene, camera);
     Companion.init(scene);
+    buildNavArrow();
     Touch.init();
     UI.showScreen('start');
     const _initCp = getCheckpoint();

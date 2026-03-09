@@ -77,6 +77,14 @@ window.UI = (function () {
     setObjective('enter', 'current');
   }
 
+  function getCurrentObjective() {
+    for (const id of OBJ_ORDER) {
+      const el = document.querySelector(`[data-obj="${id}"]`);
+      if (el && el.classList.contains('current')) return id;
+    }
+    return null;
+  }
+
   // ── Inventory ──────────────────────────────────────────
   function addItem(slotId) {
     const slot = $('slot-' + slotId);
@@ -458,6 +466,7 @@ window.UI = (function () {
     toggleCompanionMenu,
     closeCompanionMenu,
     drawMinimap,
+    getCurrentObjective,
     SFX,
     showGameOver,
     showWin,
