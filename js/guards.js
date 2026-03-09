@@ -620,6 +620,15 @@ window.Guards = (function () {
       const dot  = this.facing.x * (dx / dist) + this.facing.z * (dz / dist);
       if (dot <= Math.cos(VISION_ANGLE / 2)) return false;
 
+      // Smoke cloud — player invisible when inside active cloud
+      const clouds = window.G && window.G._smokeClouds;
+      if (clouds && clouds.length) {
+        for (const c of clouds) {
+          const sdx = playerPos.x - c.x, sdz = playerPos.z - c.z;
+          if (sdx * sdx + sdz * sdz < c.r * c.r) return false;
+        }
+      }
+
       // Wall occlusion — blocked if a wall AABB intersects the sight line
       return hasLineOfSight(this.pos.x, this.pos.z, playerPos.x, playerPos.z);
     }

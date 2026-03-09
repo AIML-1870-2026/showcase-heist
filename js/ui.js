@@ -88,6 +88,82 @@ window.UI = (function () {
     if (el) el.textContent = n;
   }
 
+  // ── Smoke count ────────────────────────────────────────
+  function updateSmokeCount(n) {
+    const el = $('smoke-num');
+    if (el) el.textContent = n;
+  }
+
+  // ── Stamina bar ────────────────────────────────────────
+  function updateStamina(val) {
+    const fill = $('stamina-fill');
+    if (!fill) return;
+    const pct = Math.max(0, Math.min(1, val)) * 100;
+    fill.style.width = pct + '%';
+    fill.style.background = val < 0.2 ? '#dd3333' : val < 0.45 ? '#ddaa22' : '#44dd88';
+  }
+
+  // ── Achievement toast ──────────────────────────────────
+  let _achTimeout = null;
+  function showAchievement(name, desc) {
+    const toast = $('achievement-toast');
+    const nameEl = $('ach-name');
+    const descEl = $('ach-desc');
+    if (!toast || !nameEl || !descEl) return;
+    nameEl.textContent = name;
+    descEl.textContent = desc;
+    toast.classList.remove('hidden', 'visible');
+    void toast.offsetWidth; // reflow to restart animation
+    toast.classList.add('visible');
+    clearTimeout(_achTimeout);
+    _achTimeout = setTimeout(() => toast.classList.add('hidden'), 4500);
+  }
+
+  // ── Ambient museum audio ───────────────────────────────
+  let _ambientNodes = [];
+  function startAmbient() {
+    stopAmbient();
+    try {
+      const ctx = getACtx();
+      // Low electrical hum
+      const hum = ctx.createOscillator();
+      hum.type = 'sine';
+      hum.frequency.value = 54;
+      const humGain = ctx.createGain();
+      humGain.gain.value = 0.055;
+      hum.connect(humGain);
+      humGain.connect(ctx.destination);
+      hum.start();
+      // Brown noise (air conditioning)
+      const bufLen = ctx.sampleRate * 3;
+      const noiseBuf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < bufLen; i++) {
+        const w = Math.random() * 2 - 1;
+        d[i] = (last + 0.02 * w) / 1.02;
+        last = d[i];
+        d[i] *= 3.5;
+      }
+      const ns = ctx.createBufferSource();
+      ns.buffer = noiseBuf;
+      ns.loop = true;
+      const nf = ctx.createBiquadFilter();
+      nf.type = 'lowpass';
+      nf.frequency.value = 240;
+      const ng = ctx.createGain();
+      ng.gain.value = 0.038;
+      ns.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+      ns.start();
+      _ambientNodes = [hum, ns];
+    } catch (e) {}
+  }
+
+  function stopAmbient() {
+    _ambientNodes.forEach(n => { try { n.stop(); } catch (e) {} });
+    _ambientNodes = [];
+  }
+
   // ── Interaction prompt ─────────────────────────────────
   function showPrompt(text) {
     promptText.textContent = text;
@@ -273,6 +349,10 @@ window.UI = (function () {
       for (let i = 0; i < 4; i++) _beep(220, 0.35, 0.5, 'sawtooth', i * 0.45);
     },
     interact() { _beep(660, 0.06, 0.12, 'sine'); },
+    smoke()    {
+      _beep(180, 0.12, 0.28, 'triangle');
+      _beep(120, 0.22, 0.18, 'triangle', 0.10);
+    },
     door()     {
       _beep(300, 0.10, 0.2, 'triangle');
       _beep(400, 0.10, 0.2, 'triangle', 0.10);
@@ -336,6 +416,15 @@ window.UI = (function () {
           return `<div style="${style}">${prefix}${m}:${s} &nbsp;<span style="color:${color}">[${e.rating}]</span>&nbsp; ${e.date}</div>`;
         }).join('');
       }
+
+      // Achievements display
+      const achEl = document.getElementById('win-ach-list');
+      if (achEl) {
+        const earned = JSON.parse(localStorage.getItem('lvdl_achievements') || '[]');
+        achEl.innerHTML = earned.length
+          ? earned.map(a => `<div>★ <span style="color:var(--gold-light)">${a}</span></div>`).join('')
+          : '<div style="color:#555">None earned yet</div>';
+      }
     }
     SFX.win();
     showScreen('win');
@@ -346,6 +435,11 @@ window.UI = (function () {
     showScreen,
     showHUD,
     updateDistractCount,
+    updateSmokeCount,
+    updateStamina,
+    showAchievement,
+    startAmbient,
+    stopAmbient,
     initObjectives,
     setObjective,
     completeObjective,

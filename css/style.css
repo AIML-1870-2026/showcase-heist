@@ -810,6 +810,154 @@ html, body {
   text-align: center;
 }
 
+/* ── Stamina bar (just above distract-count) ───────────── */
+#stamina-bar-wrap {
+  position: absolute;
+  bottom: 60px;
+  left: 16px;
+  background: var(--dark-panel);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 130px;
+}
+
+#stamina-bar {
+  flex: 1;
+  height: 5px;
+  background: #1a1a22;
+  border: 1px solid #333;
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 76px;
+}
+
+#stamina-fill {
+  height: 100%;
+  width: 100%;
+  background: #44dd88;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+/* ── Caught flash ───────────────────────────────────────── */
+#caught-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 75;
+  opacity: 0;
+  background: rgba(220, 0, 0, 0.7);
+}
+
+#caught-flash.active {
+  animation: caught-flash-anim 0.75s ease forwards;
+}
+
+@keyframes caught-flash-anim {
+  0%   { opacity: 0.85; }
+  35%  { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* ── Achievement toast (bottom-right) ───────────────────── */
+#achievement-toast {
+  position: fixed;
+  bottom: 90px;
+  right: 16px;
+  z-index: 80;
+  background: rgba(10, 10, 20, 0.96);
+  border: 1px solid var(--gold);
+  border-left: 4px solid var(--gold);
+  padding: 10px 16px;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  min-width: 230px;
+  pointer-events: none;
+}
+
+#achievement-toast.hidden { display: none !important; }
+
+#achievement-toast.visible {
+  animation: ach-slide-in 0.35s ease;
+}
+
+@keyframes ach-slide-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+#ach-icon {
+  font-size: 1.5rem;
+  color: var(--gold);
+  line-height: 1;
+}
+
+#ach-name {
+  font-size: 0.80rem;
+  color: var(--gold-light);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+#ach-desc {
+  font-size: 0.65rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* ── Safe-cracking overlay ──────────────────────────────── */
+#safe-crack-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+#safe-crack-box {
+  background: rgba(10, 10, 16, 0.97);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  padding: 28px 36px;
+  min-width: 240px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#sc-title {
+  font-family: var(--font-main);
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+
+#sc-dial {
+  border-radius: 50%;
+  background: #08080e;
+}
+
+#sc-tumbler {
+  font-size: 0.80rem;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+}
+
+#sc-hint {
+  font-size: 0.75rem;
+  color: #888;
+  letter-spacing: 0.04em;
+}
+
+#sc-hint strong { color: var(--gold); }
+
 /* ── Distraction coin counter (bottom-left HUD) ────────── */
 #distract-count {
   position: absolute;

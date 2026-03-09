@@ -41,6 +41,19 @@ window.Player = (function () {
   let footT = 0;
   let bobT  = 0;   // head-bob accumulator
 
+  // ── Stamina ────────────────────────────────────────────
+  let _stamina         = 1.0;
+  let _staminaExhausted = false;  // debounce: prevents sprint until recovered to 0.3
+
+  // ── Safe-cracking minigame state ───────────────────────
+  let _scActive    = false;
+  let _scTumbler   = 0;
+  let _scAngle     = 0;
+  let _scSpeed     = 1.0;
+  let _scZone      = { start: 0, end: 0 };
+  let _scDialCtx   = null;
+  let _scStealable = null;
+
   // ── Lockpick minigame state ────────────────────────────
   let _lpActive   = false;
   let _lpDoor     = null;
@@ -124,6 +137,99 @@ window.Player = (function () {
     if (overlay) overlay.classList.add('hidden');
   }
 
+  // ── Safe-cracking helpers ──────────────────────────────
+  function _newSCTumbler() {
+    const zoneSize = 0.20 + Math.random() * 0.18;
+    _scZone.start  = Math.random() * (Math.PI * 2 - zoneSize);
+    _scZone.end    = _scZone.start + zoneSize;
+    _scSpeed       = 0.85 + Math.random() * 0.7 + _scTumbler * 0.25;
+    _scAngle       = 0;
+  }
+
+  function _startSafeCrack(st) {
+    _scActive    = true;
+    _scTumbler   = 0;
+    _scStealable = st;
+    _newSCTumbler();
+    const overlay = document.getElementById('safe-crack-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    const canvas = document.getElementById('sc-dial');
+    _scDialCtx = canvas ? canvas.getContext('2d') : null;
+    _updateSCLabel();
+    UI.SFX.interact();
+  }
+
+  function _updateSCLabel() {
+    const el = document.getElementById('sc-tumbler');
+    if (el) el.textContent = 'Tumbler ' + (_scTumbler + 1) + ' / 3';
+  }
+
+  function _cancelSafeCrack() {
+    _scActive = false;
+    const overlay = document.getElementById('safe-crack-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  function _attemptSafeCrack() {
+    if (!_scActive) return;
+    const a = ((_scAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    if (a >= _scZone.start && a <= _scZone.end) {
+      _scTumbler++;
+      if (_scTumbler >= 3) {
+        _scActive = false;
+        document.getElementById('safe-crack-overlay').classList.add('hidden');
+        if (_scStealable) _scStealable.safeCracked = true;
+        UI.showAlert('Safe cracked! Grab the Crown.', 2500);
+        UI.SFX.pickup();
+        if (window.Achievements) Achievements.unlock('vaultCracker');
+      } else {
+        _newSCTumbler();
+        _updateSCLabel();
+        UI.SFX.door();
+      }
+    } else {
+      _scAngle = 0;
+      UI.SFX.alert();
+      UI.showAlert('Wrong position! Try again.', 1000);
+    }
+  }
+
+  function tickSafeCrack(dt) {
+    if (!_scActive || !_scDialCtx) return;
+    _scAngle += _scSpeed * dt;
+    const ctx = _scDialCtx;
+    const W = 160, H = 160, cx = 80, cy = 80, R = 66;
+    ctx.clearRect(0, 0, W, H);
+    // Background
+    ctx.fillStyle = '#08080e';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, Math.PI * 2); ctx.fill();
+    // Green zone arc
+    const za = _scZone.start - Math.PI / 2, zb = _scZone.end - Math.PI / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, R, za, zb);
+    ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(0,190,75,0.4)'; ctx.stroke();
+    ctx.lineWidth = 2;  ctx.strokeStyle = '#00c050'; ctx.stroke();
+    // Tick marks
+    for (let i = 0; i < 24; i++) {
+      const ta = (i / 24) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(ta) * (R - 7), cy + Math.sin(ta) * (R - 7));
+      ctx.lineTo(cx + Math.cos(ta) * R,       cy + Math.sin(ta) * R);
+      ctx.lineWidth = 1; ctx.strokeStyle = '#444'; ctx.stroke();
+    }
+    // Outer ring
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#2a2a3a'; ctx.stroke();
+    // Needle
+    const na = _scAngle - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(na) * (R - 5), cy + Math.sin(na) * (R - 5));
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#ffffff'; ctx.lineCap = 'round'; ctx.stroke();
+    // Center dot
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#c9a84c'; ctx.fill();
+  }
+
   function tickLockpick(dt) {
     if (!_lpActive) return;
     _lpNeedle += _lpDir * _lpSpeed * dt;
@@ -204,12 +310,17 @@ window.Player = (function () {
     }
 
     if (e.code === 'KeyE') {
-      if (_lpActive) { _attemptLockpick(); return; }
+      if (_lpActive)  { _attemptLockpick();  return; }
+      if (_scActive)  { _attemptSafeCrack(); return; }
       handleInteract();
     }
 
     if (e.code === 'KeyQ') {
       handleDistract();
+    }
+
+    if (e.code === 'KeyF') {
+      handleSmokeBomb();
     }
 
     if (e.code === 'Tab') {
@@ -218,7 +329,8 @@ window.Player = (function () {
     }
 
     if (e.code === 'Escape') {
-      if (_lpActive) { _cancelLockpick(); return; }
+      if (_lpActive) { _cancelLockpick();  return; }
+      if (_scActive) { _cancelSafeCrack(); return; }
       if (UI.companionMenuOpen) {
         UI.closeCompanionMenu();
         return;
@@ -531,6 +643,7 @@ window.Player = (function () {
     if (G.phase === 'escaping') { tickDance(dt); return; }
     if (G.phase !== 'playing') return;
     tickLockpick(dt);
+    tickSafeCrack(dt);
     if (state === 'caught') return;
 
     // Slide timer
@@ -542,9 +655,20 @@ window.Player = (function () {
     // State from input (only when not already sliding)
     if (state !== 'sliding') {
       if (keys['ShiftLeft'] || keys['ShiftRight']) state = 'crouching';
-      else if (keys['KeyR'])                       state = 'sprinting';
+      else if (keys['KeyR'] && !_staminaExhausted) state = 'sprinting';
       else                                         state = 'normal';
     }
+
+    // Stamina drain / regen
+    if (state === 'sprinting') {
+      _stamina = Math.max(0, _stamina - 0.28 * dt);
+      if (_stamina <= 0) { _staminaExhausted = true; state = 'normal'; }
+    } else {
+      _stamina = Math.min(1, _stamina + 0.18 * dt);
+      if (_staminaExhausted && _stamina >= 0.3) _staminaExhausted = false;
+    }
+    if (window.G) window.G._stamina = _stamina;
+    UI.updateStamina(_stamina);
 
     // Movement input
     let mx = 0, mz = 0;
@@ -679,6 +803,11 @@ window.Player = (function () {
       if (st.taken) continue;
       const _dx = st.x - pos.x, _dz = st.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
+        // Crown Vault safe must be cracked first
+        if (st.needsSafe && !st.safeCracked) {
+          _startSafeCrack(st);
+          return;
+        }
         st.taken        = true;
         st.mesh.visible = false;
         G._pickupFlash  = 1.0;
@@ -726,6 +855,24 @@ window.Player = (function () {
       }
     }
 
+    // Check vent shafts
+    for (const v of (G.vents || [])) {
+      const _dx = v.entryX - pos.x, _dz = v.entryZ - pos.z;
+      const _ex = v.exitX  - pos.x, _ez = v.exitZ  - pos.z;
+      const nearEntry = _dx * _dx + _dz * _dz < 2.8 * 2.8;
+      const nearExit  = _ex * _ex + _ez * _ez < 2.8 * 2.8;
+      if (nearEntry || nearExit) {
+        if (state !== 'crouching') { UI.showAlert('Crouch to use the vent!', 1500); return; }
+        const dest = nearEntry ? { x: v.exitX, z: v.exitZ } : { x: v.entryX, z: v.entryZ };
+        pos.set(dest.x, 0, dest.z);
+        vel.set(0, 0, 0);
+        wallGrid = null; // rebuild collision grid
+        UI.showAlert('Crawled through vent...', 1800);
+        UI.SFX.interact();
+        return;
+      }
+    }
+
     // Check doors
     for (const d of G.doors) {
       if (d.open) continue;
@@ -747,6 +894,22 @@ window.Player = (function () {
     }
   }
 
+  // ── Smoke bomb (F key) ─────────────────────────────────
+  function handleSmokeBomb() {
+    const G = window.G;
+    if (!G || G.phase !== 'playing') return;
+    if ((G.smokeCount || 0) <= 0) { UI.showAlert('No smoke bombs!', 1500); return; }
+    G.smokeCount--;
+    UI.updateSmokeCount(G.smokeCount);
+    const sx = pos.x + Math.sin(yaw) * 4;
+    const sz = pos.z + Math.cos(yaw) * 4;
+    G._smokeClouds.push({ x: sx, z: sz, r: 5.5, t: 0, maxT: 9.0 });
+    G._smokeEvent = { x: sx, z: sz };
+    UI.SFX.smoke();
+    UI.showAlert('Smoke deployed!', 1500);
+    if (window.Achievements) Achievements.unlock('smokeMaster');
+  }
+
   // ── Distract (Q key) ───────────────────────────────────
   function handleDistract() {
     if (!window.Guards) return;
@@ -754,6 +917,7 @@ window.Player = (function () {
     if (!G) return;
     if (G.distractCount <= 0) { UI.showAlert('No coins left!', 1500); return; }
     G.distractCount--;
+    G._usedDistract = true;
     UI.updateDistractCount(G.distractCount);
 
     const noiseX = pos.x + Math.sin(yaw) * 7;
@@ -784,7 +948,10 @@ window.Player = (function () {
       if (st.taken) continue;
       const _dx = st.x - pos.x, _dz = st.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
-        UI.showPrompt('[E] Steal the ' + (st.label || st.item));
+        const prompt = (st.needsSafe && !st.safeCracked)
+          ? '[E] Crack the vault safe'
+          : '[E] Steal the ' + (st.label || st.item);
+        UI.showPrompt(prompt);
         found = true; break;
       }
     }
@@ -804,6 +971,15 @@ window.Player = (function () {
         found = true; break;
       }
     }
+    if (!found) for (const v of (G.vents || [])) {
+      const _dx = v.entryX - pos.x, _dz = v.entryZ - pos.z;
+      const _ex = v.exitX  - pos.x, _ez = v.exitZ  - pos.z;
+      if (_dx * _dx + _dz * _dz < 2.8 * 2.8 || _ex * _ex + _ez * _ez < 2.8 * 2.8) {
+        UI.showPrompt(state === 'crouching' ? '[E] Crawl through vent' : '[Shift+E] Crouch to use vent');
+        found = true; break;
+      }
+    }
+
     if (!found) for (const d of G.doors) {
       if (d.open) continue;
       const _dx = d.x - pos.x, _dz = d.z - pos.z;
@@ -838,11 +1014,15 @@ window.Player = (function () {
   function reset() {
     pos.set(0, 0, -12);
     vel.set(0, 0, 0);
-    state     = 'normal';
-    onGround  = true;
-    jumpCount = 0;
-    yaw       = 0;      // facing north (+Z) into the museum
-    pitch     = 0.25;
+    state             = 'normal';
+    onGround          = true;
+    jumpCount         = 0;
+    yaw               = 0;
+    pitch             = 0.25;
+    _stamina          = 1.0;
+    _staminaExhausted = false;
+    _scActive         = false;
+    _cancelSafeCrack();
     // Rebuild mesh so suit/eye colours from customisation screen take effect
     if (playerMesh) scene.remove(playerMesh);
     playerMesh = buildMesh(scene);

@@ -36,7 +36,7 @@
       </div>
       <div class="controls-hint">
         <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Sprint &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
-        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
+        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
       </div>
     </div>
   </div>
@@ -127,9 +127,13 @@
         <div>Guards Alerted: <span id="win-alerted" style="color:#fff;"></span></div>
         <div>Close Calls: <span id="win-close" style="color:#fff;"></span></div>
       </div>
-      <div id="win-leaderboard" style="margin:10px 0 16px; font-family:'Courier New',monospace; font-size:0.82rem; color:#aaa; line-height:1.75;">
+      <div id="win-leaderboard" style="margin:10px 0 8px; font-family:'Courier New',monospace; font-size:0.82rem; color:#aaa; line-height:1.75;">
         <div style="color:#c9a84c; letter-spacing:0.05em; margin-bottom:4px;">── Best Times ──</div>
         <div id="leaderboard-entries"></div>
+      </div>
+      <div id="win-achievements" style="margin:0 0 16px; font-family:'Courier New',monospace; font-size:0.78rem; color:#aaa; line-height:1.75;">
+        <div style="color:#c9a84c; letter-spacing:0.05em; margin-bottom:4px;">── Achievements ──</div>
+        <div id="win-ach-list"></div>
       </div>
       <div class="menu-buttons">
         <button id="btn-play-again" class="btn btn-primary">Play Again</button>
@@ -170,10 +174,18 @@
       <span id="prompt-text">Interact</span>
     </div>
 
+    <!-- Bottom-left: Stamina bar -->
+    <div id="stamina-bar-wrap">
+      <span class="distract-label">Stamina</span>
+      <div id="stamina-bar"><div id="stamina-fill"></div></div>
+    </div>
+
     <!-- Bottom-left: Distraction coin counter -->
     <div id="distract-count">
       <span class="distract-label">Coins</span>
       <span id="distract-num">3</span>
+      <span class="distract-label" style="margin-left:8px;">Smoke</span>
+      <span id="smoke-num" style="color:#88ddff;font-size:1.1rem;font-weight:bold;min-width:16px;text-align:center;">1</span>
     </div>
 
     <!-- Bottom-right: Inventory -->
@@ -196,6 +208,15 @@
       <span id="alert-text">DETECTED</span>
     </div>
 
+    <!-- Caught flash overlay -->
+    <div id="caught-flash"></div>
+
+    <!-- Achievement toast (slides in from bottom-right) -->
+    <div id="achievement-toast" class="hidden">
+      <div id="ach-icon">★</div>
+      <div><div id="ach-name"></div><div id="ach-desc"></div></div>
+    </div>
+
     <!-- Co-op status bar (top-center, shown in co-op mode) -->
     <div id="coop-status" class="hidden">
       <span id="coop-label">Partner: </span>
@@ -216,6 +237,19 @@
       </div>
       <p id="lp-hint">Press <strong>[E]</strong> when the needle is in the green zone</p>
       <div id="lp-attempts">●●●</div>
+      <p style="font-size:0.65rem;color:#555;margin-top:4px;">Esc to cancel</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  SAFE-CRACKING MINIGAME                                -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="safe-crack-overlay" class="hidden">
+    <div id="safe-crack-box">
+      <p id="sc-title">Crown Vault Safe</p>
+      <canvas id="sc-dial" width="160" height="160"></canvas>
+      <p id="sc-tumbler">Tumbler 1 / 3</p>
+      <p id="sc-hint">Press <strong>[E]</strong> when the needle enters the green zone</p>
       <p style="font-size:0.65rem;color:#555;margin-top:4px;">Esc to cancel</p>
     </div>
   </div>

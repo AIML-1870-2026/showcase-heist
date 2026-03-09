@@ -283,6 +283,7 @@ window.GameMap = (function () {
   const laserData      = [];
   const cameraData     = [];
   const guardData      = [];
+  const vents          = [];
 
   // ── Low-level helpers ──────────────────────────────────
   function box(scene, w, h, d, x, y, z, mat) {
@@ -1867,7 +1868,7 @@ window.GameMap = (function () {
     box(scene, 1.4, 0.50, 1.4, 0, 0.75, 140, M.pedestal); // top column, top=1.00
     const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
     crownMesh.userData.float = true;
-    stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false });
+    stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false, needsSafe: true, safeCracked: false });
     { const cRing = new THREE.Mesh(new THREE.RingGeometry(0.80, 1.28, 36),
         new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false }));
       cRing.rotation.x = -Math.PI / 2; cRing.position.set(0, 0.02, 140); scene.add(cRing);
@@ -2263,6 +2264,42 @@ window.GameMap = (function () {
       scene.add(extAmbient);
     }
 
+    // ── Vent shaft grates ─────────────────────────────────────────────────────
+    // Two maintenance-tunnel shortcuts that only crouching players can use.
+    const grateM = new THREE.MeshStandardMaterial({ color: 0x2a2a38, roughness: 0.88, metalness: 0.55 });
+    const grateBarM = new THREE.MeshStandardMaterial({ color: 0x1a1a26, roughness: 0.90, metalness: 0.45 });
+    function makeVentGrate(x, z) {
+      const g = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.07, 1.1), grateM);
+      base.receiveShadow = true;
+      g.add(base);
+      // Cross-hatch bars
+      for (let i = -2; i <= 2; i++) {
+        const hBar = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.055, 0.06), grateBarM);
+        hBar.position.set(0, 0.04, i * 0.20);
+        g.add(hBar);
+        const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.055, 1.05), grateBarM);
+        vBar.position.set(i * 0.20, 0.04, 0);
+        g.add(vBar);
+      }
+      // Gold trim
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.04, 1.14), _brassM);
+      trim.position.y = -0.015;
+      g.add(trim);
+      g.position.set(x, 0.035, z);
+      scene.add(g);
+    }
+
+    // Vent 1: Lobby (z=34) → Gallery (z=60)  — west side, bypasses Corridor 1
+    makeVentGrate(-14, 34);
+    makeVentGrate(-14, 60);
+    vents.push({ entryX: -14, entryZ: 34, exitX: -14, exitZ: 60 });
+
+    // Vent 2: Gallery (z=96) → Crown Vault (z=118) — east side, bypasses Corridor 2
+    makeVentGrate(14, 96);
+    makeVentGrate(14, 118);
+    vents.push({ entryX: 14, entryZ: 96, exitX: 14, exitZ: 118 });
+
     return {
       walls,
       doors,
@@ -2273,6 +2310,7 @@ window.GameMap = (function () {
       laserData,
       cameraData,
       guardData,
+      vents,
     };
   }
 

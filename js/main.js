@@ -38,6 +38,7 @@
     stealables:     [],
     coinPickups:    [],
     terminals:      [],
+    vents:          [],
     alarm:          { level: 0, active: false },
     inventory:      { yellow: false, blue: false, red: false, painting: false, crown: false },
     playerCaught:   false,
@@ -46,14 +47,55 @@
     _pickupFlash:   0,
     _noiseEvent:    null,
     _dustEvent:     null,
+    _smokeEvent:    null,
+    _smokeClouds:   [],
+    _stamina:       1.0,
+    smokeCount:     1,
     _startMs:       0,
     guardsAlerted:  0,
     closeCalls:     0,
     distractCount:  3,
+    _usedDistract:  false,
     _throwEvent:    null,
     _checkpointReached: { Gallery: false, 'Crown Vault': false },
     _checkpointData:    null,
+    _earnedAchs:    null,
   };
+
+  // ── Achievement system ─────────────────────────────────
+  const ACH_DEFS = {
+    ghost:        { name: 'Ghost',         desc: 'Won with zero guards alerted' },
+    speedDemon:   { name: 'Speed Demon',   desc: 'Escaped in under 3 minutes' },
+    pacifist:     { name: 'Pacifist',      desc: 'Escaped without using distractions' },
+    masterThief:  { name: 'Master Thief',  desc: 'Achieved S rating' },
+    smokeMaster:  { name: 'Smoke Screen',  desc: 'Used a smoke bomb' },
+    vaultCracker: { name: 'Vault Cracker', desc: 'Cracked the Crown Vault safe' },
+  };
+  window.Achievements = {
+    unlock(id) {
+      const G = window.G;
+      if (!G._earnedAchs) G._earnedAchs = new Set();
+      if (G._earnedAchs.has(id)) return;
+      G._earnedAchs.add(id);
+      const def = ACH_DEFS[id];
+      if (def) UI.showAchievement(def.name, def.desc);
+      const stored = new Set(JSON.parse(localStorage.getItem('lvdl_achievements') || '[]'));
+      stored.add(def ? def.name : id);
+      localStorage.setItem('lvdl_achievements', JSON.stringify([...stored]));
+    },
+  };
+
+  function checkEndAchievements(elapsed, alerted, rating) {
+    const G = window.G;
+    if (alerted === 0)        Achievements.unlock('ghost');
+    if (elapsed < 180)        Achievements.unlock('speedDemon');
+    if (!G._usedDistract)     Achievements.unlock('pacifist');
+    if (rating === 'S')       Achievements.unlock('masterThief');
+  }
+
+  // ── Hit-flash state ────────────────────────────────────
+  let _prevCaught    = false;
+  const caughtFlashEl = document.getElementById('caught-flash');
 
   // ── Lighting ───────────────────────────────────────────
   const flickerLights = [];  // point lights that flicker during alarm
@@ -163,6 +205,7 @@
     window.G.stealables     = data.stealables;
     window.G.coinPickups    = data.coinPickups;
     window.G.terminals      = data.terminals;
+    window.G.vents          = data.vents || [];
     Guards.init(scene, data.guardData);
     Security.init(scene, data.laserData, data.cameraData);
   }
@@ -317,6 +360,8 @@
     if (_escapeTimer >= 5.0 && G.phase === 'escaping') {
       G.phase = 'won';
       const rating = calcRating(_escapeElapsed, G.guardsAlerted, G.closeCalls);
+      checkEndAchievements(_escapeElapsed, G.guardsAlerted, rating);
+      UI.stopAmbient();
       UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating });
     }
   }
@@ -524,6 +569,65 @@
     if (_coinState.y <= 0.1) { _coinState = null; _coinMesh.visible = false; }
   }
 
+  // ── Smoke bomb cloud ──────────────────────────────────
+  const SMOKE_COUNT = 80;
+  const smokePos  = new Float32Array(SMOKE_COUNT * 3);
+  const smokeVel  = new Float32Array(SMOKE_COUNT * 3);
+  const smokeLife = new Float32Array(SMOKE_COUNT).fill(999);
+  const SMOKE_DUR = 9.0;
+  let   _smokeT   = SMOKE_DUR; // starts "spent"
+
+  const smokeGeo = new THREE.BufferGeometry();
+  smokeGeo.setAttribute('position', new THREE.BufferAttribute(smokePos, 3));
+  const smokeMesh = new THREE.Points(smokeGeo, new THREE.PointsMaterial({
+    color: 0xd8d8c0, size: 0.55, transparent: true, opacity: 0,
+    sizeAttenuation: true, depthWrite: false,
+  }));
+  scene.add(smokeMesh);
+
+  function _spawnSmoke(ox, oz) {
+    _smokeT = 0;
+    for (let i = 0; i < SMOKE_COUNT; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd   = 0.2 + Math.random() * 0.8;
+      smokePos[i * 3]     = ox + (Math.random() - 0.5) * 0.8;
+      smokePos[i * 3 + 1] = 0.15 + Math.random() * 2.2;
+      smokePos[i * 3 + 2] = oz + (Math.random() - 0.5) * 0.8;
+      smokeVel[i * 3]     = Math.cos(angle) * spd;
+      smokeVel[i * 3 + 1] = 0.06 + Math.random() * 0.14;
+      smokeVel[i * 3 + 2] = Math.sin(angle) * spd;
+      smokeLife[i]         = 0;
+    }
+    smokeGeo.attributes.position.needsUpdate = true;
+  }
+
+  function tickSmoke(dt) {
+    const G = window.G;
+    if (G._smokeEvent) {
+      _spawnSmoke(G._smokeEvent.x, G._smokeEvent.z);
+      G._smokeEvent = null;
+    }
+    // Age clouds
+    for (let i = G._smokeClouds.length - 1; i >= 0; i--) {
+      G._smokeClouds[i].t += dt;
+      if (G._smokeClouds[i].t >= G._smokeClouds[i].maxT) G._smokeClouds.splice(i, 1);
+    }
+    // Particles
+    if (_smokeT >= SMOKE_DUR) { smokeMesh.material.opacity = 0; return; }
+    _smokeT += dt;
+    for (let i = 0; i < SMOKE_COUNT; i++) {
+      if (smokeLife[i] >= SMOKE_DUR) continue;
+      smokeLife[i]        += dt;
+      smokePos[i * 3]     += smokeVel[i * 3]     * dt;
+      smokePos[i * 3 + 1] += smokeVel[i * 3 + 1] * dt;
+      smokePos[i * 3 + 2] += smokeVel[i * 3 + 2] * dt;
+      smokeVel[i * 3]     *= Math.pow(0.88, dt * 60);
+      smokeVel[i * 3 + 2] *= Math.pow(0.88, dt * 60);
+    }
+    smokeGeo.attributes.position.needsUpdate = true;
+    smokeMesh.material.opacity = 0.48 * Math.max(0, 1 - _smokeT / SMOKE_DUR);
+  }
+
   // ── Noise distraction ring ─────────────────────────────
   const noiseRingGeo = new THREE.RingGeometry(0.05, 0.28, 40);
   const noiseRingMat = new THREE.MeshBasicMaterial({
@@ -640,10 +744,19 @@
     G.guardsAlerted = 0;
     G.closeCalls    = 0;
     G.distractCount = 3;
+    G._usedDistract = false;
+    G.smokeCount    = 1;
+    G._smokeClouds  = [];
+    G._smokeEvent   = null;
+    G._stamina      = 1.0;
+    G._earnedAchs   = new Set();
     G._throwEvent   = null;
     G._checkpointReached = { Gallery: false, 'Crown Vault': false };
     G._checkpointData    = null;
+    _prevCaught = false;
+    _smokeT     = SMOKE_DUR;
     UI.updateDistractCount(3);
+    UI.updateSmokeCount(1);
 
     // Apply difficulty
     Guards.setDifficulty(G.difficulty);
@@ -663,6 +776,7 @@
     G.stealables.forEach(st => {
       st.taken        = false;
       st.mesh.visible = true;
+      if (st.needsSafe) st.safeCracked = false;
     });
     G.coinPickups.forEach(cp => {
       cp.collected    = false;
@@ -708,6 +822,7 @@
     G._startMs = Date.now();
     clock.start();
     Music.start();
+    UI.startAmbient();
     document.body.requestPointerLock();
   }
 
@@ -906,6 +1021,7 @@
     tickDustAndSparks(dt);
     tickDustPuffs(dt);
     tickCoin(dt);
+    tickSmoke(dt);
     tickNoiseRing(dt);
     tickPickupAndChroma(dt);
     Player.tickDoors(dt);
@@ -920,13 +1036,24 @@
 
     // Catch handling
     if (G.playerCaught) {
+      // Hit-flash on first frame of catch
+      if (!_prevCaught && caughtFlashEl) {
+        caughtFlashEl.classList.remove('active');
+        void caughtFlashEl.offsetWidth; // reflow to restart animation
+        caughtFlashEl.classList.add('active');
+        shakeDecay = 0.45;
+      }
+      _prevCaught = true;
       Player.setCaught();
       if (G.mode !== 'coop') {
         G.phase = 'gameover';
         Music.stop();
+        UI.stopAmbient();
         UI.showGameOver('Caught!', 'A guard caught you.');
       }
       // In co-op, companion.js handles rescue timer & game over
+    } else {
+      _prevCaught = false;
     }
 
     // Win check
