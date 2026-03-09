@@ -45,6 +45,7 @@
     currentRoom:    'Lobby',
     _alarmLight:    null,
     _pickupFlash:   0,
+    _moneyStolen:   0,
     _noiseEvent:    null,
     _dustEvent:     null,
     _smokeEvent:    null,
@@ -362,7 +363,7 @@
       const rating = calcRating(_escapeElapsed, G.guardsAlerted, G.closeCalls);
       checkEndAchievements(_escapeElapsed, G.guardsAlerted, rating);
       UI.stopAmbient();
-      UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating });
+      UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating, money: G._moneyStolen });
     }
   }
 
@@ -749,6 +750,7 @@
     G._smokeClouds  = [];
     G._smokeEvent   = null;
     G._stamina      = 1.0;
+    G._moneyStolen  = 0;
     G._earnedAchs   = new Set();
     G._throwEvent   = null;
     G._checkpointReached = { Gallery: false, 'Crown Vault': false };

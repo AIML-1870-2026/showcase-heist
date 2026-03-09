@@ -811,6 +811,7 @@ window.Player = (function () {
         st.taken        = true;
         st.mesh.visible = false;
         G._pickupFlash  = 1.0;
+        G._moneyStolen  = (G._moneyStolen || 0) + (st.value || 0);
         UI.SFX.pickup();
         if (st.bonus) {
           // Bonus stealable — no objective, no inventory flag needed for win

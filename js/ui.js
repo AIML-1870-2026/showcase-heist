@@ -396,6 +396,8 @@ window.UI = (function () {
       document.getElementById('win-time').textContent    = mm + ':' + ss;
       document.getElementById('win-alerted').textContent = stats.guardsAlerted;
       document.getElementById('win-close').textContent   = stats.closeCalls;
+      const moneyEl = document.getElementById('win-money');
+      if (moneyEl) moneyEl.textContent = '€' + (stats.money || 0).toLocaleString('fr-FR');
 
       // Leaderboard — persist top 5 by time
       const board = JSON.parse(localStorage.getItem(LB_KEY) || '[]');

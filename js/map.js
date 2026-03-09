@@ -1137,6 +1137,26 @@ window.GameMap = (function () {
     // Lobby central rug (burgundy with gold border)
     rug(scene, 0, 20, 18, 14, 0x6b1a1a, 0xc8a040);
 
+    // Diamond Tiara — optional stealable on lobby pedestal (east side)
+    { const tiaraMat = new THREE.MeshStandardMaterial({ color: 0xe0e8ff, emissive: 0x6688ff, emissiveIntensity: 0.22, roughness: 0.08, metalness: 0.95 });
+      const gemMat   = new THREE.MeshStandardMaterial({ color: 0xaaddff, emissive: 0x4488ff, emissiveIntensity: 0.55, roughness: 0.05, metalness: 0.7 });
+      const tiara = new THREE.Group();
+      const tiaraArc = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 24, Math.PI), tiaraMat);
+      tiaraArc.rotation.z = Math.PI; tiara.add(tiaraArc);
+      [-0.09, 0, 0.09].forEach((ox, i) => {
+        const gem = new THREE.Mesh(new THREE.OctahedronGeometry(i === 1 ? 0.038 : 0.026), gemMat);
+        gem.position.set(ox, i === 1 ? 0.12 : 0.09, 0); tiara.add(gem);
+      });
+      box(scene, 0.22, 0.85, 0.22, 12, 0.425, 14, M.pedestal);
+      tiara.position.set(12, 1.04, 14);
+      tiara.userData.float = true;
+      scene.add(tiara);
+      stealables.push({ mesh: tiara, item: 'tiara', x: 12, z: 14, taken: false, bonus: true, label: 'Diamond Tiara', value: 3500000 });
+      const tRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+        new THREE.MeshBasicMaterial({ color: 0x88aaff, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+      tRing.rotation.x = -Math.PI / 2; tRing.position.set(12, 0.02, 14); scene.add(tRing);
+      tiara.userData.floorRing = tRing; }
+
     // Additional paintings — south wall and east wall
     wallPaintingNS(scene, -10, 3.5, 0.10, M.paintings[3], true);
     paintingSpotlight(scene, -10, 3.5, 0.10, 'south');
@@ -1415,6 +1435,24 @@ window.GameMap = (function () {
     // Coin cache — guards left their distraction coin stash on the table
     coinCache(scene, 3.5, 47.5, 3, 0.89);
 
+    // Antique Pocket Watch — optional stealable left on the security room table
+    { const watchMat  = new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.18, metalness: 0.92 });
+      const faceMat   = new THREE.MeshStandardMaterial({ color: 0xfffff5, roughness: 0.75, metalness: 0.0 });
+      const pwatch = new THREE.Group();
+      const watchBody = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.024, 16), watchMat);
+      const watchFace = new THREE.Mesh(new THREE.CylinderGeometry(0.073, 0.073, 0.004, 16), faceMat);
+      watchFace.position.y = 0.014; pwatch.add(watchBody); pwatch.add(watchFace);
+      const watchCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.032, 8), watchMat);
+      watchCrown.position.set(0, 0.028, 0.082); pwatch.add(watchCrown);
+      pwatch.rotation.x = -Math.PI / 2;
+      pwatch.position.set(-3, 0.915, 47);
+      scene.add(pwatch);
+      stealables.push({ mesh: pwatch, item: 'watch', x: -3, z: 47, taken: false, bonus: true, label: 'Antique Pocket Watch', value: 180000 });
+      const wRing = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.36, 24),
+        new THREE.MeshBasicMaterial({ color: 0xddaa44, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+      wRing.rotation.x = -Math.PI / 2; wRing.position.set(-3, 0.02, 47); scene.add(wRing);
+      pwatch.userData.floorRing = wRing; }
+
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
     // ════════════════════════════════
@@ -1461,7 +1499,7 @@ window.GameMap = (function () {
     wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
     paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
-    stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false });
+    stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
     placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', true);
     // Glowing floor ring — guides player to the stealable painting
     const paintRingMat = new THREE.MeshBasicMaterial({
@@ -1508,11 +1546,32 @@ window.GameMap = (function () {
     jadeHead.position.y = 0.29; jadeFig.add(jadeHead);
     jadeFig.position.set(0, 1.45, 88);
     scene.add(jadeFig);
-    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine' });
+    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine', value: 2000000 });
     { const jRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.52, 24),
         new THREE.MeshBasicMaterial({ color: 0x44ff88, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       jRing.rotation.x = -Math.PI / 2; jRing.position.set(0, 0.96, 88); scene.add(jRing);
       jadeFig.userData.floorRing = jRing; }
+
+    // Gold Chalice — optional stealable on a gallery pedestal
+    { const chaliceMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, emissive: 0x6a4a00, emissiveIntensity: 0.18, roughness: 0.22, metalness: 0.90 });
+      const chalice = new THREE.Group();
+      const cup    = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.052, 0.16, 12), chaliceMat);
+      cup.position.y = 0.18; chalice.add(cup);
+      const stem   = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.10, 8), chaliceMat);
+      stem.position.y = 0.07; chalice.add(stem);
+      const base   = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.022, 12), chaliceMat);
+      base.position.y = 0.011; chalice.add(base);
+      const gem    = new THREE.Mesh(new THREE.OctahedronGeometry(0.024),
+        new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xcc0000, emissiveIntensity: 0.6, roughness: 0.05 }));
+      gem.position.set(0.055, 0.255, 0); chalice.add(gem);
+      box(scene, 0.22, 0.85, 0.22, 8, 0.425, 96, M.pedestal);
+      chalice.position.set(8, 1.00, 96);
+      scene.add(chalice);
+      stealables.push({ mesh: chalice, item: 'chalice', x: 8, z: 96, taken: false, bonus: true, label: 'Gold Chalice', value: 2800000 });
+      const cRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+        new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+      cRing.rotation.x = -Math.PI / 2; cRing.position.set(8, 0.02, 96); scene.add(cRing);
+      chalice.userData.floorRing = cRing; }
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
@@ -1642,6 +1701,27 @@ window.GameMap = (function () {
     displayCaseRopes(scene, 42, 77);
     coinCache(scene, 42, 77, 4, 1.55);
 
+    // Fabergé Egg — optional stealable on a pedestal in the east salon
+    { const eggMat  = new THREE.MeshStandardMaterial({ color: 0xd4890a, emissive: 0x7a4400, emissiveIntensity: 0.22, roughness: 0.14, metalness: 0.88 });
+      const bandMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.08, metalness: 0.98 });
+      const egg = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 12), eggMat);
+      body.scale.y = 1.4; egg.add(body);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.012, 8, 24), bandMat);
+      band.position.y = 0.02; egg.add(band);
+      const topGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.022),
+        new THREE.MeshStandardMaterial({ color: 0x22ffaa, emissive: 0x00cc66, emissiveIntensity: 0.7, roughness: 0.05 }));
+      topGem.position.y = 0.15; egg.add(topGem);
+      box(scene, 0.22, 0.85, 0.22, 35, 0.425, 82, M.pedestal);
+      egg.position.set(35, 1.06, 82);
+      egg.userData.float = true;
+      scene.add(egg);
+      stealables.push({ mesh: egg, item: 'egg', x: 35, z: 82, taken: false, bonus: true, label: "Fabergé Egg", value: 12000000 });
+      const eRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+        new THREE.MeshBasicMaterial({ color: 0x44ffaa, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+      eRing.rotation.x = -Math.PI / 2; eRing.position.set(35, 0.02, 82); scene.add(eRing);
+      egg.userData.floorRing = eRing; }
+
     // Ceiling lamps
     ceilingLamp(scene, 32, 72);
     ceilingLamp(scene, 43, 72);
@@ -1769,7 +1849,7 @@ window.GameMap = (function () {
     wallPainting(scene, -49.9, 3.5, 77, M.monet, true);
     paintingSpotlight(scene, -49.9, 3.5, 77, 'west');
     const monetMesh = box(scene, 0.05, 1.4, 2.1, -49.75, 3.5, 77, M.monet);
-    stealables.push({ mesh: monetMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas' });
+    stealables.push({ mesh: monetMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas', value: 40000000 });
     { const mRing = new THREE.Mesh(new THREE.RingGeometry(0.65, 1.05, 32),
         new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       mRing.rotation.x = -Math.PI / 2; mRing.position.set(-49.5, 0.02, 77); scene.add(mRing);
@@ -1868,7 +1948,7 @@ window.GameMap = (function () {
     box(scene, 1.4, 0.50, 1.4, 0, 0.75, 140, M.pedestal); // top column, top=1.00
     const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
     crownMesh.userData.float = true;
-    stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false, needsSafe: true, safeCracked: false });
+    stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false, needsSafe: true, safeCracked: false, value: 250000000 });
     { const cRing = new THREE.Mesh(new THREE.RingGeometry(0.80, 1.28, 36),
         new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false }));
       cRing.rotation.x = -Math.PI / 2; cRing.position.set(0, 0.02, 140); scene.add(cRing);
@@ -1899,11 +1979,30 @@ window.GameMap = (function () {
     sceptCross.position.y = 0.26; scepter.add(sceptCross);
     scepter.position.set(-9, 1.5, 135);
     scene.add(scepter);
-    stealables.push({ mesh: scepter, item: 'scepter', x: -9, z: 135, taken: false, bonus: true, label: 'Royal Scepter' });
+    stealables.push({ mesh: scepter, item: 'scepter', x: -9, z: 135, taken: false, bonus: true, label: 'Royal Scepter', value: 5000000 });
     { const sRing = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.60, 24),
         new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       sRing.rotation.x = -Math.PI / 2; sRing.position.set(-9, 0.02, 135); scene.add(sRing);
       scepter.userData.floorRing = sRing; }
+
+    // Ivory Figurine — optional stealable on a pedestal opposite the scepter
+    { const ivoryMat = new THREE.MeshStandardMaterial({ color: 0xf5f0e0, emissive: 0x998855, emissiveIntensity: 0.06, roughness: 0.55, metalness: 0.05 });
+      const ivFig = new THREE.Group();
+      const ivBase = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.07, 10), ivoryMat);
+      const ivBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.10, 0.22, 10), ivoryMat);
+      ivBody.position.y = 0.145; ivFig.add(ivBase); ivFig.add(ivBody);
+      const ivHead = new THREE.Mesh(new THREE.SphereGeometry(0.072, 10, 8), ivoryMat);
+      ivHead.position.y = 0.30; ivFig.add(ivHead);
+      const ivArm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 6), ivoryMat);
+      ivArm.rotation.z = 0.6; ivArm.position.set(0.09, 0.21, 0); ivFig.add(ivArm);
+      box(scene, 0.22, 0.85, 0.22, 9, 0.425, 135, M.pedestal);
+      ivFig.position.set(9, 1.00, 135);
+      scene.add(ivFig);
+      stealables.push({ mesh: ivFig, item: 'ivory', x: 9, z: 135, taken: false, bonus: true, label: 'Ivory Figurine', value: 1800000 });
+      const iRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.50, 24),
+        new THREE.MeshBasicMaterial({ color: 0xf0e8c0, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+      iRing.rotation.x = -Math.PI / 2; iRing.position.set(9, 0.02, 135); scene.add(iRing);
+      ivFig.userData.floorRing = iRing; }
 
     // Guard spawns — Crown Vault (4 guards)
     guardData.push({
