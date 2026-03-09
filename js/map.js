@@ -271,6 +271,16 @@ window.GameMap = (function () {
       map: loadPaintingTex('assets/paintings/harnoor.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
+    // Jon Smail — Assistant Director, Scott Scholars, UNO
+    jon: new THREE.MeshStandardMaterial({
+      map: loadPaintingTex('assets/paintings/jon.jpg'),
+      roughness: 0.88, metalness: 0.0,
+    }),
+    // Kaitlyn Baysa — Design Studio Program Coordinator, Scott Scholars, UNO
+    kaitlyn: new THREE.MeshStandardMaterial({
+      map: loadPaintingTex('assets/paintings/kaitlyn.jpg'),
+      roughness: 0.88, metalness: 0.0,
+    }),
   };
 
   // Collected data returned to main.js
@@ -1674,6 +1684,12 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 92, M.harnoor, false);
     paintingSpotlight(scene,  24.9, 3.5, 92, 'east');
     placard(scene,  24.9, 2.6, 92, 'Dr. Harnoor Dhaliwal', 'Scott Scholars, UNO', false);
+    wallPainting(scene, -24.9, 3.5, 80, M.jon, true);
+    paintingSpotlight(scene, -24.9, 3.5, 80, 'west');
+    placard(scene, -24.9, 2.6, 80, 'Jon Smail', 'Scott Scholars, UNO', true);
+    wallPainting(scene, -24.9, 3.5, 60, M.kaitlyn, true);
+    paintingSpotlight(scene, -24.9, 3.5, 60, 'west');
+    placard(scene, -24.9, 2.6, 60, 'Kaitlyn Baysa', 'Scott Scholars, UNO', true);
 
     // Hack terminal
     terminal(scene, 20, 78);
