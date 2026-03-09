@@ -368,15 +368,62 @@ window.Player = (function () {
     }
   }
 
+  // ── Themed suit canvas textures ────────────────────────
+  function makeSuitTex(theme) {
+    const S = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    if (theme === 'galaxy') {
+      const grad = ctx.createRadialGradient(S*0.4, S*0.35, 0, S/2, S/2, S*0.75);
+      grad.addColorStop(0.0, '#1e0a40'); grad.addColorStop(0.5, '#0a0820'); grad.addColorStop(1.0, '#04030e');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+      for (let i = 0; i < 220; i++) {
+        const sx = Math.random() * S, sy = Math.random() * S;
+        const r  = Math.random() * 1.4 + 0.3;
+        const b  = Math.floor(180 + Math.random() * 75);
+        ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${Math.floor(b*0.7)},${Math.floor(b*0.8)},255,${0.55 + Math.random() * 0.45})`; ctx.fill();
+      }
+      for (let i = 0; i < 5; i++) {
+        const ng = ctx.createLinearGradient(Math.random()*S, Math.random()*S, Math.random()*S, Math.random()*S);
+        ng.addColorStop(0, 'rgba(80,20,180,0)'); ng.addColorStop(0.5, 'rgba(90,30,210,0.16)'); ng.addColorStop(1, 'rgba(20,80,200,0)');
+        ctx.fillStyle = ng; ctx.fillRect(0, 0, S, S);
+      }
+    } else if (theme === 'snakeskin') {
+      ctx.fillStyle = '#0d1a08'; ctx.fillRect(0, 0, S, S);
+      const SW = 20, SH = 13;
+      for (let row = 0; row * SH < S + SH; row++) {
+        for (let col = -1; col * SW < S + SW; col++) {
+          const ox = (row % 2) * (SW / 2);
+          const ex = col * SW + ox + SW / 2, ey = row * SH + SH / 2;
+          const bright = 0.45 + Math.random() * 0.4;
+          const g = Math.floor(28 + bright * 65);
+          ctx.beginPath();
+          ctx.ellipse(ex, ey, SW / 2 - 1, SH / 2 - 1, 0, 0, Math.PI * 2);
+          ctx.fillStyle = `rgb(${Math.floor(g*0.28)},${g},${Math.floor(g*0.18)})`; ctx.fill();
+          ctx.strokeStyle = 'rgba(4,10,2,0.85)'; ctx.lineWidth = 1.3; ctx.stroke();
+        }
+      }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 5);
+    return tex;
+  }
+
   // ── Mesh ───────────────────────────────────────────────
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    const custom   = window.G && window.G.playerCustom || {};
-    const suitHex  = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
-    const eyeHex   = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
+    const custom    = window.G && window.G.playerCustom || {};
+    const suitHex   = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
+    const eyeHex    = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
+    const suitTheme = custom.suitTheme || null;
 
-    const matSuit   = new THREE.MeshStandardMaterial({ color: suitHex,  roughness: 0.82, metalness: 0.05 });
+    const matSuit = suitTheme
+      ? new THREE.MeshStandardMaterial({ map: makeSuitTex(suitTheme), roughness: 0.78, metalness: 0.05 })
+      : new THREE.MeshStandardMaterial({ color: suitHex, roughness: 0.82, metalness: 0.05 });
     const matVest   = new THREE.MeshStandardMaterial({ color: 0x141420, roughness: 0.80, metalness: 0.06 });
     const matHelmet = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.12 });
     const matSkin   = new THREE.MeshStandardMaterial({ color: 0xd4a07a, roughness: 0.80, metalness: 0.0  });
@@ -546,18 +593,19 @@ window.Player = (function () {
     helmet.castShadow = true;
     group.add(helmet);
 
-    // ── Large square goggles resting on helmet forehead ──
+    // ── Goggles on the face at actual eye level ───────────
     [-0.097, 0.097].forEach(xOff => {
       const frame = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.092, 0.058), matGogF);
-      frame.position.set(xOff, 2.06, -0.255);
+      frame.position.set(xOff, 1.86, -0.308);
       group.add(frame);
-      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.070, 0.026), matGogL);
-      lens.position.set(xOff, 2.06, -0.270);
+      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.070, 0.030), matGogL);
+      lens.position.set(xOff, 1.86, -0.326);
       group.add(lens);
     });
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.028, 0.045), matGogF);
-    bridge.position.set(0, 2.06, -0.258);
+    bridge.position.set(0, 1.86, -0.311);
     group.add(bridge);
+    // Strap wraps around back of helmet (stays at helmet height)
     const gogStrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.060, 0.030), matStrap);
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
@@ -1144,9 +1192,9 @@ window.Player = (function () {
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
     // Build a standalone mesh for the customize screen preview (not added to game scene)
-    buildPreviewMesh(suitColor, eyeColor) {
+    buildPreviewMesh(suitColor, eyeColor, suitTheme) {
       const prev = window.G && window.G.playerCustom;
-      if (window.G) window.G.playerCustom = { suitColor, eyeColor };
+      if (window.G) window.G.playerCustom = { suitColor, eyeColor, suitTheme: suitTheme || null };
       const g = buildMesh({ add() {} });
       if (window.G) window.G.playerCustom = prev;
       return g;
