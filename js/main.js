@@ -58,8 +58,10 @@
     distractCount:  3,
     _usedDistract:  false,
     takedownCount:  0,
-    loadout:        { smoke: false, lockpick: false, coins: false, vault: false },
+    loadout:        { smoke: false, lockpick: false, coins: false, vault: false, rappel: false },
     _throwEvent:    null,
+    _powerOut:      false,
+    _powerOutTimer: 0,
     _checkpointReached: { Gallery: false, 'Crown Vault': false },
     _checkpointData:    null,
     _earnedAchs:    null,
@@ -325,6 +327,37 @@
   // ── Win check ──────────────────────────────────────────
   function checkWin(pos) {
     const G = window.G;
+
+    // Feature 8: Service exit (west Lobby, X=-20, Z=15)
+    if (G.inventory.painting && G.inventory.crown) {
+      const seDx = pos.x - (-20), seDz = pos.z - 15;
+      if (seDx * seDx + seDz * seDz < 1.5 * 1.5) {
+        G.phase = 'escaping';
+        _escapeTimer   = 0;
+        _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
+        UI.completeObjective('escape');
+        Music.stop();
+        document.exitPointerLock();
+        return;
+      }
+    }
+
+    // Feature 8: Helicopter exit (rooftop, rappel perk, X=0 Y>5 Z≈-8)
+    if (G.loadout.rappel && G.inventory.painting && G.inventory.crown) {
+      if (pos.y > 5) {
+        const heDx = pos.x - 0, heDz = pos.z - (-8);
+        if (heDx * heDx + heDz * heDz < 3 * 3) {
+          G.phase = 'escaping';
+          _escapeTimer   = 0;
+          _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
+          UI.completeObjective('escape');
+          Music.stop();
+          document.exitPointerLock();
+          return;
+        }
+      }
+    }
+
     if (pos.z < 163) return;
     if (G.inventory.painting && G.inventory.crown) {
       G.phase = 'escaping';
@@ -766,11 +799,20 @@
     UI.updateSmokeCount(G.smokeCount);
 
     // Apply difficulty
+    // Reset power state before applying difficulty so VISION_RANGE is correct
+    G._powerOut      = false;
+    G._powerOutTimer = 0;
+    if (window.Guards) Guards.setPowerOut && Guards.setPowerOut(false);
+
     Guards.setDifficulty(G.difficulty);
     Security.setDifficulty(G.difficulty);
 
     // Reset modules
     Player.reset();
+    // Rappel perk: spawn on rooftop so player drops through skylight
+    if (G.loadout.rappel) {
+      Player.setPosition(0, 8, 5);
+    }
     Guards.resetAlarm();
     Security.resetAlarm();
     Security.resetLasers();
@@ -998,6 +1040,7 @@
         lockpick: _selectedLoadout.has('lockpick'),
         coins:    _selectedLoadout.has('coins'),
         vault:    _selectedLoadout.has('vault'),
+        rappel:   _selectedLoadout.has('rappel'),
       };
       UI.showScreen(null);
       startGame(_pendingMode);
@@ -1078,6 +1121,20 @@
     // World
     updateRoom(playerPos.z);
     tickAlarmLight(dt);
+
+    // Power breaker timer — runs after tickAlarmLight so it overrides alarm flicker
+    if (G._powerOut) {
+      G._powerOutTimer -= dt;
+      if (G._powerOutTimer <= 0) {
+        G._powerOut = false;
+        G._powerOutTimer = 0;
+        Guards.setPowerOut && Guards.setPowerOut(false);
+        flickerLights.forEach(l => { l.intensity = l._baseIntensity; });
+      } else {
+        // Dim all flicker lights to 40% while power is out (overrides alarm flicker)
+        flickerLights.forEach(l => { l.intensity = l._baseIntensity * 0.4; });
+      }
+    }
     tickFloatItems(dt);
     tickDustAndSparks(dt);
     tickDustPuffs(dt);

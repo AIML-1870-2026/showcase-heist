@@ -1032,7 +1032,14 @@ window.GameMap = (function () {
     // ════════════════════════════════
     //  LOBBY  cx=0  cz=20  40×40
     // ════════════════════════════════
-    roomWalls(scene, 0, 20, 40, 40, { north: true, south: true });
+    // Lobby walls — skip west wall so we can add a service exit gap
+    roomWalls(scene, 0, 20, 40, 40, { north: true, south: true, west: true });
+
+    // Lobby west wall with 3-unit service exit gap at Z=15
+    // Full west wall: X=-20, Z 0→40 (length 40, centre Z=20)
+    // Gap at Z 13.5→16.5 (3 units), so stubs: Z 0→13.5 (len 13.5, ctr 6.75) and Z 16.5→40 (len 23.5, ctr 28.25)
+    wall(scene, -20,  6.75, WALL_T, 13.5);   // south stub
+    wall(scene, -20, 28.25, WALL_T, 23.5);   // north stub
 
     // South wall stubs flanking the 3-unit front entrance gap
     const _enStub = (40 - 3) / 2;  // 18.5
@@ -1180,6 +1187,74 @@ window.GameMap = (function () {
 
     // Glowing archway at yellow keycard door so the exit is obvious
     doorGlow(scene, 0, 39.75, 0xf0c040);
+
+    // ── FEATURE 2: Skylight in Lobby ceiling (rappel entry) ─────────────────
+    // The full ceiling is already added by roomWalls above. We add a glass skylight
+    // pane and metal frame visible from the rooftop (where rappel players spawn).
+    // The ceiling has no Y-axis collision, so players fall through it freely.
+    {
+      const brokenGlassMat = new THREE.MeshStandardMaterial({
+        color: 0x88ccff, roughness: 0.05, metalness: 0.1,
+        transparent: true, opacity: 0.22,
+        emissive: 0x4488cc, emissiveIntensity: 0.18,
+        side: THREE.DoubleSide,
+      });
+      const metalFrameMat = new THREE.MeshStandardMaterial({ color: 0x556070, roughness: 0.4, metalness: 0.7 });
+      // Glass pane sits just above the ceiling level — visible from rooftop
+      box(scene, 4.0, 0.06, 4.0, 0, WALL_H + FLOOR_T + 0.05, 20, brokenGlassMat);
+      // Metal frame around the skylight opening
+      box(scene, 4.4, 0.14, 0.14, 0, WALL_H + FLOOR_T + 0.07, 18.07, metalFrameMat); // south edge
+      box(scene, 4.4, 0.14, 0.14, 0, WALL_H + FLOOR_T + 0.07, 21.93, metalFrameMat); // north edge
+      box(scene, 0.14, 0.14, 4.4, -1.93, WALL_H + FLOOR_T + 0.07, 20, metalFrameMat); // west edge
+      box(scene, 0.14, 0.14, 4.4,  1.93, WALL_H + FLOOR_T + 0.07, 20, metalFrameMat); // east edge
+    }
+
+    // ── FEATURE 8: Service Exit (west Lobby wall at X=-20, Z=15) ────────────
+    // The west wall already runs the full height. We need a gap for the door.
+    // The lobby west wall is at X=-20, Z=-11 (exterior section) and the interior
+    // is covered by roomWalls(). We add a door mesh and an EXIT sign.
+    door(scene, -20, 15, null, Math.PI / 2);
+    // Glowing EXIT sign above the service exit
+    {
+      const exitSignMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff55, emissive: 0x00ff55, emissiveIntensity: 2.0,
+        roughness: 0.3,
+      });
+      box(scene, 0.08, 0.35, 1.5, -19.92, WALL_H - 0.45, 15, exitSignMat);
+    }
+
+    // ── FEATURE 3: Trapdoor in Lobby → Underground Service Tunnel ──────────
+    {
+      const trapdoorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.75, metalness: 0.65 });
+      const tdMesh = box(scene, 1.8, 0.10, 1.8, 0, 0.05, 28, trapdoorMat);
+      // Latch/handle detail
+      const latchMat = new THREE.MeshStandardMaterial({ color: 0xc09030, roughness: 0.3, metalness: 0.8 });
+      box(scene, 0.5, 0.06, 0.1, 0, 0.12, 28.6, latchMat);
+      vents.push({ entryX: 0, entryZ: 28, exitX: 0, exitZ: 130, exitY: 0, label: 'Tunnel', mesh: tdMesh });
+    }
+
+    // ── FEATURE 3: Underground tunnel corridor Y=-3, Z=28→130 ─────────────
+    {
+      const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x1c1814, roughness: 0.90, metalness: 0.0 });
+      const tunnelCeilMat = new THREE.MeshStandardMaterial({ color: 0x141210, roughness: 0.95, metalness: 0.0 });
+      const tunnelFloorMat = new THREE.MeshStandardMaterial({ color: 0x161412, roughness: 0.85, metalness: 0.0 });
+      const tunnelLen = 102; // Z 28→130
+      const tunnelCZ  = (28 + 130) / 2; // 79
+      // Floor slab
+      box(scene, 4, 0.3, tunnelLen, 0, -3.15, tunnelCZ, tunnelFloorMat);
+      // Ceiling slab
+      box(scene, 4, 0.3, tunnelLen, 0, -0.65, tunnelCZ, tunnelCeilMat);
+      // West wall
+      box(scene, 0.25, 2.5, tunnelLen, -2.125, -2.0, tunnelCZ, tunnelMat);
+      // East wall
+      box(scene, 0.25, 2.5, tunnelLen,  2.125, -2.0, tunnelCZ, tunnelMat);
+      // Dim orange point lights along tunnel
+      [[0, -2.0, 50], [0, -2.0, 75], [0, -2.0, 100]].forEach(([lx, ly, lz]) => {
+        const pt = new THREE.PointLight(0xff6a00, 0.55, 14);
+        pt.position.set(lx, ly, lz);
+        scene.add(pt);
+      });
+    }
 
     // ════════════════════════════════
     //  EXTERIOR ENTRANCE PLAZA  Z=-22→0  X=-20→20
@@ -1473,14 +1548,22 @@ window.GameMap = (function () {
     wall(scene,  15, 55, 20, WALL_T);  // east stub: X +5→+25
 
     // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
-    // South stub: Z 55→75.5  (length 20.5, centre 65.25)
-    wall(scene, 25, 65.25, WALL_T, 20.5);
+    //   and additional 3-unit gap at Z=71.5 leading to the Conservation Lab (Feature 4)
+    // South section: Z 55→70 (length 15, centre 62.5)
+    wall(scene, 25, 62.5, WALL_T, 15);
+    // Middle stub between lab and salon gaps: Z 73→75.5 (length 2.5, centre 74.25)
+    wall(scene, 25, 74.25, WALL_T, 2.5);
     // North stub: Z 78.5→100  (length 21.5, centre 89.25)
     wall(scene, 25, 89.25, WALL_T, 21.5);
+    // Door at lab opening (X=25, Z=71.5) — connects Gallery to Conservation Lab
+    door(scene, 25, 71.5, null, Math.PI / 2);
 
     // Gallery west wall stubs — 3-unit gap at Z=77 leading to the Galerie des Sculptures
-    // South stub: Z 55→75.5  (length 20.5, centre 65.25)
-    wall(scene, -25, 65.25, WALL_T, 20.5);
+    //   and additional 3-unit gap at Z=64 leading to the Power Breaker Room (Feature 7)
+    // South section: Z 55→62.5 (length 7.5, centre 58.75) — solid, south of breaker door
+    wall(scene, -25, 58.75, WALL_T, 7.5);
+    // Middle stub: Z 65.5→75.5 (length 10, centre 70.5) — between breaker gap and Galerie gap
+    wall(scene, -25, 70.5, WALL_T, 10);
     // North stub: Z 78.5→100  (length 21.5, centre 89.25)
     wall(scene, -25, 89.25, WALL_T, 21.5);
 
@@ -1896,6 +1979,184 @@ window.GameMap = (function () {
 
     // Security camera watching the entrance
     cameraData.push({ x: -43, y: WALL_H - 0.3, z: 80, sweepAngle: Math.PI / 2.2, facingZ: 1 });
+
+    // ════════════════════════════════
+    //  CONSERVATION LAB  X 25→55  Z 58→85
+    //  Side room east of Gallery (Feature 4)
+    // ════════════════════════════════
+    {
+      const CLX = 40, CLZ = 71.5, CLW = 30, CLD = 27;
+      // Floor and ceiling
+      floor(scene, CLX, CLZ, CLW, CLD);
+      ceiling(scene, CLX, CLZ, CLW, CLD);
+      // East wall (X=55)
+      wall(scene, 55, CLZ, WALL_T, CLD);
+      // North wall (Z=85)
+      wall(scene, CLX, 85, CLW, WALL_T);
+      // South wall (Z=58) — solid, connection is via gallery east wall door at X=25, Z=71.5
+      wall(scene, CLX, 58, CLW, WALL_T);
+
+      // UV light (purple/UV point light)
+      const uvLight = new THREE.PointLight(0x8844ff, 1.5, 18);
+      uvLight.position.set(45, 3, 72);
+      scene.add(uvLight);
+
+      // Ceiling lamp
+      ceilingLamp(scene, 36, 65);
+      ceilingLamp(scene, 50, 65);
+      ceilingLamp(scene, 36, 78);
+      ceilingLamp(scene, 50, 78);
+
+      // Lab benches / work tables
+      const labDeskMat = new THREE.MeshStandardMaterial({ color: 0x1a2530, roughness: 0.75, metalness: 0.0 });
+      box(scene, 6, 0.85, 1.2, 36, 0.425, 62, labDeskMat);  // south bench
+      box(scene, 6, 0.85, 1.2, 50, 0.425, 65, labDeskMat);  // east bench
+      box(scene, 6, 0.85, 1.2, 36, 0.425, 79, labDeskMat);  // north bench
+      box(scene, 6, 0.85, 1.2, 50, 0.425, 78, labDeskMat);  // east-north bench
+
+      // UV key pickup — glowing green box in the gallery, near the lab entrance
+      // at X=30, Z=80 (gallery side)
+      const uvKeyMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff88, emissive: 0x00cc66, emissiveIntensity: 1.8,
+        roughness: 0.3, metalness: 0.1,
+      });
+      const uvKeyMesh = box(scene, 0.25, 0.25, 0.25, 30, 0.85, 80, uvKeyMat);
+      uvKeyMesh.userData.isUVKey = true;
+      // Glow ring under UV key
+      const uvRingMat = new THREE.MeshBasicMaterial({
+        color: 0x00ff88, transparent: true, opacity: 0.38,
+        side: THREE.DoubleSide, depthWrite: false,
+      });
+      const uvRing = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.38, 20), uvRingMat);
+      uvRing.rotation.x = -Math.PI / 2;
+      uvRing.position.set(30, 0.02, 80);
+      scene.add(uvRing);
+      uvKeyMesh.userData.floorRing = uvRing;
+      // Register as a special keycard-style pickup
+      keycardPickups.push({ mesh: uvKeyMesh, key: 'uvKey', x: 30, z: 80, collected: false, floorRing: uvRing, isUVKey: true });
+
+      // Stealables in the Conservation Lab
+      // Greek Vase
+      { const vaseMat = new THREE.MeshStandardMaterial({ color: 0xc87020, roughness: 0.55, metalness: 0.12 });
+        const vase = new THREE.Group();
+        const vFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.05, 10), vaseMat);
+        vFoot.position.y = 0.025; vase.add(vFoot);
+        const vBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.09, 0.22, 12), vaseMat);
+        vBody.position.y = 0.16; vase.add(vBody);
+        const vNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 0.14, 10), vaseMat);
+        vNeck.position.y = 0.37; vase.add(vNeck);
+        const vRim = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.04, 10), vaseMat);
+        vRim.position.y = 0.47; vase.add(vRim);
+        box(scene, 0.22, 0.65, 0.22, 36, 0.325, 63, M.pedestal);
+        vase.position.set(36, 0.90, 63);
+        vase.userData.float = true;
+        scene.add(vase);
+        stealables.push({ mesh: vase, item: 'vase', x: 36, z: 63, taken: false, bonus: true, label: 'Greek Vase', value: 8500000 });
+        const vRing2 = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0xff8822, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+        vRing2.rotation.x = -Math.PI / 2; vRing2.position.set(36, 0.02, 63); scene.add(vRing2);
+        vase.userData.floorRing = vRing2; }
+
+      // Illuminated Manuscript
+      { const msMat = new THREE.MeshStandardMaterial({ color: 0x8a5a14, roughness: 0.80, metalness: 0.0 });
+        const msPageMat = new THREE.MeshStandardMaterial({ color: 0xf8f0d8, roughness: 0.90, metalness: 0.0,
+          emissive: 0x9a6a10, emissiveIntensity: 0.28 });
+        const ms = new THREE.Group();
+        box(scene, 0.38, 0.04, 0.28, 0, 0, 0, msMat);
+        const msPages = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.008, 0.24), msPageMat);
+        msPages.position.y = 0.024; ms.add(msPages);
+        ms.position.set(36, 0.99, 78);
+        scene.add(ms);
+        stealables.push({ mesh: ms, item: 'manuscript', x: 36, z: 78, taken: false, bonus: true, label: 'Illuminated Manuscript', value: 15000000 });
+        const msRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0xddaa44, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+        msRing.rotation.x = -Math.PI / 2; msRing.position.set(36, 0.02, 78); scene.add(msRing);
+        ms.userData.floorRing = msRing; }
+
+      // Bronze Bust
+      { const bbMat = new THREE.MeshStandardMaterial({ color: 0x7a4c18, roughness: 0.45, metalness: 0.72,
+          emissive: 0x3a2008, emissiveIntensity: 0.15 });
+        const bb = new THREE.Group();
+        const bbTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.30, 10), bbMat);
+        bbTorso.position.y = 0.15; bb.add(bbTorso);
+        const bbNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 0.12, 8), bbMat);
+        bbNeck.position.y = 0.36; bb.add(bbNeck);
+        const bbHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), bbMat);
+        bbHead.position.y = 0.59; bb.add(bbHead);
+        box(scene, 0.22, 0.65, 0.22, 50, 0.325, 65, M.pedestal);
+        bb.position.set(50, 0.90, 65);
+        bb.userData.float = true;
+        scene.add(bb);
+        stealables.push({ mesh: bb, item: 'bust', x: 50, z: 65, taken: false, bonus: true, label: 'Bronze Bust', value: 6200000 });
+        const bbRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0xaa7722, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+        bbRing.rotation.x = -Math.PI / 2; bbRing.position.set(50, 0.02, 65); scene.add(bbRing);
+        bb.userData.floorRing = bbRing; }
+
+      // UV-locked Sapphire Brooch
+      { const sbMat = new THREE.MeshStandardMaterial({ color: 0x1a44cc, roughness: 0.04, metalness: 0.08,
+          emissive: 0x0a1a66, emissiveIntensity: 0.50, transparent: true, opacity: 0.90 });
+        const sbFrameMat = new THREE.MeshStandardMaterial({ color: 0xd4a030, roughness: 0.18, metalness: 0.92 });
+        const sb = new THREE.Group();
+        const sbGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.065), sbMat);
+        sb.add(sbGem);
+        const sbFrame = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.018, 6, 16), sbFrameMat);
+        sbFrame.position.y = 0; sb.add(sbFrame);
+        box(scene, 0.22, 0.65, 0.22, 50, 0.325, 78, M.pedestal);
+        sb.position.set(50, 1.02, 78);
+        sb.userData.float = true;
+        scene.add(sb);
+        stealables.push({ mesh: sb, item: 'brooch', x: 50, z: 78, taken: false, bonus: true, label: 'Sapphire Brooch', value: 22000000, needsUV: true });
+        const sbRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+        sbRing.rotation.x = -Math.PI / 2; sbRing.position.set(50, 0.02, 78); scene.add(sbRing);
+        sb.userData.floorRing = sbRing; }
+
+      // Conservation Lab guard
+      guardData.push({
+        spawnX: 36, spawnZ: 65,
+        waypoints: _route(
+          [new THREE.Vector3(36, 0, 63), new THREE.Vector3(50, 0, 65), new THREE.Vector3(50, 0, 78), new THREE.Vector3(36, 0, 78)],
+          [new THREE.Vector3(36, 0, 63), new THREE.Vector3(36, 0, 78), new THREE.Vector3(50, 0, 78), new THREE.Vector3(50, 0, 65)]
+        ),
+      });
+    }
+
+    // ════════════════════════════════
+    //  POWER BREAKER ROOM  X -31→-25  Z 60→68
+    //  Side room west of Gallery (Feature 7)
+    // ════════════════════════════════
+    {
+      // Floor and ceiling
+      floor(scene, -28, 64, 6, 8);
+      ceiling(scene, -28, 64, 6, 8);
+      // West wall (X=-31)
+      wall(scene, -31, 64, WALL_T, 8);
+      // North wall (Z=68)
+      wall(scene, -28, 68, 6, WALL_T);
+      // South wall (Z=60)
+      wall(scene, -28, 60, 6, WALL_T);
+      // East face — door only; gallery west wall stubs already cover this side
+      // Door into breaker room
+      door(scene, -25, 64, null, Math.PI / 2);
+
+      // Breaker panel on west wall
+      const breakerMat = new THREE.MeshStandardMaterial({ color: 0x151e28, roughness: 0.80, metalness: 0.18 });
+      const breakerScreenMat = new THREE.MeshStandardMaterial({
+        color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.9, roughness: 0.4, metalness: 0.1,
+        transparent: true, opacity: 0.82,
+      });
+      const breakerMesh = box(scene, 0.8, 1.2, 0.15, -30.6, 1.2, 64, breakerMat);
+      box(scene, 0.55, 0.55, 0.05, -30.6, 1.3, 63.93, breakerScreenMat);
+      // Breaker switches (small boxes on panel)
+      const switchMat = new THREE.MeshStandardMaterial({ color: 0x303838, roughness: 0.5, metalness: 0.4 });
+      for (let si = 0; si < 4; si++) {
+        box(scene, 0.08, 0.12, 0.04, -30.54, 0.72 + si * 0.16, 63.93, switchMat);
+      }
+      // Register breaker terminal
+      const breakerTerminal = { mesh: breakerMesh, x: -30.6, z: 64, hacked: false, type: 'breaker' };
+      terminals.push(breakerTerminal);
+    }
 
     // ════════════════════════════════
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
@@ -2385,6 +2646,28 @@ window.GameMap = (function () {
       scene.add(extAmbient);
     }
 
+    // ── FEATURE 8: Helipad on lobby rooftop (rappel exit) ────────────────────
+    {
+      const heliMat = new THREE.MeshStandardMaterial({
+        color: 0xf0a000, emissive: 0xff8800, emissiveIntensity: 0.70, roughness: 0.55, metalness: 0.0,
+      });
+      const heliPad = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.05, 24), heliMat);
+      heliPad.position.set(0, 8.0, -8);
+      scene.add(heliPad);
+      // H marking — two vertical bars + crossbar
+      const hBarMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.9, roughness: 0.5 });
+      box(scene, 0.20, 0.06, 0.80, -0.50, 8.04, -8, hBarMat);  // left leg of H
+      box(scene, 0.20, 0.06, 0.80,  0.50, 8.04, -8, hBarMat);  // right leg of H
+      box(scene, 1.20, 0.06, 0.20,  0.00, 8.04, -8, hBarMat);  // crossbar of H
+      // Spotlight pointing down at helipad
+      const heliSpot = new THREE.SpotLight(0xffe8a0, 2.2, 20, Math.PI / 5, 0.3);
+      heliSpot.position.set(0, 18, -8);
+      heliSpot.target.position.set(0, 8, -8);
+      heliSpot.castShadow = false;
+      scene.add(heliSpot);
+      scene.add(heliSpot.target);
+    }
+
     // ── Vent shaft grates ─────────────────────────────────────────────────────
     // Two maintenance-tunnel shortcuts that only crouching players can use.
     const grateM = new THREE.MeshStandardMaterial({ color: 0x2a2a38, roughness: 0.88, metalness: 0.55 });
@@ -2420,6 +2703,11 @@ window.GameMap = (function () {
     makeVentGrate(14, 96);
     makeVentGrate(14, 118);
     vents.push({ entryX: 14, entryZ: 96, exitX: 14, exitZ: 118 });
+
+    // ── FEATURE 3: Tunnel floor grate in Crown Vault (exit point at Z=130) ──────
+    makeVentGrate(0, 130);
+    // Crown Vault → Lobby tunnel return vent entry
+    vents.push({ entryX: 0, entryZ: 130, exitX: 0, exitZ: 28, exitY: 0, label: 'Tunnel' });
 
     return {
       walls,

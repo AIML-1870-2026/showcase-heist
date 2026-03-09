@@ -1052,6 +1052,21 @@ window.Guards = (function () {
       .map(g => ({ x: g.pos.x, z: g.pos.z }));
   }
 
+  // ── Power breaker effect ───────────────────────────────
+  let _savedVisionRange = null;
+  function setPowerOut(on) {
+    if (on) {
+      if (_savedVisionRange === null) _savedVisionRange = VISION_RANGE;
+      VISION_RANGE = _savedVisionRange * 0.5;
+    } else {
+      // Restore VISION_RANGE only if the power-out effect was active
+      if (_savedVisionRange !== null) {
+        VISION_RANGE = _savedVisionRange;
+      }
+      _savedVisionRange = null;
+    }
+  }
+
   return {
     init,
     update,
@@ -1065,6 +1080,7 @@ window.Guards = (function () {
     setDifficulty,
     tryTakedown,
     checkTakedownAvailable,
+    setPowerOut,
   };
 
 }());

@@ -814,6 +814,11 @@ window.Player = (function () {
           _startSafeCrack(st);
           return;
         }
+        // UV-locked items require the UV key
+        if (st.needsUV && !G.inventory.uvKey) {
+          UI.showAlert('Need UV key to unlock case.', 2000);
+          return;
+        }
         st.taken        = true;
         st.mesh.visible = false;
         G._pickupFlash  = 1.0;
@@ -855,9 +860,17 @@ window.Player = (function () {
       const _dx = tm.x - pos.x, _dz = tm.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
         tm.hacked = true;
-        if (window.Security) Security.hackCameras(20);
-        UI.SFX.interact();
-        UI.showAlert('Cameras looped for 20 seconds.', 2500);
+        if (tm.type === 'breaker') {
+          G._powerOut = true;
+          G._powerOutTimer = 30;
+          if (window.Guards) Guards.setPowerOut && Guards.setPowerOut(true);
+          UI.SFX.interact();
+          UI.showAlert('Power cut! Guards half-blind for 30s.', 3000);
+        } else {
+          if (window.Security) Security.hackCameras(20);
+          UI.SFX.interact();
+          UI.showAlert('Cameras looped for 20 seconds.', 2500);
+        }
         return;
       }
     }
@@ -870,11 +883,19 @@ window.Player = (function () {
       const nearExit  = _ex * _ex + _ez * _ez < 2.8 * 2.8;
       if (nearEntry || nearExit) {
         if (state !== 'crouching') { UI.showAlert('Crouch to use the vent!', 1500); return; }
-        const dest = nearEntry ? { x: v.exitX, z: v.exitZ } : { x: v.entryX, z: v.entryZ };
-        pos.set(dest.x, 0, dest.z);
+        let destX, destZ, destY;
+        if (nearEntry) {
+          destX = v.exitX; destZ = v.exitZ;
+          destY = (v.exitY !== undefined) ? v.exitY : 0;
+        } else {
+          destX = v.entryX; destZ = v.entryZ;
+          destY = 0;
+        }
+        pos.set(destX, destY, destZ);
         vel.set(0, 0, 0);
         wallGrid = null; // rebuild collision grid
-        UI.showAlert('Crawled through vent...', 1800);
+        const label = v.label || 'vent';
+        UI.showAlert('Entered ' + label + '...', 1800);
         UI.SFX.interact();
         return;
       }
@@ -997,7 +1018,7 @@ window.Player = (function () {
       if (tm.hacked) continue;
       const _dx = tm.x - pos.x, _dz = tm.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
-        UI.showPrompt('[E] Hack terminal');
+        UI.showPrompt(tm.type === 'breaker' ? '[E] Cut the power (30s)' : '[E] Hack terminal');
         found = true; break;
       }
     }
