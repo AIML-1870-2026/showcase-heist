@@ -1681,15 +1681,13 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
     paintingSpotlight(scene,  24.9, 3.5, 60, 'east');
     placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
-    wallPainting(scene,  24.9, 3.5, 92, M.harnoor, false);
-    paintingSpotlight(scene,  24.9, 3.5, 92, 'east');
-    placard(scene,  24.9, 2.6, 92, 'Dr. Harnoor Dhaliwal', 'Scott Scholars, UNO', false);
-    wallPainting(scene, -24.9, 3.5, 80, M.jon, true);
-    paintingSpotlight(scene, -24.9, 3.5, 80, 'west');
-    placard(scene, -24.9, 2.6, 80, 'Jon Smail', 'Scott Scholars, UNO', true);
-    wallPainting(scene, -24.9, 3.5, 60, M.kaitlyn, true);
-    paintingSpotlight(scene, -24.9, 3.5, 60, 'west');
-    placard(scene, -24.9, 2.6, 60, 'Kaitlyn Baysa', 'Scott Scholars, UNO', true);
+    // Scott Scholars portraits — south gallery entrance wall, visible as players enter
+    wallPaintingNS(scene,  21, 3.5, 55.10, M.harnoor, true);
+    paintingSpotlight(scene,  21, 3.5, 55.10, 'south');
+    wallPaintingNS(scene,   8, 3.5, 55.10, M.jon, true);
+    paintingSpotlight(scene,   8, 3.5, 55.10, 'south');
+    wallPaintingNS(scene, -21, 3.5, 55.10, M.kaitlyn, true);
+    paintingSpotlight(scene, -21, 3.5, 55.10, 'south');
 
     // Hack terminal
     terminal(scene, 20, 78);
