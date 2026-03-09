@@ -25,7 +25,7 @@ window.Player = (function () {
   let _leftLeg = null, _rightLeg = null;
   let _leftArm = null, _rightArm = null;
 
-  let pos       = new THREE.Vector3(0, 0, -16);
+  let pos       = new THREE.Vector3(0, 0, -20);
   let vel       = new THREE.Vector3(0, 0, 0);
   let onGround  = true;
   let jumpCount = 0;
@@ -558,7 +558,7 @@ window.Player = (function () {
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.028, 0.045), matGogF);
     bridge.position.set(0, 2.06, -0.258);
     group.add(bridge);
-    const gogStrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.028, 0.020), matGogF);
+    const gogStrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.060, 0.030), matGogL);
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
 
@@ -1048,7 +1048,7 @@ window.Player = (function () {
   }
 
   function reset() {
-    pos.set(0, 0, -12);
+    pos.set(0, 0, -20);
     vel.set(0, 0, 0);
     state             = 'normal';
     onGround          = true;

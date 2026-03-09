@@ -826,6 +826,8 @@ window.Guards = (function () {
       while (delta >  Math.PI) delta -= Math.PI * 2;
       while (delta < -Math.PI) delta += Math.PI * 2;
       this.smoothYaw += delta * Math.min(1, dt * 12);
+      // Hard boundary: guards must stay inside the museum (south wall at Z≈0)
+      if (this.pos.z < 1.5) this.pos.z = 1.5;
       this.mesh.position.copy(this.pos);
       this.mesh.rotation.y = this.smoothYaw + Math.PI;
       this.updateCone(playerPos);
