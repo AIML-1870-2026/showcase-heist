@@ -48,9 +48,9 @@ window.GameMap = (function () {
     c.width = c.height = S;
     const ctx = c.getContext('2d');
     const grad = ctx.createLinearGradient(0, 0, S, S);
-    grad.addColorStop(0.0, '#8a9098');
-    grad.addColorStop(0.5, '#828890');
-    grad.addColorStop(1.0, '#8c929a');
+    grad.addColorStop(0.0, '#cfc0a0');
+    grad.addColorStop(0.5, '#c8b890');
+    grad.addColorStop(1.0, '#d0bea8');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, S, S);
     const img = ctx.getImageData(0, 0, S, S);
@@ -70,7 +70,7 @@ window.GameMap = (function () {
       }
     }
     ctx.putImageData(img, 0, 0);
-    ctx.strokeStyle = 'rgba(60,70,90,0.35)';
+    ctx.strokeStyle = 'rgba(160,120,30,0.40)';
     ctx.lineWidth = 2;
     for (let i = 0; i <= S; i += 128) {
       ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
@@ -180,6 +180,183 @@ window.GameMap = (function () {
     return tex;
   }
 
+  // ── Procedural Impressionist painting textures ────────────────────────────
+  function makeVanGoghStarryNight() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0d1b3e'; ctx.fillRect(0, 0, S, S);
+    const skyColors = ['#1e3f7a','#2a52a8','#163266','#3a6ac8','#1040a0'];
+    for (let i = 0; i < 120; i++) {
+      const x = Math.random()*S, y = Math.random()*S*0.7, r = 15+Math.random()*45;
+      ctx.strokeStyle = skyColors[Math.floor(Math.random()*skyColors.length)];
+      ctx.lineWidth = 2+Math.random()*7;
+      ctx.beginPath(); ctx.arc(x, y, r, Math.random()*Math.PI, Math.random()*Math.PI*2); ctx.stroke();
+    }
+    for (let i = 0; i < 25; i++) {
+      const sx = Math.random()*S, sy = Math.random()*S*0.65, sr = 3+Math.random()*10;
+      const grd = ctx.createRadialGradient(sx,sy,0,sx,sy,sr*3.5);
+      grd.addColorStop(0,'rgba(255,240,160,0.95)'); grd.addColorStop(0.3,'rgba(255,220,80,0.6)'); grd.addColorStop(1,'rgba(255,220,80,0)');
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(sx,sy,sr*3.5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle='rgba(255,245,180,0.9)'; ctx.beginPath(); ctx.arc(S*0.82,S*0.12,30,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1a1810'; ctx.fillRect(0,S*0.62,S,S*0.38);
+    ctx.fillStyle='#0d0e0a'; ctx.beginPath(); ctx.moveTo(S*0.25,S*0.35); ctx.lineTo(S*0.22,S*0.62); ctx.lineTo(S*0.28,S*0.62); ctx.fill();
+    ctx.fillStyle='#14200a'; ctx.beginPath(); ctx.moveTo(0,S*0.62);
+    for (let x=0;x<=S;x+=20) ctx.lineTo(x, S*0.62-Math.sin(x*0.03)*25);
+    ctx.lineTo(S,S); ctx.lineTo(0,S); ctx.fill();
+    for (let i=0;i<18;i++) {
+      ctx.fillStyle=`rgba(255,200,80,${0.5+Math.random()*0.5})`;
+      ctx.fillRect(Math.random()*S, S*0.65+Math.random()*S*0.15, 3+Math.random()*7, 3+Math.random()*5);
+    }
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function makeVanGoghSunflowers() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='#d8a800'; ctx.fillRect(0,0,S,S);
+    ctx.fillStyle='#6a3c10'; ctx.fillRect(0,S*0.78,S,S);
+    ctx.fillStyle='#8a5018'; ctx.beginPath(); ctx.moveTo(S*0.28,S*0.78); ctx.lineTo(S*0.22,S*0.98); ctx.lineTo(S*0.78,S*0.98); ctx.lineTo(S*0.72,S*0.78); ctx.fill();
+    const flowerDefs=[[S*0.5,S*0.3,55],[S*0.2,S*0.45,40],[S*0.78,S*0.4,45],[S*0.35,S*0.18,35],[S*0.65,S*0.22,38],[S*0.5,S*0.55,38],[S*0.15,S*0.6,30],[S*0.82,S*0.58,32]];
+    const petalC=['#f0a000','#e08000','#f0c000','#d89000','#f0b820'];
+    flowerDefs.forEach(([fx,fy,fr]) => {
+      for (let p=0;p<14;p++) {
+        const pa=(p/14)*Math.PI*2; ctx.fillStyle=petalC[Math.floor(Math.random()*petalC.length)];
+        ctx.beginPath(); ctx.ellipse(fx+Math.cos(pa)*fr*0.95,fy+Math.sin(pa)*fr*0.95,fr*0.35,fr*0.18,pa+Math.PI/2,0,Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle='#2a1200'; ctx.beginPath(); ctx.arc(fx,fy,fr*0.38,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#2a6010'; ctx.lineWidth=4+fr*0.05; ctx.beginPath(); ctx.moveTo(fx,fy+fr); ctx.quadraticCurveTo(fx+(Math.random()-0.5)*50,fy+fr+60,S*0.5,S*0.78); ctx.stroke();
+    });
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function makeVanGoghIrises() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='#c87828'; ctx.fillRect(0,0,S,S);
+    ctx.fillStyle='#6a4010'; ctx.fillRect(0,S*0.6,S,S);
+    ctx.strokeStyle='#1a5010'; ctx.lineWidth=3;
+    for (let i=0;i<60;i++) {
+      const lx=Math.random()*S, ly=S*0.55+Math.random()*S*0.3, lh=40+Math.random()*120, curve=(Math.random()-0.5)*60;
+      ctx.beginPath(); ctx.moveTo(lx,ly); ctx.quadraticCurveTo(lx+curve,ly-lh/2,lx+curve*0.5,ly-lh); ctx.stroke();
+    }
+    const irisDefs=[[S*0.18,S*0.38],[S*0.35,S*0.28],[S*0.52,S*0.4],[S*0.68,S*0.3],[S*0.82,S*0.35],[S*0.25,S*0.55],[S*0.6,S*0.52],[S*0.78,S*0.5]];
+    const irisC=['#4a1a8a','#5a2aaa','#3a0a70','#6030c0','#7040d0'];
+    const irisA=['#9060e0','#a070f0','#8050d0'];
+    irisDefs.forEach(([fx,fy]) => {
+      for (let p=0;p<3;p++) { const pa=(p/3)*Math.PI*1.4-0.7; ctx.fillStyle=irisC[Math.floor(Math.random()*irisC.length)]; ctx.beginPath(); ctx.ellipse(fx+Math.cos(pa)*15,fy-20,11,22,pa,0,Math.PI*2); ctx.fill(); }
+      for (let p=0;p<3;p++) { const pa=(p/3)*Math.PI*2; ctx.fillStyle=irisA[Math.floor(Math.random()*irisA.length)]; ctx.beginPath(); ctx.ellipse(fx+Math.cos(pa)*16,fy+12,9,18,pa,0,Math.PI*2); ctx.fill(); }
+      ctx.fillStyle='#e8c000'; ctx.beginPath(); ctx.ellipse(fx,fy,5,10,0,0,Math.PI*2); ctx.fill();
+    });
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function makeMonetSunrise() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const skyGrad = ctx.createLinearGradient(0,0,0,S*0.5);
+    skyGrad.addColorStop(0,'#1a2848'); skyGrad.addColorStop(0.4,'#4a3060'); skyGrad.addColorStop(0.7,'#9a4820'); skyGrad.addColorStop(1,'#d06820');
+    ctx.fillStyle=skyGrad; ctx.fillRect(0,0,S,S*0.5);
+    const waterGrad = ctx.createLinearGradient(0,S*0.5,0,S);
+    waterGrad.addColorStop(0,'#1a3060'); waterGrad.addColorStop(0.5,'#102030'); waterGrad.addColorStop(1,'#080d18');
+    ctx.fillStyle=waterGrad; ctx.fillRect(0,S*0.5,S,S*0.5);
+    const sunGrad = ctx.createRadialGradient(S*0.6,S*0.48,0,S*0.6,S*0.48,55);
+    sunGrad.addColorStop(0,'rgba(255,180,0,1)'); sunGrad.addColorStop(0.4,'rgba(255,100,0,0.8)'); sunGrad.addColorStop(1,'rgba(255,80,0,0)');
+    ctx.fillStyle=sunGrad; ctx.beginPath(); ctx.arc(S*0.6,S*0.48,55,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0a0e18'; ctx.fillRect(S*0.05,S*0.35,8,S*0.15); ctx.fillRect(S*0.15,S*0.4,6,S*0.1); ctx.fillRect(S*0.82,S*0.38,8,S*0.12);
+    ctx.fillStyle='#080c14'; ctx.beginPath(); ctx.moveTo(S*0.3,S*0.58); ctx.lineTo(S*0.22,S*0.62); ctx.lineTo(S*0.38,S*0.62); ctx.fill();
+    for (let i=0;i<50;i++) {
+      const ry=S*0.5+Math.random()*S*0.5, rxLen=20+Math.random()*80, rxStart=Math.random()*(S-rxLen);
+      ctx.strokeStyle=`rgba(${40+Math.floor(Math.random()*80)},${60+Math.floor(Math.random()*80)},${80+Math.floor(Math.random()*100)},${0.1+Math.random()*0.25})`;
+      ctx.lineWidth=1+Math.random()*2; ctx.beginPath(); ctx.moveTo(rxStart,ry); ctx.lineTo(rxStart+rxLen,ry); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function makeMonetPoppies() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const skyGrad = ctx.createLinearGradient(0,0,0,S*0.45);
+    skyGrad.addColorStop(0,'#4a80c0'); skyGrad.addColorStop(1,'#90b8e0');
+    ctx.fillStyle=skyGrad; ctx.fillRect(0,0,S,S*0.45);
+    ctx.fillStyle='rgba(255,255,255,0.85)';
+    [[S*0.15,S*0.1,60,30],[S*0.6,S*0.08,80,35],[S*0.82,S*0.15,50,22]].forEach(([cx,cy,rw,rh]) => { ctx.beginPath(); ctx.ellipse(cx,cy,rw,rh,0,0,Math.PI*2); ctx.fill(); });
+    const hillGrad = ctx.createLinearGradient(0,S*0.42,0,S);
+    hillGrad.addColorStop(0,'#5a9040'); hillGrad.addColorStop(0.3,'#4a7830'); hillGrad.addColorStop(1,'#3a5c20');
+    ctx.fillStyle=hillGrad; ctx.beginPath(); ctx.moveTo(0,S*0.45);
+    for (let x=0;x<=S;x+=15) ctx.lineTo(x, S*0.42+Math.sin(x*0.018)*18+Math.sin(x*0.008)*25);
+    ctx.lineTo(S,S); ctx.lineTo(0,S); ctx.fill();
+    for (let i=0;i<200;i++) {
+      const px=Math.random()*S, py=S*0.45+Math.random()*S*0.55, pr=2+Math.random()*8;
+      ctx.fillStyle=`rgba(${180+Math.floor(Math.random()*75)},${Math.floor(Math.random()*30)},${Math.floor(Math.random()*30)},${0.7+Math.random()*0.3})`;
+      ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function makeRenoirPortrait() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='#e8b880'; ctx.fillRect(0,0,S,S);
+    for (let i=0;i<200;i++) {
+      const x=Math.random()*S, y=Math.random()*S, r=8+Math.random()*20;
+      const lC=['rgba(255,220,180,','rgba(255,200,160,','rgba(240,180,140,'];
+      ctx.fillStyle=lC[Math.floor(Math.random()*lC.length)]+(0.08+Math.random()*0.2)+')';
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle='#a06030'; ctx.beginPath(); ctx.ellipse(S*0.5,S*0.85,S*0.25,S*0.2,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#c09050'; ctx.beginPath(); ctx.arc(S*0.5,S*0.55,S*0.1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#8a3020'; ctx.beginPath(); ctx.ellipse(S*0.5,S*0.48,S*0.15,S*0.06,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#d02040';
+    for (let p=0;p<6;p++) { const pa=p/6*Math.PI*2; ctx.beginPath(); ctx.ellipse(S*0.5+Math.cos(pa)*S*0.06,S*0.46+Math.sin(pa)*S*0.04,8,5,pa,0,Math.PI*2); ctx.fill(); }
+    const vibC=['#ff4040','#ff8820','#ffcc20','#40aa40','#4088ff','#cc40ff'];
+    for (let i=0;i<40;i++) {
+      ctx.fillStyle=vibC[Math.floor(Math.random()*vibC.length)];
+      ctx.beginPath(); ctx.arc(Math.random()*S, S*0.6+Math.random()*S*0.4, 3+Math.random()*8, 0, Math.PI*2); ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function makeCezanneLandscape() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const skyGrad = ctx.createLinearGradient(0,0,0,S*0.4);
+    skyGrad.addColorStop(0,'#7090b8'); skyGrad.addColorStop(1,'#a0b8d8');
+    ctx.fillStyle=skyGrad; ctx.fillRect(0,0,S,S*0.4);
+    const mtC=['#9098b0','#8898c0','#6878a0'];
+    [[S*0.2,S*0.38,S*0.5,S*0.08,S*0.8,S*0.38],[S*0.2,S*0.38,S*0.38,S*0.2,S*0.5,S*0.08],[S*0.5,S*0.08,S*0.65,S*0.22,S*0.8,S*0.38]].forEach(([x1,y1,x2,y2,x3,y3],i) => {
+      ctx.fillStyle=mtC[i]; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.fill();
+    });
+    const valGrad = ctx.createLinearGradient(0,S*0.38,0,S);
+    valGrad.addColorStop(0,'#709048'); valGrad.addColorStop(1,'#486028');
+    ctx.fillStyle=valGrad; ctx.fillRect(0,S*0.38,S,S*0.62);
+    [[S*0.08,S*0.35],[S*0.15,S*0.42],[S*0.88,S*0.38],[S*0.78,S*0.44]].forEach(([tx,ty]) => {
+      ctx.fillStyle='#1a4010'; ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx-15,ty+45); ctx.lineTo(tx+15,ty+45); ctx.fill();
+    });
+    for (let i=0;i<80;i++) {
+      const bx=Math.random()*S, by=S*0.4+Math.random()*S*0.6, br=8+Math.random()*18;
+      ctx.fillStyle=`rgba(${50+Math.floor(Math.random()*60)},${80+Math.floor(Math.random()*60)},${30+Math.floor(Math.random()*40)},0.4)`;
+      ctx.fillRect(bx,by,br,br*0.6);
+    }
+    ctx.fillStyle='#c8a870'; ctx.fillRect(S*0.38,S*0.55,S*0.28,S*0.22);
+    ctx.fillStyle='#8a3820'; ctx.fillRect(S*0.35,S*0.5,S*0.34,S*0.06);
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
   // ── Load real painting texture from URL (public domain, Wikimedia Commons) ──
   const _loader = new THREE.TextureLoader();
   function loadPaintingTex(url) {
@@ -216,10 +393,10 @@ window.GameMap = (function () {
   }
 
   const _tileTex    = makeMarbleTex();
-  const _ceilTex    = makeTileTex('#4a5260', '#35404e', 3);   // cool dark stone ceiling
-  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x505868, roughness: 0.82, metalness: 0.0 });   // cool gray stone baseboard
-  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0x3a4250, roughness: 0.72, metalness: 0.0 });   // dark blue-gray stone wainscoting
-  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0x6a7888, roughness: 0.78, metalness: 0.05 });  // cool gray stone molding
+  const _ceilTex    = makeTileTex('#3a2810', '#261808', 3);   // warm dark mahogany ceiling
+  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x3c1a08, roughness: 0.78, metalness: 0.0 });   // dark mahogany wood baseboard
+  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0x6a3010, roughness: 0.65, metalness: 0.0 });   // rich mahogany wood paneling
+  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xc09018, roughness: 0.20, metalness: 0.80 });  // gilt gold molding
   const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.72, metalness: 0.06 });  // dark slate door frame
   const _handleMat  = new THREE.MeshStandardMaterial({ color: 0x7890a8, roughness: 0.3,  metalness: 0.8  });
   const _stripeMat  = new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.95, metalness: 0.05 });
@@ -228,14 +405,14 @@ window.GameMap = (function () {
   // ── Materials ──────────────────────────────────────────
   const M = {
     floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.22, metalness: 0.04 }),
-    wall:     new THREE.MeshStandardMaterial({ color: 0x546070, roughness: 0.90, metalness: 0.0  }),  // cool blue-gray stone
+    wall:     new THREE.MeshStandardMaterial({ color: 0xd4c8a0, roughness: 0.88, metalness: 0.0  }),  // warm ivory stone
     ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.94, metalness: 0.0  }),
     desk:     new THREE.MeshStandardMaterial({ color: 0x2a3040, roughness: 0.75, metalness: 0.0  }),  // dark slate
     glass:    new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3 }),
     frame:    new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.70, metalness: 0.08 }),  // dark slate frame
     door:     new THREE.MeshStandardMaterial({ color: 0x253040, roughness: 0.72, metalness: 0.06 }),  // dark gunmetal door
-    pillar:   new THREE.MeshStandardMaterial({ color: 0x6a7888, roughness: 0.76, metalness: 0.0  }),  // cool gray stone pillar
-    pedestal: new THREE.MeshStandardMaterial({ color: 0x7080a0, roughness: 0.50, metalness: 0.12 }),  // cool slate marble
+    pillar:   new THREE.MeshStandardMaterial({ color: 0x9a8060, roughness: 0.70, metalness: 0.04 }),  // warm cream stone pillar
+    pedestal: new THREE.MeshStandardMaterial({ color: 0xb09070, roughness: 0.45, metalness: 0.08 }),  // warm marble pedestal
     crown:    new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.2,  metalness: 0.9  }),
     terminal: new THREE.MeshStandardMaterial({ color: 0x1e2838, roughness: 0.80, metalness: 0.10 }),  // dark gunmetal cabinet
     exit:     new THREE.MeshStandardMaterial({ color: 0x00ff88, roughness: 0.3,  metalness: 0.0, transparent: true, opacity: 0.7 }),
@@ -281,6 +458,14 @@ window.GameMap = (function () {
       map: loadPaintingTex('assets/paintings/kaitlyn.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
+    // Procedural Impressionist paintings
+    vangoghStarry:     new THREE.MeshStandardMaterial({ map: makeVanGoghStarryNight(),  roughness: 0.88, metalness: 0.0 }),
+    vangoghSunflowers: new THREE.MeshStandardMaterial({ map: makeVanGoghSunflowers(),   roughness: 0.88, metalness: 0.0 }),
+    vangoghIrises:     new THREE.MeshStandardMaterial({ map: makeVanGoghIrises(),        roughness: 0.88, metalness: 0.0 }),
+    monetSunrise:      new THREE.MeshStandardMaterial({ map: makeMonetSunrise(),         roughness: 0.88, metalness: 0.0 }),
+    monetPoppies:      new THREE.MeshStandardMaterial({ map: makeMonetPoppies(),         roughness: 0.88, metalness: 0.0 }),
+    renoir:            new THREE.MeshStandardMaterial({ map: makeRenoirPortrait(),       roughness: 0.88, metalness: 0.0 }),
+    cezanne:           new THREE.MeshStandardMaterial({ map: makeCezanneLandscape(),     roughness: 0.88, metalness: 0.0 }),
   };
 
   // Collected data returned to main.js
@@ -352,7 +537,7 @@ window.GameMap = (function () {
     mat.map = tex;
     box(scene, w, FLOOR_T, d, cx, WALL_H + FLOOR_T / 2, cz, mat);
     // Recessed ceiling panel strip (thin dark inset frame)
-    const panelMat = new THREE.MeshStandardMaterial({ color: 0xe8e4de, roughness: 0.95, metalness: 0.0 });
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0xd4a820, roughness: 0.35, metalness: 0.55 });
     box(scene, w - 0.6, 0.05, d - 0.6, cx, WALL_H - 0.02, cz, panelMat);
   }
 
@@ -494,10 +679,10 @@ window.GameMap = (function () {
 
   // ── Flat rug on the floor ──────────────────────────────
   function rug(scene, cx, cz, w, d, mainColor, accentColor) {
-    const mainMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.96, metalness: 0.0 });
-    box(scene, w, 0.022, d, cx, 0.012, cz, mainMat);
+    const mainMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.38, metalness: 0.0 });
+    box(scene, w, 0.042, d, cx, 0.021, cz, mainMat);
     if (accentColor !== undefined) {
-      const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.96, metalness: 0.0 });
+      const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.20, metalness: 0.12 });
       const BW = 0.18;
       box(scene, w, 0.024, BW, cx, 0.013, cz - d / 2 + BW / 2, accentMat);
       box(scene, w, 0.024, BW, cx, 0.013, cz + d / 2 - BW / 2, accentMat);
@@ -623,7 +808,7 @@ window.GameMap = (function () {
   }
 
   // ── Decorative helpers ─────────────────────────────────
-  const _brassM = new THREE.MeshStandardMaterial({ color: 0x708090, roughness: 0.30, metalness: 0.80 });
+  const _brassM = new THREE.MeshStandardMaterial({ color: 0xb87820, roughness: 0.22, metalness: 0.85 });
 
   function ceilingLamp(scene, x, z) {
     const glassM = new THREE.MeshStandardMaterial({
@@ -741,7 +926,7 @@ window.GameMap = (function () {
   }
 
   function galleryBench(scene, x, z, rotY) {
-    const woodM  = new THREE.MeshStandardMaterial({ color: 0x2a3848, roughness: 0.75, metalness: 0.0 });
+    const woodM  = new THREE.MeshStandardMaterial({ color: 0x5a2e10, roughness: 0.72, metalness: 0.0 });
     const metalM = new THREE.MeshStandardMaterial({ color: 0x607080, roughness: 0.40, metalness: 0.70 });
     const g = new THREE.Group();
     // Three seat slats
@@ -1279,6 +1464,46 @@ window.GameMap = (function () {
     wallSconce(scene,  19.75, 2.9,  4, -1);
     wallSconce(scene,  19.75, 2.9, 28, -1);
 
+    // Extra lobby paintings — west wall
+    wallPainting(scene, -19.9, 3.5, 14, M.vangoghSunflowers, true);
+    paintingSpotlight(scene, -19.9, 3.5, 14, 'west');
+    placard(scene, -19.9, 2.6, 14, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    wallPainting(scene, -19.9, 3.5, 20, M.monetSunrise, true);
+    paintingSpotlight(scene, -19.9, 3.5, 20, 'west');
+    placard(scene, -19.9, 2.6, 20, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    wallPainting(scene, -19.9, 3.5, 34, M.cezanne, true);
+    paintingSpotlight(scene, -19.9, 3.5, 34, 'west');
+    placard(scene, -19.9, 2.6, 34, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', true);
+    // Extra lobby paintings — east wall
+    wallPainting(scene, 19.9, 3.5, 10, M.vangoghStarry, false);
+    paintingSpotlight(scene, 19.9, 3.5, 10, 'east');
+    placard(scene, 19.9, 2.6, 10, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    wallPainting(scene, 19.9, 3.5, 22, M.renoir, false);
+    paintingSpotlight(scene, 19.9, 3.5, 22, 'east');
+    placard(scene, 19.9, 2.6, 22, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    wallPainting(scene, 19.9, 3.5, 36, M.monetPoppies, false);
+    paintingSpotlight(scene, 19.9, 3.5, 36, 'east');
+    placard(scene, 19.9, 2.6, 36, 'Poppies', 'Claude Monet, 1873', false);
+    // Extra lobby paintings — south wall (entrance wall stubs)
+    wallPaintingNS(scene, -16, 3.5, 0.10, M.vangoghIrises, true);
+    paintingSpotlight(scene, -16, 3.5, 0.10, 'south');
+    placard(scene, -16, 2.6, 0.10, 'Irises', 'Vincent van Gogh, 1889', true);
+    wallPaintingNS(scene,  16, 3.5, 0.10, M.monetSunrise, true);
+    paintingSpotlight(scene,  16, 3.5, 0.10, 'south');
+    placard(scene,  16, 2.6, 0.10, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    // Extra lobby paintings — north wall stubs
+    wallPaintingNS(scene, -8, 3.5, 39.65, M.vangoghStarry, false);
+    paintingSpotlight(scene, -8, 3.5, 39.65, 'north');
+    placard(scene, -8, 2.6, 39.65, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    wallPaintingNS(scene,  8, 3.5, 39.65, M.vangoghSunflowers, false);
+    paintingSpotlight(scene,  8, 3.5, 39.65, 'north');
+    placard(scene,  8, 2.6, 39.65, 'Sunflowers', 'Vincent van Gogh, 1888', false);
+    // Extra lobby bay trees
+    lorTree(scene, -5, 6);
+    lorTree(scene,  5, 6);
+    lorTree(scene, -14, 10);
+    lorTree(scene,  14, 10);
+
     // Glowing archway at yellow keycard door so the exit is obvious
     doorGlow(scene, 0, 39.75, 0xf0c040);
 
@@ -1611,6 +1836,11 @@ window.GameMap = (function () {
     box(scene, 2.2, 1.5, 0.08, -4.6, 2.8, 49.5, M.terminal);
     box(scene, 1.9, 1.2, 0.05, -4.6, 2.8, 49.45,
       new THREE.MeshStandardMaterial({ color: 0x001a33, emissive: 0x000d1a, emissiveIntensity: 0.4 }));
+    // Corridor 1 paintings on north/south walls
+    wallPaintingNS(scene, 0, 3.5, 40.35, M.vangoghIrises, true);
+    paintingSpotlight(scene, 0, 3.5, 40.35, 'south');
+    wallPaintingNS(scene, 0, 3.5, 54.65, M.renoir, false);
+    paintingSpotlight(scene, 0, 3.5, 54.65, 'north');
     // Velvet carpet runner through corridor 1
     rug(scene, 0, 47.5, 3.5, 14, 0x6b1a1a, 0xc8a040);
 
@@ -1894,6 +2124,48 @@ window.GameMap = (function () {
     paintingSpotlight(scene,  15, 3.5, 99.65, 'north');
     placard(scene,  15, 2.6, 99.65, 'Liberty Leading the People', 'Eugène Delacroix, 1830', false);
 
+    // Extra gallery paintings — west wall (between existing)
+    wallPainting(scene, -24.9, 3.5, 64, M.vangoghStarry, true);
+    paintingSpotlight(scene, -24.9, 3.5, 64, 'west');
+    placard(scene, -24.9, 2.6, 64, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    wallPainting(scene, -24.9, 3.5, 76, M.vangoghIrises, true);
+    paintingSpotlight(scene, -24.9, 3.5, 76, 'west');
+    placard(scene, -24.9, 2.6, 76, 'Irises', 'Vincent van Gogh, 1889', true);
+    wallPainting(scene, -24.9, 3.5, 86, M.monetSunrise, true);
+    paintingSpotlight(scene, -24.9, 3.5, 86, 'west');
+    placard(scene, -24.9, 2.6, 86, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    wallPainting(scene, -24.9, 3.5, 96, M.monetPoppies, true);
+    paintingSpotlight(scene, -24.9, 3.5, 96, 'west');
+    placard(scene, -24.9, 2.6, 96, 'Poppies', 'Claude Monet, 1873', true);
+    // Extra gallery paintings — east wall (between existing)
+    wallPainting(scene,  24.9, 3.5, 65, M.vangoghSunflowers, false);
+    paintingSpotlight(scene,  24.9, 3.5, 65, 'east');
+    placard(scene,  24.9, 2.6, 65, 'Sunflowers', 'Vincent van Gogh, 1888', false);
+    wallPainting(scene,  24.9, 3.5, 75, M.renoir, false);
+    paintingSpotlight(scene,  24.9, 3.5, 75, 'east');
+    placard(scene,  24.9, 2.6, 75, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    wallPainting(scene,  24.9, 3.5, 85, M.cezanne, false);
+    paintingSpotlight(scene,  24.9, 3.5, 85, 'east');
+    placard(scene,  24.9, 2.6, 85, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    wallPainting(scene,  24.9, 3.5, 95, M.vangoghIrises, false);
+    paintingSpotlight(scene,  24.9, 3.5, 95, 'east');
+    placard(scene,  24.9, 2.6, 95, 'Irises', 'Vincent van Gogh, 1889', false);
+    // Extra gallery south wall paintings
+    wallPaintingNS(scene, -7, 3.5, 55.10, M.monetPoppies, true);
+    paintingSpotlight(scene, -7, 3.5, 55.10, 'south');
+    wallPaintingNS(scene,  7, 3.5, 55.10, M.vangoghStarry, true);
+    paintingSpotlight(scene,  7, 3.5, 55.10, 'south');
+    // Extra gallery north wall
+    wallPaintingNS(scene, -8, 3.5, 99.65, M.renoir, false);
+    paintingSpotlight(scene, -8, 3.5, 99.65, 'north');
+    placard(scene, -8, 2.6, 99.65, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    wallPaintingNS(scene,  8, 3.5, 99.65, M.cezanne, false);
+    paintingSpotlight(scene,  8, 3.5, 99.65, 'north');
+    placard(scene,  8, 2.6, 99.65, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    // Extra gallery trees (center colonnade)
+    lorTree(scene, -10, 75);
+    lorTree(scene,  10, 75);
+
     // Velvet carpet runners leading to the blue door
     rug(scene, 0, 98, 3, 4, 0x0a1a4a, 0xc8a040);
 
@@ -1930,6 +2202,21 @@ window.GameMap = (function () {
     wallPaintingNS(scene, 38, 3.5, 86.90, M.paintings[3], false);
     paintingSpotlight(scene, 38, 3.5, 86.90, 'north');
 
+    // Extra Salon paintings
+    wallPainting(scene, 49.9, 3.5, 75, M.vangoghStarry, false);
+    paintingSpotlight(scene, 49.9, 3.5, 75, 'east');
+    placard(scene, 49.9, 2.6, 75, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    wallPainting(scene, 49.9, 3.5, 79, M.monetPoppies, false);
+    paintingSpotlight(scene, 49.9, 3.5, 79, 'east');
+    placard(scene, 49.9, 2.6, 79, 'Poppies', 'Claude Monet, 1873', false);
+    wallPaintingNS(scene, 30, 3.5, 67.10, M.vangoghSunflowers, true);
+    paintingSpotlight(scene, 30, 3.5, 67.10, 'south');
+    wallPaintingNS(scene, 44, 3.5, 67.10, M.monetSunrise, true);
+    paintingSpotlight(scene, 44, 3.5, 67.10, 'south');
+    wallPaintingNS(scene, 30, 3.5, 86.90, M.renoir, false);
+    paintingSpotlight(scene, 30, 3.5, 86.90, 'north');
+    wallPaintingNS(scene, 44, 3.5, 86.90, M.cezanne, false);
+    paintingSpotlight(scene, 44, 3.5, 86.90, 'north');
     // Room label for Salon des Antiquités
     roomLabel(scene, SAX, SAZ, 'Salon des Antiquités', Math.PI / 2);
 
@@ -2097,6 +2384,15 @@ window.GameMap = (function () {
       monetMesh.userData.floorRing = mRing; }
     placard(scene, -49.9, 2.6, 77, 'Les Nymphéas', 'Claude Monet, c. 1906', true);
 
+    // Extra Galerie des Sculptures paintings
+    wallPaintingNS(scene, -30, 3.5, 67.10, M.vangoghStarry, true);
+    paintingSpotlight(scene, -30, 3.5, 67.10, 'south');
+    wallPaintingNS(scene, -44, 3.5, 67.10, M.vangoghIrises, true);
+    paintingSpotlight(scene, -44, 3.5, 67.10, 'south');
+    wallPaintingNS(scene, -30, 3.5, 86.90, M.monetSunrise, false);
+    paintingSpotlight(scene, -30, 3.5, 86.90, 'north');
+    wallPaintingNS(scene, -44, 3.5, 86.90, M.monetPoppies, false);
+    paintingSpotlight(scene, -44, 3.5, 86.90, 'north');
     // Rug
     rug(scene, GWX, GWZ, 18, 14, 0x2a1a3a, 0xc8a040);
 
@@ -2287,6 +2583,11 @@ window.GameMap = (function () {
     wall(scene, -5, 107.5, WALL_T, 15);
     wall(scene,  5, 107.5, WALL_T, 15);
 
+    // Corridor 2 paintings on north/south walls
+    wallPaintingNS(scene, 0, 3.5, 100.35, M.cezanne, true);
+    paintingSpotlight(scene, 0, 3.5, 100.35, 'south');
+    wallPaintingNS(scene, 0, 3.5, 114.65, M.monetPoppies, false);
+    paintingSpotlight(scene, 0, 3.5, 114.65, 'north');
     // Velvet carpet runner through corridor 2
     rug(scene, 0, 107.5, 3.5, 14, 0x0a1a4a, 0xc8a040);
 
@@ -2481,6 +2782,68 @@ window.GameMap = (function () {
     wallPaintingNS(scene,  12, 3.5, 159.65, M.paintings[3], false);
     paintingSpotlight(scene,  12, 3.5, 159.65, 'north');
     placard(scene,  12, 2.6, 159.65, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+
+    // Extra vault paintings — west wall
+    wallPainting(scene, -24.9, 3.5, 120, M.vangoghStarry, true);
+    paintingSpotlight(scene, -24.9, 3.5, 120, 'west');
+    placard(scene, -24.9, 2.6, 120, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    wallPainting(scene, -24.9, 3.5, 131, M.monetSunrise, true);
+    paintingSpotlight(scene, -24.9, 3.5, 131, 'west');
+    placard(scene, -24.9, 2.6, 131, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    wallPainting(scene, -24.9, 3.5, 143, M.vangoghSunflowers, true);
+    paintingSpotlight(scene, -24.9, 3.5, 143, 'west');
+    placard(scene, -24.9, 2.6, 143, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    wallPainting(scene, -24.9, 3.5, 157, M.vangoghIrises, true);
+    paintingSpotlight(scene, -24.9, 3.5, 157, 'west');
+    placard(scene, -24.9, 2.6, 157, 'Irises', 'Vincent van Gogh, 1889', true);
+    // Extra vault paintings — east wall
+    wallPainting(scene,  24.9, 3.5, 120, M.renoir, false);
+    paintingSpotlight(scene,  24.9, 3.5, 120, 'east');
+    placard(scene,  24.9, 2.6, 120, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    wallPainting(scene,  24.9, 3.5, 136, M.cezanne, false);
+    paintingSpotlight(scene,  24.9, 3.5, 136, 'east');
+    placard(scene,  24.9, 2.6, 136, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    wallPainting(scene,  24.9, 3.5, 148, M.monetPoppies, false);
+    paintingSpotlight(scene,  24.9, 3.5, 148, 'east');
+    placard(scene,  24.9, 2.6, 148, 'Poppies', 'Claude Monet, 1873', false);
+    wallPainting(scene,  24.9, 3.5, 157, M.vangoghStarry, false);
+    paintingSpotlight(scene,  24.9, 3.5, 157, 'east');
+    placard(scene,  24.9, 2.6, 157, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    // Vault south wall paintings (on stubs flanking corridor entrance)
+    wallPaintingNS(scene, -15, 3.5, 115.10, M.vangoghSunflowers, true);
+    paintingSpotlight(scene, -15, 3.5, 115.10, 'south');
+    placard(scene, -15, 2.6, 115.10, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    wallPaintingNS(scene,  15, 3.5, 115.10, M.monetSunrise, true);
+    paintingSpotlight(scene,  15, 3.5, 115.10, 'south');
+    placard(scene,  15, 2.6, 115.10, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    // Vault north wall extra
+    wallPaintingNS(scene, -6, 3.5, 159.65, M.cezanne, false);
+    paintingSpotlight(scene, -6, 3.5, 159.65, 'north');
+    wallPaintingNS(scene,  6, 3.5, 159.65, M.renoir, false);
+    paintingSpotlight(scene,  6, 3.5, 159.65, 'north');
+    // Diamond cluster display case in vault entrance area
+    {
+      const diamondM = new THREE.MeshStandardMaterial({ color: 0xddf4ff, roughness: 0.0, metalness: 0.05, transparent: true, opacity: 0.82, emissive: 0x88ccff, emissiveIntensity: 0.45 });
+      const goldM2 = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.12, metalness: 0.95, emissive: 0x332200, emissiveIntensity: 0.3 });
+      // Tall pedestal with diamond cluster on top
+      box(scene, 0.32, 1.4, 0.32, -18, 0.7, 122, goldM2);
+      box(scene, 0.55, 0.06, 0.55, -18, 1.43, 122, goldM2);
+      [[0,0,0.10],[0.08,0,0.07],[-0.08,0,0.07],[0,0,-0.09],[0.06,0.06,0],[-0.06,0.06,0]].forEach(([ox,oy,r]) => {
+        const gem = new THREE.Mesh(new THREE.OctahedronGeometry(r || 0.07), diamondM);
+        gem.position.set(-18+ox, 1.56+oy, 122); gem.rotation.y = Math.random()*Math.PI; scene.add(gem);
+      });
+      const dRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.46, 24), new THREE.MeshBasicMaterial({ color: 0xaaddff, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false }));
+      dRing.rotation.x = -Math.PI/2; dRing.position.set(-18, 0.02, 122); scene.add(dRing);
+      // Second diamond pedestal on other side
+      box(scene, 0.32, 1.4, 0.32, 18, 0.7, 122, goldM2);
+      box(scene, 0.55, 0.06, 0.55, 18, 1.43, 122, goldM2);
+      [[0,0,0.10],[0.08,0,0.07],[-0.08,0,0.07],[0,0,-0.09]].forEach(([ox,oy,r]) => {
+        const gem2 = new THREE.Mesh(new THREE.OctahedronGeometry(r || 0.07), diamondM);
+        gem2.position.set(18+ox, 1.56+oy, 122); gem2.rotation.y = Math.random()*Math.PI; scene.add(gem2);
+      });
+      const dRing2 = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.46, 24), new THREE.MeshBasicMaterial({ color: 0xaaddff, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false }));
+      dRing2.rotation.x = -Math.PI/2; dRing2.position.set(18, 0.02, 122); scene.add(dRing2);
+    }
 
     // Extended velvet carpets (runners leading to crown)
     rug(scene, 0, 124, 6, 10, 0x2a0a4a, 0xc8a040);
