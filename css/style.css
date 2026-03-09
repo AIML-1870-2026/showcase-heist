@@ -871,10 +871,10 @@ html, body {
   text-align: center;
 }
 
-/* ── Stamina bar (just above distract-count) ───────────── */
+/* ── Stamina bar (just above noise bar) ─────────────────── */
 #stamina-bar-wrap {
   position: absolute;
-  bottom: 60px;
+  bottom: 90px;
   left: 16px;
   background: var(--dark-panel);
   border: 1px solid rgba(201, 168, 76, 0.2);
@@ -901,6 +901,60 @@ html, body {
   background: #44dd88;
   border-radius: 2px;
   transition: background 0.3s;
+}
+
+/* ── Noise meter (above distract-count) ─────────────────── */
+#noise-bar-wrap {
+  position: absolute;
+  bottom: 60px;
+  left: 16px;
+  background: var(--dark-panel);
+  border: 1px solid rgba(255, 80, 40, 0.25);
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+}
+
+#noise-bar {
+  flex: 1;
+  height: 5px;
+  background: #1a1a22;
+  border: 1px solid #333;
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 76px;
+}
+
+#noise-fill {
+  height: 100%;
+  width: 0%;
+  background: #44dd88;
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+
+/* ── Aerial view button (below minimap) ─────────────────── */
+#btn-aerial {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  background: rgba(40, 20, 60, 0.85);
+  border: 1px solid rgba(160, 100, 220, 0.4);
+  color: #b080e0;
+  cursor: pointer;
+  border-radius: 3px;
+  width: 100%;
+  transition: background 0.12s, border-color 0.12s;
+  text-transform: uppercase;
+}
+#btn-aerial:hover,
+#btn-aerial.active {
+  background: rgba(80, 40, 120, 0.9);
+  border-color: #b080e0;
+  color: #ddb0ff;
 }
 
 /* ── Caught flash ───────────────────────────────────────── */

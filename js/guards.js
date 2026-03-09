@@ -544,15 +544,8 @@ window.Guards = (function () {
 
       this.mesh.position.copy(this.pos);
 
-      // Flashlight — SpotLight at head height pointing in facing direction
-      const flash = new THREE.SpotLight(0xfff8e0, 0.65, 14, 0.27, 0.45, 1.5);
-      flash.castShadow = false;
-      const flashTarget = new THREE.Object3D();
-      scene.add(flash);
-      scene.add(flashTarget);
-      flash.target = flashTarget;
-      this._flash       = flash;
-      this._flashTarget = flashTarget;
+      this._flash       = null;
+      this._flashTarget = null;
 
       // Speech bubble sprite
       this._bubbleMat     = null;
@@ -847,17 +840,7 @@ window.Guards = (function () {
       }
     }
 
-    tickFlashlight() {
-      this._flash.position.set(this.pos.x, 1.55, this.pos.z);
-      this._flashTarget.position.set(
-        this.pos.x + this.facing.x * 11,
-        0.7,
-        this.pos.z + this.facing.z * 11
-      );
-      const a = this.state === 'alerted', s = this.state === 'suspicious';
-      this._flash.color.setHex(a ? 0xff2200 : s ? 0xffcc44 : 0xfff8e0);
-      this._flash.intensity = a ? 1.9 : s ? 1.2 : 0.65;
-    }
+    tickFlashlight() {}
 
     _showBubble(text) {
       if (text === this._bubblePhrase) return;
@@ -913,7 +896,6 @@ window.Guards = (function () {
       this.mesh.position.y  = 0.5;
       this.coneMesh.visible = false;
       this.beamMesh.visible = false;
-      this._flash.intensity = 0;
       this.bubble.visible   = false;
       this.detectBar.visible = false;
     }
@@ -1005,7 +987,7 @@ window.Guards = (function () {
   }
 
   // Returns true and subdues the guard if player is behind a valid target.
-  function tryTakedown(px, pz, facingX, facingZ) {
+  function tryTakedown(px, pz) {
     for (const g of guards) {
       if (g.state === 'subdued' || g.state === 'alerted') continue;
       const dx = g.pos.x - px;

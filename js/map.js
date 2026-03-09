@@ -41,16 +41,16 @@ window.GameMap = (function () {
     return tex;
   }
 
-  // ── Stone floor texture (cool gray limestone slabs) ──────
+  // ── Lobby floor texture — warm amber/terracotta marble ───
   function makeMarbleTex() {
     const S = 512;
     const c = document.createElement('canvas');
     c.width = c.height = S;
     const ctx = c.getContext('2d');
     const grad = ctx.createLinearGradient(0, 0, S, S);
-    grad.addColorStop(0.0, '#cfc0a0');
-    grad.addColorStop(0.5, '#c8b890');
-    grad.addColorStop(1.0, '#d0bea8');
+    grad.addColorStop(0.0, '#a07848');
+    grad.addColorStop(0.5, '#987040');
+    grad.addColorStop(1.0, '#b08850');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, S, S);
     const img = ctx.getImageData(0, 0, S, S);
@@ -62,15 +62,55 @@ window.GameMap = (function () {
                 + Math.sin(y * 0.032 + x * 0.023) * 2.5
                 + Math.sin((x + y) * 0.019) * 1.7;
         const vein = Math.abs(Math.sin(t * Math.PI));
-        const dark = vein * vein * 28;
+        const dark = vein * vein * 32;
         const i = (y * S + x) * 4;
-        d[i]   = Math.max(0, d[i]   - dark * 0.55);
-        d[i+1] = Math.max(0, d[i+1] - dark * 0.50);
-        d[i+2] = Math.max(0, d[i+2] - dark * 0.42);
+        d[i]   = Math.max(0, d[i]   - dark * 0.45);
+        d[i+1] = Math.max(0, d[i+1] - dark * 0.55);
+        d[i+2] = Math.max(0, d[i+2] - dark * 0.70);
       }
     }
     ctx.putImageData(img, 0, 0);
-    ctx.strokeStyle = 'rgba(160,120,30,0.40)';
+    ctx.strokeStyle = 'rgba(80,40,10,0.35)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex._tileSize = 4;
+    return tex;
+  }
+
+  // ── Gallery floor — deep cobalt/navy marble ───────────────
+  function makeGalleryFloorTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, S, S);
+    grad.addColorStop(0.0, '#1a2850');
+    grad.addColorStop(0.5, '#152040');
+    grad.addColorStop(1.0, '#1e2e58');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, S, S);
+    const img = ctx.getImageData(0, 0, S, S);
+    const d = img.data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const t = x * 0.011 + y * 0.009
+                + Math.sin(x * 0.038 + y * 0.022) * 2.8
+                + Math.sin(y * 0.028 + x * 0.019) * 2.2;
+        const vein = Math.abs(Math.sin(t * Math.PI));
+        const bright = vein * vein * 20;
+        const i = (y * S + x) * 4;
+        d[i]   = Math.min(255, d[i]   + bright * 0.3);
+        d[i+1] = Math.min(255, d[i+1] + bright * 0.4);
+        d[i+2] = Math.min(255, d[i+2] + bright * 0.9);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    ctx.strokeStyle = 'rgba(60,90,180,0.40)';
     ctx.lineWidth = 2;
     for (let i = 0; i <= S; i += 128) {
       ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
@@ -392,30 +432,39 @@ window.GameMap = (function () {
     scene.add(mesh);
   }
 
-  const _tileTex    = makeMarbleTex();
-  const _ceilTex    = makeTileTex('#3a2810', '#261808', 3);   // warm dark mahogany ceiling
-  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x3c1a08, roughness: 0.78, metalness: 0.0 });   // dark mahogany wood baseboard
-  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0x6a3010, roughness: 0.65, metalness: 0.0 });   // rich mahogany wood paneling
-  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xc09018, roughness: 0.20, metalness: 0.80 });  // gilt gold molding
-  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x2a1008, roughness: 0.70, metalness: 0.06 });  // dark wood door frame
-  const _handleMat  = new THREE.MeshStandardMaterial({ color: 0xc09018, roughness: 0.22,  metalness: 0.88  });  // gold door handle
-  const _stripeMat  = new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.95, metalness: 0.05 });
-  const _chipMat    = new THREE.MeshStandardMaterial({ color: 0x8a9ab0, roughness: 0.35, metalness: 0.75 });
+  const _tileTex        = makeMarbleTex();
+  const _galleryFloorTex = makeGalleryFloorTex();
+  const _ceilTex        = makeTileTex('#2a1a42', '#1a0e2e', 3);   // deep purple ceiling
+  const _galleryCeilTex = makeTileTex('#0e1a38', '#080e22', 3);   // deep navy gallery ceiling
+  const _vaultCeilTex   = makeTileTex('#0e1a0e', '#060e06', 3);   // deep emerald vault ceiling
+  const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x9a7030, roughness: 0.75, metalness: 0.10 });  // warm brass baseboard
+  const _wainMat    = new THREE.MeshStandardMaterial({ color: 0x4a2010, roughness: 0.78, metalness: 0.0  });  // deep mahogany wainscoting
+  const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xb88030, roughness: 0.45, metalness: 0.55 });  // gold-brass molding
+  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x2a1008, roughness: 0.72, metalness: 0.06 });  // dark walnut door frame
+  const _handleMat  = new THREE.MeshStandardMaterial({ color: 0xc8a040, roughness: 0.3,  metalness: 0.85 });  // gold handle
+  const _stripeMat  = new THREE.MeshStandardMaterial({ color: 0x0e0c08, roughness: 0.95, metalness: 0.05 });
+  const _chipMat    = new THREE.MeshStandardMaterial({ color: 0xc09040, roughness: 0.35, metalness: 0.75 });
 
   // ── Materials ──────────────────────────────────────────
   const M = {
-    floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.22, metalness: 0.04 }),
-    wall:     new THREE.MeshStandardMaterial({ color: 0xd4c8a0, roughness: 0.88, metalness: 0.0  }),  // warm ivory stone
-    ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.94, metalness: 0.0  }),
-    desk:     new THREE.MeshStandardMaterial({ color: 0x3a1808, roughness: 0.78, metalness: 0.0  }),  // dark mahogany desk
-    glass:    new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3 }),
-    frame:    new THREE.MeshStandardMaterial({ color: 0x2a1008, roughness: 0.68, metalness: 0.08 }),  // dark wood painting frame
-    door:     new THREE.MeshStandardMaterial({ color: 0x3a1a08, roughness: 0.70, metalness: 0.06 }),  // rich dark wood door
-    pillar:   new THREE.MeshStandardMaterial({ color: 0x9a8060, roughness: 0.70, metalness: 0.04 }),  // warm cream stone pillar
-    pedestal: new THREE.MeshStandardMaterial({ color: 0xb09070, roughness: 0.45, metalness: 0.08 }),  // warm marble pedestal
-    crown:    new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.2,  metalness: 0.9  }),
-    terminal: new THREE.MeshStandardMaterial({ color: 0x1e2838, roughness: 0.80, metalness: 0.10 }),  // dark gunmetal cabinet
-    exit:     new THREE.MeshStandardMaterial({ color: 0x00ff88, roughness: 0.3,  metalness: 0.0, transparent: true, opacity: 0.7 }),
+    floor:        new THREE.MeshStandardMaterial({ map: _tileTex,         roughness: 0.22, metalness: 0.04 }),
+    galleryFloor: new THREE.MeshStandardMaterial({ map: _galleryFloorTex, roughness: 0.20, metalness: 0.06 }),
+    wall:         new THREE.MeshStandardMaterial({ color: 0x7a4a22, roughness: 0.88, metalness: 0.0  }),  // warm amber stone
+    galleryWall:  new THREE.MeshStandardMaterial({ color: 0x1e1848, roughness: 0.88, metalness: 0.0  }),  // deep midnight blue
+    vaultWall:    new THREE.MeshStandardMaterial({ color: 0x0c2a18, roughness: 0.88, metalness: 0.0  }),  // deep emerald
+    corridorWall: new THREE.MeshStandardMaterial({ color: 0x5a2e10, roughness: 0.88, metalness: 0.0  }),  // warm cinnamon
+    ceiling:      new THREE.MeshStandardMaterial({ map: _ceilTex,         roughness: 0.92, metalness: 0.0 }),
+    galleryCeil:  new THREE.MeshStandardMaterial({ map: _galleryCeilTex,  roughness: 0.92, metalness: 0.0 }),
+    vaultCeil:    new THREE.MeshStandardMaterial({ map: _vaultCeilTex,    roughness: 0.92, metalness: 0.0 }),
+    desk:         new THREE.MeshStandardMaterial({ color: 0x3a1808, roughness: 0.75, metalness: 0.0  }),  // dark walnut
+    glass:        new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3 }),
+    frame:        new THREE.MeshStandardMaterial({ color: 0x1a0808, roughness: 0.70, metalness: 0.08 }),  // dark frame
+    door:         new THREE.MeshStandardMaterial({ color: 0x3a1408, roughness: 0.72, metalness: 0.06 }),  // dark walnut door
+    pillar:       new THREE.MeshStandardMaterial({ color: 0xc09040, roughness: 0.55, metalness: 0.20 }),  // warm gold stone pillar
+    pedestal:     new THREE.MeshStandardMaterial({ color: 0x9a6828, roughness: 0.50, metalness: 0.15 }),  // warm amber pedestal
+    crown:        new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.2,  metalness: 0.9  }),
+    terminal:     new THREE.MeshStandardMaterial({ color: 0x0e1a08, roughness: 0.80, metalness: 0.10 }),  // dark green cabinet
+    exit:         new THREE.MeshStandardMaterial({ color: 0x00ff88, roughness: 0.3,  metalness: 0.0, transparent: true, opacity: 0.7 }),
     keycards: {
       yellow: new THREE.MeshStandardMaterial({ color: 0xf0c040, roughness: 0.3, metalness: 0.6 }),
       blue:   new THREE.MeshStandardMaterial({ color: 0x4a9eff, roughness: 0.3, metalness: 0.6 }),
@@ -505,8 +554,8 @@ window.GameMap = (function () {
   }
 
   // Solid wall segment + collision registration
-  function wall(scene, cx, cz, w, d) {
-    box(scene, w, WALL_H, d, cx, WALL_H / 2, cz, M.wall);
+  function wall(scene, cx, cz, w, d, mat) {
+    box(scene, w, WALL_H, d, cx, WALL_H / 2, cz, mat || M.wall);
     addWallAABB(cx, cz, w + 0.02, d + 0.02);
     // Baseboard trim — protrude slightly past the wall face to avoid z-fighting
     const bw = w > d ? w + 0.04 : 0.08;
@@ -520,57 +569,74 @@ window.GameMap = (function () {
     box(scene, w + 0.02, 0.13, d + 0.02, cx, WALL_H - 0.065, cz, _moldMat);
   }
 
-  function floor(scene, cx, cz, w, d) {
-    const mat = M.floor.clone();
-    const tex  = _tileTex.clone();
-    tex.wrapS  = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(w / _tileTex._tileSize, d / _tileTex._tileSize);
-    mat.map = tex;
+  function floor(scene, cx, cz, w, d, floorMat) {
+    const mat = (floorMat || M.floor).clone();
+    if (floorMat && mat.map) {
+      // Custom floor: tile using its own texture
+      const tex = mat.map.clone();
+      const ts = tex._tileSize || 4;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(w / ts, d / ts);
+      mat.map = tex;
+    } else {
+      const tex  = _tileTex.clone();
+      tex.wrapS  = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(w / _tileTex._tileSize, d / _tileTex._tileSize);
+      mat.map = tex;
+    }
     box(scene, w, FLOOR_T, d, cx, -FLOOR_T / 2, cz, mat);
   }
 
-  function ceiling(scene, cx, cz, w, d) {
-    const mat = M.ceiling.clone();
-    const tex  = _ceilTex.clone();
-    tex.wrapS  = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(w / _ceilTex._tileSize, d / _ceilTex._tileSize);
-    mat.map = tex;
+  function ceiling(scene, cx, cz, w, d, ceilMat) {
+    const mat = (ceilMat || M.ceiling).clone();
+    if (ceilMat && mat.map) {
+      // Custom ceiling: tile using its own texture (tile size 3)
+      const tex = mat.map.clone();
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(w / 3, d / 3);
+      mat.map = tex;
+    } else {
+      const tex  = _ceilTex.clone();
+      tex.wrapS  = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(w / _ceilTex._tileSize, d / _ceilTex._tileSize);
+      mat.map = tex;
+    }
     box(scene, w, FLOOR_T, d, cx, WALL_H + FLOOR_T / 2, cz, mat);
     // Recessed ceiling panel strip (thin dark inset frame)
-    const panelMat = new THREE.MeshStandardMaterial({ color: 0xd4a820, roughness: 0.35, metalness: 0.55 });
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0x1a1028, roughness: 0.95, metalness: 0.0 });
     box(scene, w - 0.6, 0.05, d - 0.6, cx, WALL_H - 0.02, cz, panelMat);
   }
 
   // Full room shell: floor + ceiling + 4 walls with opening gap
   // Openings (door slots) are left by NOT drawing that full wall segment —
   // instead two partial segments are drawn, leaving a 3-unit door gap.
-  function roomWalls(scene, cx, cz, rw, rd, openings) {
+  function roomWalls(scene, cx, cz, rw, rd, openings, wallMat, floorMat, ceilMat) {
     openings = openings || {};
 
     // South wall (−Z face)
     if (!openings.south) {
-      wall(scene, cx, cz - rd / 2, rw, WALL_T);
+      wall(scene, cx, cz - rd / 2, rw, WALL_T, wallMat);
     }
     // North wall (+Z face)
     if (!openings.north) {
-      wall(scene, cx, cz + rd / 2, rw, WALL_T);
+      wall(scene, cx, cz + rd / 2, rw, WALL_T, wallMat);
     } else {
       // Two stubs flanking the door gap (3 units wide centered)
       const stub = (rw - 3) / 2;
-      wall(scene, cx - (rw / 2 - stub / 2), cz + rd / 2, stub, WALL_T);
-      wall(scene, cx + (rw / 2 - stub / 2), cz + rd / 2, stub, WALL_T);
+      wall(scene, cx - (rw / 2 - stub / 2), cz + rd / 2, stub, WALL_T, wallMat);
+      wall(scene, cx + (rw / 2 - stub / 2), cz + rd / 2, stub, WALL_T, wallMat);
     }
     // East wall (+X face)
     if (!openings.east) {
-      wall(scene, cx + rw / 2, cz, WALL_T, rd);
+      wall(scene, cx + rw / 2, cz, WALL_T, rd, wallMat);
     }
     // West wall (−X face)
     if (!openings.west) {
-      wall(scene, cx - rw / 2, cz, WALL_T, rd);
+      wall(scene, cx - rw / 2, cz, WALL_T, rd, wallMat);
     }
 
-    floor(scene, cx, cz, rw, rd);
-    ceiling(scene, cx, cz, rw, rd);
+    floor(scene, cx, cz, rw, rd, floorMat);
+    ceiling(scene, cx, cz, rw, rd, ceilMat);
   }
 
   function pillar(scene, x, z) {
@@ -1913,8 +1979,8 @@ window.GameMap = (function () {
     // ════════════════════════════════
     floor(scene, 0, 47.5, 10, 15);
     ceiling(scene, 0, 47.5, 10, 15);
-    wall(scene, -5, 47.5, WALL_T, 15);
-    wall(scene,  5, 47.5, WALL_T, 15);
+    wall(scene, -5, 47.5, WALL_T, 15, M.corridorWall);
+    wall(scene,  5, 47.5, WALL_T, 15, M.corridorWall);
 
     // Corridor 1 lanterns
     wallLantern(scene, -4.85, 3.0, 44,  1);
@@ -1963,26 +2029,26 @@ window.GameMap = (function () {
     //  GALLERY  cx=0  cz=77.5  50×45
     // ════════════════════════════════
     // Skip south/east/west walls — replace with stubs so corridor + side room openings work
-    roomWalls(scene, 0, 77.5, 50, 45, { south: true, north: true, east: true, west: true });
+    roomWalls(scene, 0, 77.5, 50, 45, { south: true, north: true, east: true, west: true }, M.galleryWall, M.galleryFloor, M.galleryCeil);
 
     // Gallery south wall stubs — 10-unit gap at X=0 matching corridor width (Z=55)
-    wall(scene, -15, 55, 20, WALL_T);  // west stub: X -25→-5
-    wall(scene,  15, 55, 20, WALL_T);  // east stub: X +5→+25
+    wall(scene, -15, 55, 20, WALL_T, M.galleryWall);  // west stub: X -25→-5
+    wall(scene,  15, 55, 20, WALL_T, M.galleryWall);  // east stub: X +5→+25
 
     // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
     // South stub: Z 55→75.5  (length 20.5, centre 65.25)
-    wall(scene, 25, 65.25, WALL_T, 20.5);
+    wall(scene, 25, 65.25, WALL_T, 20.5, M.galleryWall);
     // North stub: Z 78.5→100  (length 21.5, centre 89.25)
-    wall(scene, 25, 89.25, WALL_T, 21.5);
+    wall(scene, 25, 89.25, WALL_T, 21.5, M.galleryWall);
 
     // Gallery west wall stubs — 3-unit gap at Z=77 leading to the Galerie des Sculptures
     //   and additional 3-unit gap at Z=64 leading to the Power Breaker Room (Feature 7)
     // South section: Z 55→62.5 (length 7.5, centre 58.75) — solid, south of breaker door
-    wall(scene, -25, 58.75, WALL_T, 7.5);
+    wall(scene, -25, 58.75, WALL_T, 7.5, M.galleryWall);
     // Middle stub: Z 65.5→75.5 (length 10, centre 70.5) — between breaker gap and Galerie gap
-    wall(scene, -25, 70.5, WALL_T, 10);
+    wall(scene, -25, 70.5, WALL_T, 10, M.galleryWall);
     // North stub: Z 78.5→100  (length 21.5, centre 89.25)
-    wall(scene, -25, 89.25, WALL_T, 21.5);
+    wall(scene, -25, 89.25, WALL_T, 21.5, M.galleryWall);
 
     // Glowing archway at side-room entrance (opening in X-wall, strips run along Z)
     const sideGlowMat = new THREE.MeshStandardMaterial({
@@ -2291,13 +2357,13 @@ window.GameMap = (function () {
     //  X 25→50  Z 67→87  (centre 37.5, 77)
     // ════════════════════════════════
     const SAX = 37.5, SAZ = 77, SAW = 25, SAD = 20;
-    floor(scene,   SAX, SAZ, SAW, SAD);
-    ceiling(scene, SAX, SAZ, SAW, SAD);
+    floor(scene,   SAX, SAZ, SAW, SAD, M.galleryFloor);
+    ceiling(scene, SAX, SAZ, SAW, SAD, M.galleryCeil);
     // South wall (Z=67) and north wall (Z=87)
-    wall(scene, SAX, SAZ - SAD / 2, SAW, WALL_T);
-    wall(scene, SAX, SAZ + SAD / 2, SAW, WALL_T);
+    wall(scene, SAX, SAZ - SAD / 2, SAW, WALL_T, M.galleryWall);
+    wall(scene, SAX, SAZ + SAD / 2, SAW, WALL_T, M.galleryWall);
     // East wall (X=50)
-    wall(scene, SAX + SAW / 2, SAZ, WALL_T, SAD);
+    wall(scene, SAX + SAW / 2, SAZ, WALL_T, SAD, M.galleryWall);
     // West wall shared with gallery east-wall stubs — no extra wall needed
 
     // Pillars flanking the entrance (just inside the room)
@@ -2393,13 +2459,13 @@ window.GameMap = (function () {
     //  X -50→-25  Z 67→87  (centre -37.5, 77)
     // ════════════════════════════════
     const GWX = -37.5, GWZ = 77, GWW = 25, GWD = 20;
-    floor(scene,   GWX, GWZ, GWW, GWD);
-    ceiling(scene, GWX, GWZ, GWW, GWD);
+    floor(scene,   GWX, GWZ, GWW, GWD, M.galleryFloor);
+    ceiling(scene, GWX, GWZ, GWW, GWD, M.galleryCeil);
     // South wall (Z=67) and north wall (Z=87)
-    wall(scene, GWX, GWZ - GWD / 2, GWW, WALL_T);
-    wall(scene, GWX, GWZ + GWD / 2, GWW, WALL_T);
+    wall(scene, GWX, GWZ - GWD / 2, GWW, WALL_T, M.galleryWall);
+    wall(scene, GWX, GWZ + GWD / 2, GWW, WALL_T, M.galleryWall);
     // West wall (X=-50)
-    wall(scene, GWX - GWW / 2, GWZ, WALL_T, GWD);
+    wall(scene, GWX - GWW / 2, GWZ, WALL_T, GWD, M.galleryWall);
     // East wall shared with gallery west-wall stubs — no extra wall needed
 
     // Door in the opening connecting Gallery to Galerie des Sculptures
@@ -2418,28 +2484,14 @@ window.GameMap = (function () {
     pillar(scene, -28.5, 70);
     pillar(scene, -28.5, 84);
 
-    // ── Sculptures — multi-part forms on tiered pedestals ──
-    const sMat1 = new THREE.MeshStandardMaterial({ color: 0xc8c0b4, roughness: 0.55, metalness: 0.06 });
+    // ── Sculptures — non-figurative forms on tiered pedestals ──
     const sMat2 = new THREE.MeshStandardMaterial({ color: 0xb8a888, roughness: 0.50, metalness: 0.08 });
-    const sMat3 = new THREE.MeshStandardMaterial({ color: 0xc0b8ac, roughness: 0.52, metalness: 0.08 });
     const sMat4 = new THREE.MeshStandardMaterial({ color: 0x9898a8, roughness: 0.42, metalness: 0.22 });
 
-    // Sculpture 1 — Classical Bust (torso → neck → head)
-    box(scene, 1.35, 0.12, 1.35, -34, 0.06, 72, _baseMat);   // plinth lip
-    box(scene, 1.0,  0.90, 1.0,  -34, 0.57, 72, M.pedestal); // pedestal, top=1.02
-    { const g = new THREE.Group(); g.position.set(-34, 1.02, 72);
-      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.30, 0.36, 10), sMat1);
-      torso.position.y = 0.18; g.add(torso);
-      const neck  = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.14, 8), sMat1);
-      neck.position.y = 0.43; g.add(neck);
-      const head  = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 8), sMat1);
-      head.position.y = 0.67; g.add(head);
-      g.castShadow = true; scene.add(g); }
-
-    // Sculpture 2 — Greek Amphora (stacked cylinders for vase profile)
-    box(scene, 1.35, 0.12, 1.35, -42, 0.06, 72, _baseMat);
-    box(scene, 1.0,  1.10, 1.0,  -42, 0.61, 72, M.pedestal); // top=1.16
-    { const g = new THREE.Group(); g.position.set(-42, 1.16, 72);
+    // Sculpture 1 — Greek Amphora
+    box(scene, 1.35, 0.12, 1.35, -34, 0.06, 72, _baseMat);
+    box(scene, 1.0,  1.10, 1.0,  -34, 0.61, 72, M.pedestal);
+    { const g = new THREE.Group(); g.position.set(-34, 1.16, 72);
       const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.06, 10), sMat2);
       foot.position.y = 0.03; g.add(foot);
       const body = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.11, 0.28, 12), sMat2);
@@ -2452,30 +2504,40 @@ window.GameMap = (function () {
       rim.position.y = 0.73; g.add(rim);
       g.castShadow = true; scene.add(g); }
 
-    // Sculpture 3 — Standing Figure (lower body → torso → shoulders → head)
-    box(scene, 1.35, 0.12, 1.35, -34, 0.06, 82, _baseMat);
-    box(scene, 1.0,  0.90, 1.0,  -34, 0.57, 82, M.pedestal); // top=1.02
-    { const g = new THREE.Group(); g.position.set(-34, 1.02, 82);
-      const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.10, 0.38, 8), sMat3);
-      lower.position.y = 0.19; g.add(lower);
-      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.32, 8), sMat3);
-      torso.position.y = 0.54; g.add(torso);
-      const shldr = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.08, 8), sMat3);
-      shldr.position.y = 0.74; g.add(shldr);
-      const neck  = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 0.11, 8), sMat3);
-      neck.position.y = 0.84; g.add(neck);
-      const head  = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), sMat3);
-      head.position.y = 1.04; g.add(head);
-      g.castShadow = true; scene.add(g); }
-
-    // Sculpture 4 — Obelisk (square shaft + pyramid cap)
-    box(scene, 1.35, 0.12, 1.35, -42, 0.06, 82, _baseMat);
-    box(scene, 1.0,  1.00, 1.0,  -42, 0.56, 82, M.pedestal); // top=1.06
-    { const g = new THREE.Group(); g.position.set(-42, 1.06, 82);
+    // Sculpture 2 — Obelisk (square shaft + pyramid cap)
+    box(scene, 1.35, 0.12, 1.35, -42, 0.06, 72, _baseMat);
+    box(scene, 1.0,  1.00, 1.0,  -42, 0.56, 72, M.pedestal);
+    { const g = new THREE.Group(); g.position.set(-42, 1.06, 72);
       const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.72, 0.22), sMat4);
       shaft.position.y = 0.36; g.add(shaft);
       const tip   = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.13, 0.28, 4), sMat4);
       tip.position.y = 0.86; g.add(tip);
+      g.castShadow = true; scene.add(g); }
+
+    // Sculpture 3 — Second Amphora variant
+    box(scene, 1.35, 0.12, 1.35, -34, 0.06, 82, _baseMat);
+    box(scene, 1.0,  1.10, 1.0,  -34, 0.61, 82, M.pedestal);
+    { const g = new THREE.Group(); g.position.set(-34, 1.16, 82);
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.06, 10), sMat4);
+      foot.position.y = 0.03; g.add(foot);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.10, 0.32, 12), sMat4);
+      body.position.y = 0.22; g.add(body);
+      const shldr= new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.26, 0.18, 12), sMat4);
+      shldr.position.y = 0.47; g.add(shldr);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.12, 0.14, 10), sMat4);
+      neck.position.y = 0.63; g.add(neck);
+      const rim  = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.07, 0.04, 10), sMat4);
+      rim.position.y = 0.73; g.add(rim);
+      g.castShadow = true; scene.add(g); }
+
+    // Sculpture 4 — Tall Obelisk
+    box(scene, 1.35, 0.12, 1.35, -42, 0.06, 82, _baseMat);
+    box(scene, 1.0,  1.00, 1.0,  -42, 0.56, 82, M.pedestal);
+    { const g = new THREE.Group(); g.position.set(-42, 1.06, 82);
+      const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.88, 0.18), sMat2);
+      shaft.position.y = 0.44; g.add(shaft);
+      const tip   = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.11, 0.24, 4), sMat2);
+      tip.position.y = 0.96; g.add(tip);
       g.castShadow = true; scene.add(g); }
 
     // Coin cache on a small table
@@ -2694,8 +2756,8 @@ window.GameMap = (function () {
     // ════════════════════════════════
     floor(scene, 0, 107.5, 10, 15);
     ceiling(scene, 0, 107.5, 10, 15);
-    wall(scene, -5, 107.5, WALL_T, 15);
-    wall(scene,  5, 107.5, WALL_T, 15);
+    wall(scene, -5, 107.5, WALL_T, 15, M.corridorWall);
+    wall(scene,  5, 107.5, WALL_T, 15, M.corridorWall);
 
     // Corridor 2 paintings on north/south walls
     wallPaintingNS(scene, 0, 3.5, 100.35, M.cezanne, true);
@@ -2722,7 +2784,7 @@ window.GameMap = (function () {
     //  CROWN VAULT  cx=0  cz=137.5  50×45
     // ════════════════════════════════
     // Skip south and north walls — add stubs manually so corridor/exit connect properly
-    roomWalls(scene, 0, 137.5, 50, 45, { south: true, north: true });
+    roomWalls(scene, 0, 137.5, 50, 45, { south: true, north: true }, M.vaultWall, null, M.vaultCeil);
 
     // Crown Vault floor overlay — dark obsidian with gold veining (over standard marble)
     {
@@ -2739,12 +2801,12 @@ window.GameMap = (function () {
 
     // Vault south wall stubs — 10-unit gap (matches corridor width) at x=0
     const VS = (50 - 10) / 2;  // stub width = 20
-    wall(scene, -(25 - VS / 2), 115, VS, WALL_T);   // west stub centred at (-15, 115)
-    wall(scene,  (25 - VS / 2), 115, VS, WALL_T);   // east stub centred at ( 15, 115)
+    wall(scene, -(25 - VS / 2), 115, VS, WALL_T, M.vaultWall);   // west stub centred at (-15, 115)
+    wall(scene,  (25 - VS / 2), 115, VS, WALL_T, M.vaultWall);   // east stub centred at ( 15, 115)
 
     // Vault north wall stubs — 10-unit gap for exit passage
-    wall(scene, -(25 - VS / 2), 160, VS, WALL_T);   // west stub
-    wall(scene,  (25 - VS / 2), 160, VS, WALL_T);   // east stub
+    wall(scene, -(25 - VS / 2), 160, VS, WALL_T, M.vaultWall);   // west stub
+    wall(scene,  (25 - VS / 2), 160, VS, WALL_T, M.vaultWall);   // east stub
 
     // Vault lasers: low + high + crossed
     laserData.push({ type: 'low',  x1: -20, x2:  20, y: 0.5, z: 122 });

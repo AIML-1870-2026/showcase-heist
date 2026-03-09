@@ -248,9 +248,11 @@ window.UI = (function () {
   // ── Minimap ────────────────────────────────────────────
   // Rooms in minimap pixel space (160×120 canvas)
   const MM_ROOMS = [
-    { rx: 55,  ry: 5,  rw: 50,  rh: 28, color: '#222233' }, // Lobby
-    { rx: 30,  ry: 43, rw: 100, rh: 28, color: '#1c1c2e' }, // Gallery
-    { rx: 30,  ry: 81, rw: 100, rh: 28, color: '#1e1018' }, // Crown Vault
+    { rx: 30,  ry: 2,  rw: 100, rh: 28, color: '#3a1a08', label: 'LOBBY',       lx: 80,  ly: 20 },
+    { rx: 68,  ry: 30, rw: 24,  rh: 14, color: '#2a1a30', label: 'CORRIDOR',    lx: 80,  ly: 40 },
+    { rx: 20,  ry: 44, rw: 120, rh: 28, color: '#1a1042', label: 'GALLERY',     lx: 80,  ly: 60 },
+    { rx: 68,  ry: 72, rw: 24,  rh: 14, color: '#0a2a1a', label: 'CORRIDOR',    lx: 80,  ly: 81 },
+    { rx: 20,  ry: 86, rw: 120, rh: 30, color: '#1a0828', label: 'CROWN VAULT', lx: 80,  ly: 103},
   ];
 
   // Pre-bake static room layout to an offscreen canvas — drawn once, blitted each frame
@@ -259,33 +261,46 @@ window.UI = (function () {
   _mmOffscreen.height = 120;
   (function bakeMinimapBg() {
     const ctx = _mmOffscreen.getContext('2d');
-    ctx.fillStyle = '#0a0a0c';
+    ctx.fillStyle = '#080608';
     ctx.fillRect(0, 0, 160, 120);
     MM_ROOMS.forEach(r => {
       ctx.fillStyle   = r.color;
       ctx.fillRect(r.rx, r.ry, r.rw, r.rh);
-      ctx.strokeStyle = '#444';
-      ctx.lineWidth   = 1;
+      // Colored border per room
+      ctx.strokeStyle = r.label === 'LOBBY' ? '#c8722a'
+                      : r.label === 'GALLERY' ? '#4a5eaa'
+                      : r.label === 'CROWN VAULT' ? '#c8a030'
+                      : '#6a4a8a';
+      ctx.lineWidth   = 1.5;
       ctx.strokeRect(r.rx, r.ry, r.rw, r.rh);
+      // Room label
+      ctx.fillStyle   = r.label === 'LOBBY' ? '#e87840'
+                      : r.label === 'GALLERY' ? '#7a9aff'
+                      : r.label === 'CROWN VAULT' ? '#ffd060'
+                      : '#b08ad0';
+      ctx.font        = r.label === 'CORRIDOR' ? 'bold 7px monospace' : 'bold 8px monospace';
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(r.label, r.lx, r.ly);
     });
   }());
 
   function worldToMini(wx, wz) {
     return {
-      mx: 80  + wx  * 1.8,
-      my: 5   + (wz / 165) * 108,
+      mx: 80  + wx  * 1.5,
+      my: 2   + (wz / 165) * 114,
     };
   }
 
-  function drawMinimap(playerPos, guardPositions, currentRoom) {
+  function drawMinimap(playerPos, guardPositions, currentRoom, playerYaw) {
     // Blit pre-rendered background — no room geometry redrawn each frame
     minimapCtx.drawImage(_mmOffscreen, 0, 0);
 
     // Guards — always visible; color escalates with alarm level
     if (guardPositions) {
       const lvl = window.G ? window.G.alarm.level : 0;
-      const dotColor = lvl >= 2 ? '#ff2200' : lvl >= 1 ? '#ff8800' : '#cc4444';
-      const dotR     = lvl >= 1 ? 3.0 : 2.0;
+      const dotColor = lvl >= 2 ? '#ff2200' : lvl >= 1 ? '#ff8800' : '#e05050';
+      const dotR     = lvl >= 1 ? 3.0 : 2.2;
       guardPositions.forEach(gp => {
         const { mx, my } = worldToMini(gp.x, gp.z);
         minimapCtx.fillStyle = dotColor;
@@ -299,20 +314,69 @@ window.UI = (function () {
       });
     }
 
-    // Player dot (gold)
+    // Player — gold triangle arrow showing facing direction
     if (playerPos) {
       const { mx, my } = worldToMini(playerPos.x, playerPos.z);
-      minimapCtx.fillStyle = '#c9a84c';
-      minimapCtx.beginPath();
-      minimapCtx.arc(
-        Math.max(3, Math.min(157, mx)),
-        Math.max(3, Math.min(117, my)),
-        3.5, 0, Math.PI * 2
-      );
-      minimapCtx.fill();
+      const px = Math.max(5, Math.min(155, mx));
+      const py = Math.max(5, Math.min(115, my));
+
+      if (playerYaw !== undefined) {
+        // Draw directional arrow triangle in the player's facing direction
+        const R = 5.5;   // arrow tip distance
+        const W = 3.2;   // arrow half-width at base
+        // yaw=0 means player faces +Z in world which maps to +Y in minimap
+        const ang = playerYaw + Math.PI; // facing direction in minimap
+        const tx = px + Math.sin(ang) * R;
+        const ty = py + Math.cos(ang) * R;
+        const lx = px + Math.sin(ang + Math.PI * 0.6) * W;
+        const ly = py + Math.cos(ang + Math.PI * 0.6) * W;
+        const rx = px + Math.sin(ang - Math.PI * 0.6) * W;
+        const ry = py + Math.cos(ang - Math.PI * 0.6) * W;
+        minimapCtx.fillStyle = '#ffd060';
+        minimapCtx.strokeStyle = '#8a5a00';
+        minimapCtx.lineWidth = 0.8;
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(tx, ty);
+        minimapCtx.lineTo(lx, ly);
+        minimapCtx.lineTo(rx, ry);
+        minimapCtx.closePath();
+        minimapCtx.fill();
+        minimapCtx.stroke();
+        // Center dot
+        minimapCtx.fillStyle = '#fff';
+        minimapCtx.beginPath();
+        minimapCtx.arc(px, py, 1.8, 0, Math.PI * 2);
+        minimapCtx.fill();
+      } else {
+        minimapCtx.fillStyle = '#c9a84c';
+        minimapCtx.beginPath();
+        minimapCtx.arc(px, py, 3.5, 0, Math.PI * 2);
+        minimapCtx.fill();
+      }
     }
 
     if (currentRoom) minimapLabel.textContent = 'Area: ' + currentRoom;
+  }
+
+  // ── Noise meter ────────────────────────────────────────
+  function updateNoise(val) {
+    const fill = $('noise-fill');
+    const label = $('noise-label-val');
+    if (!fill) return;
+    const pct = Math.max(0, Math.min(1, val)) * 100;
+    fill.style.width = pct + '%';
+    const color = val > 0.75 ? '#ff3322'
+                : val > 0.45 ? '#ffaa22'
+                : val > 0.15 ? '#ffdd44'
+                : '#44dd88';
+    fill.style.background = color;
+    if (label) {
+      label.textContent = val > 0.75 ? 'LOUD'
+                        : val > 0.45 ? 'NOISY'
+                        : val > 0.15 ? 'quiet'
+                        : 'silent';
+      label.style.color = color;
+    }
   }
 
   // ── Web Audio SFX ──────────────────────────────────────
@@ -448,6 +512,7 @@ window.UI = (function () {
     updateDistractCount,
     updateSmokeCount,
     updateStamina,
+    updateNoise,
     showAchievement,
     startAmbient,
     stopAmbient,

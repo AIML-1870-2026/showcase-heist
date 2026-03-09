@@ -45,6 +45,10 @@ window.Player = (function () {
   let _stamina         = 1.0;
   let _staminaExhausted = false;  // debounce: prevents sprint until recovered to 0.3
 
+  // ── Noise level ────────────────────────────────────────
+  let _noiseLevel = 0;   // 0..1, drives noise meter HUD
+  let _prevVelSpd = 0;   // previous frame speed to detect wall impacts
+
   // ── Safe-cracking minigame state ───────────────────────
   let _scActive    = false;
   let _scTumbler   = 0;
@@ -610,6 +614,16 @@ window.Player = (function () {
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
 
+    // ── Direction arrow — floor-level in FRONT of character ──
+    const arrowMat = new THREE.MeshStandardMaterial({
+      color: 0xffd060, emissive: 0xffd060, emissiveIntensity: 0.7,
+      roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.82,
+    });
+    const arrowCone = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.34, 5), arrowMat);
+    arrowCone.rotation.x = -Math.PI / 2;   // tip points toward local -Z (character forward)
+    arrowCone.position.set(0, 0.10, -0.88); // floor level, in front
+    group.add(arrowCone);
+
     sc.add(group);
     return group;
   }
@@ -789,8 +803,30 @@ window.Player = (function () {
       onGround = false;
     }
 
-    // Wall collision
+    // Wall collision — capture position before resolve to detect impact
+    const _preX = pos.x, _preZ = pos.z;
     resolveWalls();
+    const _wallCorrDist = Math.sqrt(
+      (pos.x - _preX) * (pos.x - _preX) + (pos.z - _preZ) * (pos.z - _preZ)
+    );
+
+    // Noise level update
+    {
+      let noiseTarget = 0;
+      if      (state === 'sprinting')                 noiseTarget = 0.85;
+      else if (state === 'sliding')                   noiseTarget = 0.55;
+      else if (moving && state !== 'crouching')       noiseTarget = 0.28;
+      else if (state === 'crouching' && moving)       noiseTarget = 0.05;
+      const rate = noiseTarget > _noiseLevel ? 2.5 : 1.4;
+      _noiseLevel += (noiseTarget - _noiseLevel) * rate * dt;
+      // Wall impact spike — louder the harder you hit
+      if (_wallCorrDist > 0.04) {
+        _noiseLevel = Math.min(1, _noiseLevel + _wallCorrDist * 3.5);
+      }
+      _noiseLevel = Math.max(0, Math.min(1, _noiseLevel));
+      if (window.G) window.G._noiseLevel = _noiseLevel;
+      UI.updateNoise(_noiseLevel);
+    }
 
     // Mesh height scale for crouching/sliding
     const h = (state === 'crouching' || state === 'sliding') ? H_CROUCH : H_NORMAL;
@@ -1181,6 +1217,7 @@ window.Player = (function () {
     tickDoors,
     getPosition()    { return pos.clone(); },
     getPositionRef() { return pos; },
+    getYaw()         { return yaw; },
     getState()       { return state; },
     isCrouching()    { return state === 'crouching'; },
     isSliding()      { return state === 'sliding'; },

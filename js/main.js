@@ -7,9 +7,9 @@
 
   // ── Renderer ───────────────────────────────────────────
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.shadowMap.enabled  = true;
-  renderer.shadowMap.type     = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type     = THREE.PCFShadowMap;
   renderer.toneMapping        = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
   renderer.outputEncoding     = THREE.sRGBEncoding;
@@ -115,8 +115,8 @@
     sun = new THREE.DirectionalLight(0xd0e0f8, 0.65);
     sun.position.set(15, 25, 10);
     sun.castShadow = true;
-    sun.shadow.mapSize.width  = 2048;
-    sun.shadow.mapSize.height = 2048;
+    sun.shadow.mapSize.width  = 1024;
+    sun.shadow.mapSize.height = 1024;
     sun.shadow.camera.near   = 0.5;
     sun.shadow.camera.far    = 120;
     sun.shadow.camera.left   = -28;
@@ -423,6 +423,47 @@
       light.intensity = 0;
       flickerLights.forEach(l => { l.intensity = l._baseIntensity; });
     }
+  }
+
+  // ── Aerial view ────────────────────────────────────────
+  let _aerialActive    = false;
+  const _aerialCamPos  = new THREE.Vector3();
+  const _aerialCamSave = new THREE.Vector3();
+
+  function _setAerial(on) {
+    _aerialActive = on;
+    const btn = document.getElementById('btn-aerial');
+    if (btn) btn.classList.toggle('active', on);
+    if (!on) {
+      // Snap camera back (player.js will lerp it naturally next frame)
+      _aerialCamSave.copy(camera.position);
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'KeyV' && window.G && window.G.phase === 'playing') {
+      e.preventDefault();
+      _setAerial(!_aerialActive);
+    }
+  });
+  const _aerialBtn = document.getElementById('btn-aerial');
+  if (_aerialBtn) {
+    _aerialBtn.addEventListener('mousedown',  () => _setAerial(true));
+    _aerialBtn.addEventListener('mouseup',    () => _setAerial(false));
+    _aerialBtn.addEventListener('mouseleave', () => _setAerial(false));
+    _aerialBtn.addEventListener('touchstart', e => { e.preventDefault(); _setAerial(true); }, { passive: false });
+    _aerialBtn.addEventListener('touchend',   e => { e.preventDefault(); _setAerial(false); }, { passive: false });
+  }
+
+  function tickAerialView(playerPos) {
+    if (!_aerialActive) return;
+    // Smooth camera to bird's-eye position above player
+    const targetX = playerPos.x;
+    const targetY = 70;
+    const targetZ = playerPos.z;
+    _aerialCamPos.set(targetX, targetY, targetZ);
+    camera.position.lerp(_aerialCamPos, 0.14);
+    camera.lookAt(playerPos.x, 0, playerPos.z);
   }
 
   // ── Screen shake ───────────────────────────────────────
@@ -1197,9 +1238,10 @@
     Player.tickDoors(dt);
     tickScreenShake(dt);
     tickStressVignette(dt, playerPos);
+    tickAerialView(playerPos);
 
     // HUD minimap — pass a snapshot for the minimap (read-only, safe to use ref)
-    UI.drawMinimap(playerPos, Guards.getGuardPositions(), G.currentRoom);
+    UI.drawMinimap(playerPos, Guards.getGuardPositions(), G.currentRoom, Player.getYaw());
 
     // Music
     Music.update(G.alarm.level, G.alarm.active);

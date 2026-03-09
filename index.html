@@ -35,8 +35,8 @@
         <button id="btn-continue" class="btn btn-ghost hidden">Continue</button>
       </div>
       <div class="controls-hint">
-        <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Sprint &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
-        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
+        <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Sprint (loud!) &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
+        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; V — Aerial View &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
       </div>
     </div>
   </div>
@@ -209,6 +209,7 @@
     <div id="minimap">
       <canvas id="minimap-canvas" width="160" height="120"></canvas>
       <p id="minimap-label">Area: Lobby</p>
+      <button id="btn-aerial" title="Hold for aerial view [V]">&#9650; Aerial [V]</button>
     </div>
 
     <!-- Bottom-center: Interaction prompt -->
@@ -221,6 +222,13 @@
     <div id="stamina-bar-wrap">
       <span class="distract-label">Stamina</span>
       <div id="stamina-bar"><div id="stamina-fill"></div></div>
+    </div>
+
+    <!-- Bottom-left: Noise meter -->
+    <div id="noise-bar-wrap">
+      <span class="distract-label">Noise</span>
+      <div id="noise-bar"><div id="noise-fill"></div></div>
+      <span id="noise-label-val" style="font-size:0.68rem;min-width:38px;margin-left:5px;">silent</span>
     </div>
 
     <!-- Bottom-left: Distraction coin counter -->

@@ -68,13 +68,14 @@ window.Security = (function () {
 
   // ── Materials ──────────────────────────────────────────
   const MAT_CAMERA  = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  const MAT_LASER_LOW  = new THREE.MeshStandardMaterial({
-    color: 0xff2200, emissive: 0xff1100, emissiveIntensity: 1.5,
-    transparent: true, opacity: 0.85, roughness: 0.2, metalness: 0,
+  // Laser beam — additive blending makes beams glow without a real PointLight
+  const MAT_LASER_CORE = new THREE.MeshBasicMaterial({
+    color: 0xff1800, transparent: true, opacity: 0.98,
+    blending: THREE.AdditiveBlending, depthWrite: false,
   });
-  const MAT_LASER_HIGH = new THREE.MeshStandardMaterial({
-    color: 0x0099ff, emissive: 0x0066ff, emissiveIntensity: 1.5,
-    transparent: true, opacity: 0.85, roughness: 0.2, metalness: 0,
+  const MAT_LASER_GLOW = new THREE.MeshBasicMaterial({
+    color: 0xff0800, transparent: true, opacity: 0.18,
+    blending: THREE.AdditiveBlending, depthWrite: false,
   });
   const MAT_FOV = new THREE.MeshLambertMaterial({
     color: 0x00ffff, transparent: true, opacity: 0.12, side: THREE.DoubleSide,
@@ -211,15 +212,21 @@ window.Security = (function () {
       this._warned        = false; // prevents duplicate warning
 
       const w   = Math.abs(data.x2 - data.x1);
-      const mat = data.type === 'low' ? MAT_LASER_LOW : MAT_LASER_HIGH;
+      const cx  = (data.x1 + data.x2) / 2;
 
-      this.mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.07, 0.07), mat);
-      this.mesh.position.set((data.x1 + data.x2) / 2, data.y, data.z);
+      // Thin core beam
+      this.mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.025, 0.025), MAT_LASER_CORE);
+      this.mesh.position.set(cx, data.y, data.z);
       scene.add(this.mesh);
 
-      // Emitter boxes at each end
-      const emitColor  = data.type === 'low' ? 0xff4400 : 0x0066ff;
-      const emitEmissive = data.type === 'low' ? 0xff2200 : 0x0044cc;
+      // Wider soft glow halo around the core
+      this._glowMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, 0.18), MAT_LASER_GLOW);
+      this._glowMesh.position.set(cx, data.y, data.z);
+      scene.add(this._glowMesh);
+
+      // Emitter boxes at each end — all red
+      const emitColor    = 0xff2200;
+      const emitEmissive = 0xff0800;
       const emitMat = new THREE.MeshStandardMaterial({ color: emitColor, emissive: emitEmissive, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.1 });
       const emitGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
       [data.x1, data.x2].forEach(ex => {
@@ -240,12 +247,15 @@ window.Security = (function () {
       }
       // Flash the beam mesh in the last 2 s so the player sees it
       if (this.reactivateTimer <= 2) {
-        this.mesh.visible = Math.floor(this.reactivateTimer * 6) % 2 === 0;
+        const vis = Math.floor(this.reactivateTimer * 6) % 2 === 0;
+        this.mesh.visible      = vis;
+        this._glowMesh.visible = vis;
       }
       if (this.reactivateTimer <= 0) {
-        this.triggered        = false;
-        this._warned          = false;
-        this.mesh.visible     = true;
+        this.triggered         = false;
+        this._warned           = false;
+        this.mesh.visible      = true;
+        this._glowMesh.visible = true;
       }
     }
 
@@ -317,9 +327,10 @@ window.Security = (function () {
     for (const laser of lasers) {
       laser.update(dt);
       if (laser.checkPlayer(playerPos, playerState)) {
-        laser.triggered       = true;
-        laser.reactivateTimer = LASER_REACTIVATE_TIME;
-        laser.mesh.visible    = false;
+        laser.triggered            = true;
+        laser.reactivateTimer      = LASER_REACTIVATE_TIME;
+        laser.mesh.visible         = false;
+        laser._glowMesh.visible    = false;
         triggerAlarmLevel(3);
         UI.showAlert('LASER TRIGGERED!', 3500);
         UI.SFX.alarm();
