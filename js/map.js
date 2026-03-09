@@ -397,8 +397,8 @@ window.GameMap = (function () {
   const _baseMat    = new THREE.MeshStandardMaterial({ color: 0x3c1a08, roughness: 0.78, metalness: 0.0 });   // dark mahogany wood baseboard
   const _wainMat    = new THREE.MeshStandardMaterial({ color: 0x6a3010, roughness: 0.65, metalness: 0.0 });   // rich mahogany wood paneling
   const _moldMat    = new THREE.MeshStandardMaterial({ color: 0xc09018, roughness: 0.20, metalness: 0.80 });  // gilt gold molding
-  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.72, metalness: 0.06 });  // dark slate door frame
-  const _handleMat  = new THREE.MeshStandardMaterial({ color: 0x7890a8, roughness: 0.3,  metalness: 0.8  });
+  const _frameMat   = new THREE.MeshStandardMaterial({ color: 0x2a1008, roughness: 0.70, metalness: 0.06 });  // dark wood door frame
+  const _handleMat  = new THREE.MeshStandardMaterial({ color: 0xc09018, roughness: 0.22,  metalness: 0.88  });  // gold door handle
   const _stripeMat  = new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.95, metalness: 0.05 });
   const _chipMat    = new THREE.MeshStandardMaterial({ color: 0x8a9ab0, roughness: 0.35, metalness: 0.75 });
 
@@ -407,10 +407,10 @@ window.GameMap = (function () {
     floor:    new THREE.MeshStandardMaterial({ map: _tileTex, roughness: 0.22, metalness: 0.04 }),
     wall:     new THREE.MeshStandardMaterial({ color: 0xd4c8a0, roughness: 0.88, metalness: 0.0  }),  // warm ivory stone
     ceiling:  new THREE.MeshStandardMaterial({ map: _ceilTex, roughness: 0.94, metalness: 0.0  }),
-    desk:     new THREE.MeshStandardMaterial({ color: 0x2a3040, roughness: 0.75, metalness: 0.0  }),  // dark slate
+    desk:     new THREE.MeshStandardMaterial({ color: 0x3a1808, roughness: 0.78, metalness: 0.0  }),  // dark mahogany desk
     glass:    new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3 }),
-    frame:    new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.70, metalness: 0.08 }),  // dark slate frame
-    door:     new THREE.MeshStandardMaterial({ color: 0x253040, roughness: 0.72, metalness: 0.06 }),  // dark gunmetal door
+    frame:    new THREE.MeshStandardMaterial({ color: 0x2a1008, roughness: 0.68, metalness: 0.08 }),  // dark wood painting frame
+    door:     new THREE.MeshStandardMaterial({ color: 0x3a1a08, roughness: 0.70, metalness: 0.06 }),  // rich dark wood door
     pillar:   new THREE.MeshStandardMaterial({ color: 0x9a8060, roughness: 0.70, metalness: 0.04 }),  // warm cream stone pillar
     pedestal: new THREE.MeshStandardMaterial({ color: 0xb09070, roughness: 0.45, metalness: 0.08 }),  // warm marble pedestal
     crown:    new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.2,  metalness: 0.9  }),
@@ -600,7 +600,7 @@ window.GameMap = (function () {
     // Glass vitrine
     box(scene, 1.0,  1.20, 1.0,  x, 1.40, z, M.glass);
     // Slim metal corner posts
-    const postMat = new THREE.MeshStandardMaterial({ color: 0x6a7888, roughness: 0.30, metalness: 0.70 });
+    const postMat = new THREE.MeshStandardMaterial({ color: 0xb87820, roughness: 0.22, metalness: 0.88 });
     [[-0.50, -0.50], [-0.50, 0.50], [0.50, -0.50], [0.50, 0.50]].forEach(([ox, oz]) => {
       box(scene, 0.065, 1.28, 0.065, x + ox, 1.44, z + oz, postMat);
     });
@@ -809,6 +809,75 @@ window.GameMap = (function () {
 
   // ── Decorative helpers ─────────────────────────────────
   const _brassM = new THREE.MeshStandardMaterial({ color: 0xb87820, roughness: 0.22, metalness: 0.85 });
+
+  // ── Ornate wall lantern (wrought-iron cage with warm flame glow) ────────────
+  // extX: +1 = lantern points toward +X (on west wall), -1 = toward -X (on east wall)
+  function wallLantern(scene, wx, y, wz, extX) {
+    const ironM = new THREE.MeshStandardMaterial({ color: 0x1a0e04, roughness: 0.42, metalness: 0.72 });
+    const glowM = new THREE.MeshStandardMaterial({
+      color: 0xff8800, emissive: 0xff6000, emissiveIntensity: 2.2,
+      transparent: true, opacity: 0.82, roughness: 0.10,
+    });
+    const EX = extX * 0.54;
+    // Bracket arm extending from wall
+    box(scene, Math.abs(EX) * 0.85, 0.05, 0.05, wx + EX * 0.44, y + 0.06, wz, ironM);
+    // Vertical drop rod
+    box(scene, 0.04, 0.22, 0.04, wx + EX * 0.88, y - 0.03, wz, ironM);
+    // Lantern cage (outer frame)
+    box(scene, 0.30, 0.40, 0.30, wx + EX, y - 0.14, wz, ironM);
+    // Warm glass panels (4 sides, slightly inset)
+    box(scene, 0.22, 0.30, 0.03, wx + EX, y - 0.14, wz - 0.148, glowM);
+    box(scene, 0.22, 0.30, 0.03, wx + EX, y - 0.14, wz + 0.148, glowM);
+    box(scene, 0.03, 0.30, 0.22, wx + EX - 0.148 * Math.sign(extX), y - 0.14, wz, glowM);
+    box(scene, 0.03, 0.30, 0.22, wx + EX + 0.148 * Math.sign(extX), y - 0.14, wz, glowM);
+    // Roof cap
+    box(scene, 0.32, 0.05, 0.32, wx + EX, y + 0.08, wz, ironM);
+    // Pyramid finial top
+    const top = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.18, 4), ironM);
+    top.position.set(wx + EX, y + 0.20, wz); scene.add(top);
+    // Pendant drop finial
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 4), ironM);
+    fin.rotation.x = Math.PI; fin.position.set(wx + EX, y - 0.36, wz); scene.add(fin);
+    // Scroll curl decoration on bracket
+    const scroll = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.018, 5, 10, Math.PI), ironM);
+    scroll.rotation.z = extX > 0 ? -Math.PI / 2 : Math.PI / 2;
+    scroll.position.set(wx + EX * 0.7, y + 0.05, wz); scene.add(scroll);
+  }
+
+  // ── Museum visitor (colorful static pedestrian NPC) ─────────────────────────
+  function museumVisitor(scene, x, z, outfitColor, facingY) {
+    const outfitM = new THREE.MeshStandardMaterial({ color: outfitColor, roughness: 0.78, metalness: 0.0 });
+    const skinM   = new THREE.MeshStandardMaterial({ color: 0xd4a070, roughness: 0.72, metalness: 0.0 });
+    const hairM   = new THREE.MeshStandardMaterial({ color: 0x1a0c04, roughness: 0.88, metalness: 0.0 });
+    const shoeM   = new THREE.MeshStandardMaterial({ color: 0x0e0804, roughness: 0.75, metalness: 0.0 });
+    const g = new THREE.Group();
+    // Shoes
+    box(scene, 0.14, 0.09, 0.26, x - 0.09, 0.045, z, shoeM);
+    box(scene, 0.14, 0.09, 0.26, x + 0.09, 0.045, z, shoeM);
+    // Legs
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.82, 6), outfitM);
+    legs.position.set(x, 0.50, z); legs.castShadow = true; scene.add(legs);
+    // Torso
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.62, 7), outfitM);
+    torso.position.set(x, 1.12, z); torso.castShadow = true; scene.add(torso);
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), skinM);
+    head.position.set(x, 1.62, z); head.castShadow = true; scene.add(head);
+    // Hair dome
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.168, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.52), hairM);
+    hair.position.set(x, 1.63, z); scene.add(hair);
+    // Arms
+    [-0.23, 0.23].forEach((ox, i) => {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.52, 5), outfitM);
+      arm.position.set(x + ox, 1.12, z);
+      arm.rotation.z = ox > 0 ? 0.28 : -0.28;
+      arm.castShadow = true; scene.add(arm);
+    });
+    if (facingY !== undefined) {
+      // Rotate all parts around the visitor centre
+      [legs, torso, head, hair].forEach(m => m.rotation.y = facingY);
+    }
+  }
 
   function ceilingLamp(scene, x, z) {
     const glassM = new THREE.MeshStandardMaterial({
@@ -1382,6 +1451,28 @@ window.GameMap = (function () {
       sweepAngle: Math.PI / 3, facingZ: -1,
     });
 
+    // Wall lanterns — Lobby west wall (lanterns between paintings)
+    wallLantern(scene, -19.85, 3.2,  3.0,  1);
+    wallLantern(scene, -19.85, 3.2, 11.5,  1);
+    wallLantern(scene, -19.85, 3.2, 17.5,  1);
+    wallLantern(scene, -19.85, 3.2, 24.0,  1);
+    wallLantern(scene, -19.85, 3.2, 31.5,  1);
+    wallLantern(scene, -19.85, 3.2, 37.0,  1);
+    // Wall lanterns — Lobby east wall
+    wallLantern(scene,  19.85, 3.2,  2.5, -1);
+    wallLantern(scene,  19.85, 3.2,  7.0, -1);
+    wallLantern(scene,  19.85, 3.2, 13.5, -1);
+    wallLantern(scene,  19.85, 3.2, 19.0, -1);
+    wallLantern(scene,  19.85, 3.2, 25.5, -1);
+    wallLantern(scene,  19.85, 3.2, 32.0, -1);
+    wallLantern(scene,  19.85, 3.2, 38.0, -1);
+    // Museum visitors in lobby
+    museumVisitor(scene, -6,   8, 0x2244aa, Math.PI * 0.6);   // blue outfit, looking at painting
+    museumVisitor(scene,  7,  12, 0xaa2222, Math.PI * 1.4);   // red outfit
+    museumVisitor(scene,  4,  26, 0x228833, 0);                // green outfit near fountain
+    museumVisitor(scene, -8,  30, 0x996611, Math.PI * 0.8);   // brown outfit
+    museumVisitor(scene,  6,   6, 0x882288, Math.PI * 1.8);   // purple outfit
+    museumVisitor(scene, -5,  36, 0xcc6611, Math.PI * 0.3);   // orange outfit
     // Yellow keycard door at corridor entrance
     door(scene, 0, 39.75, 'yellow');
 
@@ -1825,6 +1916,9 @@ window.GameMap = (function () {
     wall(scene, -5, 47.5, WALL_T, 15);
     wall(scene,  5, 47.5, WALL_T, 15);
 
+    // Corridor 1 lanterns
+    wallLantern(scene, -4.85, 3.0, 44,  1);
+    wallLantern(scene, -4.85, 3.0, 51,  1);
     // Guard break table + chair against east wall
     box(scene, 2.0, 0.75, 1.3, 3.5, 0.375, 47.5, M.desk);
     box(scene, 0.65, 0.5,  0.65, 3.5, 0.25, 45.8, M.desk);    // seat
@@ -2048,6 +2142,26 @@ window.GameMap = (function () {
     cameraData.push({ x: -10, y: WALL_H - 0.3, z: 84, sweepAngle: Math.PI / 2.5, facingZ:  1 });
     cameraData.push({ x:  10, y: WALL_H - 0.3, z: 64, sweepAngle: Math.PI / 2.5, facingZ:  1 });
 
+    // Wall lanterns — Gallery west wall
+    wallLantern(scene, -24.85, 3.2, 62,  1);
+    wallLantern(scene, -24.85, 3.2, 68,  1);
+    wallLantern(scene, -24.85, 3.2, 79,  1);
+    wallLantern(scene, -24.85, 3.2, 89,  1);
+    wallLantern(scene, -24.85, 3.2, 97,  1);
+    // Wall lanterns — Gallery east wall
+    wallLantern(scene,  24.85, 3.2, 62, -1);
+    wallLantern(scene,  24.85, 3.2, 68, -1);
+    wallLantern(scene,  24.85, 3.2, 77, -1);
+    wallLantern(scene,  24.85, 3.2, 88, -1);
+    wallLantern(scene,  24.85, 3.2, 97, -1);
+    // Museum visitors in gallery
+    museumVisitor(scene,  -5, 72, 0xcc4444, Math.PI * 1.5);  // red, near display case
+    museumVisitor(scene,   3, 72, 0x4466cc, 0);               // blue
+    museumVisitor(scene, -16, 80, 0x44aa44, Math.PI * 0.4);  // green, near Mona Lisa
+    museumVisitor(scene,  -9, 85, 0xdd8811, Math.PI * 1.1);  // amber
+    museumVisitor(scene,  12, 62, 0x7722aa, Math.PI * 0.7);  // purple
+    museumVisitor(scene,   0, 94, 0xcc5533, Math.PI * 1.8);  // terracotta
+    museumVisitor(scene,  16, 90, 0x2288aa, Math.PI * 1.3);  // teal
     // Blue keycard door
     door(scene, 0, 99.75, 'blue');
 
@@ -2591,6 +2705,9 @@ window.GameMap = (function () {
     // Velvet carpet runner through corridor 2
     rug(scene, 0, 107.5, 3.5, 14, 0x0a1a4a, 0xc8a040);
 
+    // Corridor 2 lanterns
+    wallLantern(scene, -4.85, 3.0, 104,  1);
+    wallLantern(scene, -4.85, 3.0, 111,  1);
     // Shelving unit + boxes against west wall
     box(scene, 2.4, 2.6, 0.45, -4.65, 1.3, 107.5, M.desk);
     box(scene, 0.65, 0.3, 0.38, -4.65, 2.75, 108.2, M.terminal); // small crate on top
@@ -2890,6 +3007,26 @@ window.GameMap = (function () {
       scene.add(mural);
     }
 
+    // Wall lanterns — Crown Vault west wall
+    wallLantern(scene, -24.85, 3.2, 122,  1);
+    wallLantern(scene, -24.85, 3.2, 128,  1);
+    wallLantern(scene, -24.85, 3.2, 134,  1);
+    wallLantern(scene, -24.85, 3.2, 140,  1);
+    wallLantern(scene, -24.85, 3.2, 146,  1);
+    wallLantern(scene, -24.85, 3.2, 153,  1);
+    wallLantern(scene, -24.85, 3.2, 158,  1);
+    // Wall lanterns — Crown Vault east wall
+    wallLantern(scene,  24.85, 3.2, 122, -1);
+    wallLantern(scene,  24.85, 3.2, 128, -1);
+    wallLantern(scene,  24.85, 3.2, 134, -1);
+    wallLantern(scene,  24.85, 3.2, 140, -1);
+    wallLantern(scene,  24.85, 3.2, 146, -1);
+    wallLantern(scene,  24.85, 3.2, 153, -1);
+    wallLantern(scene,  24.85, 3.2, 158, -1);
+    // Vault visitors
+    museumVisitor(scene, -10, 130, 0xaa3322, Math.PI * 0.5);
+    museumVisitor(scene,  10, 145, 0x3355cc, Math.PI * 1.6);
+    museumVisitor(scene,  -5, 155, 0x228844, Math.PI * 0.2);
     // Crown Vault ceiling lamps above point lights
     [[-10, 125], [10, 125], [0, 140], [-10, 155], [10, 155]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
 
