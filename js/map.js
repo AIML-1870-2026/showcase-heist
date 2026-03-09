@@ -123,6 +123,63 @@ window.GameMap = (function () {
     return tex;
   }
 
+  // ── Crown Vault ceiling mural — dark gold arabesque pattern ─────────────────
+  function makeVaultMuralTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#090705';
+    ctx.fillRect(0, 0, S, S);
+    const gold = 'rgba(200,158,36,';
+    // Outer border frame
+    ctx.strokeStyle = gold + '0.72)'; ctx.lineWidth = 3.5;
+    ctx.strokeRect(14, 14, S - 28, S - 28);
+    ctx.strokeStyle = gold + '0.38)'; ctx.lineWidth = 1;
+    ctx.strokeRect(22, 22, S - 44, S - 44);
+    // Corner rosettes
+    [[22, 22], [S-22, 22], [22, S-22], [S-22, S-22]].forEach(([cx, cy]) => {
+      for (let r = 5; r <= 14; r += 5) {
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = gold + (r === 5 ? '0.70)' : '0.38)');
+        ctx.lineWidth = r === 5 ? 2 : 1; ctx.stroke();
+      }
+    });
+    // Central medallion rings
+    [[80, '0.55)'], [60, '0.42)'], [36, '0.58)'], [18, '0.48)']].forEach(([r, a]) => {
+      ctx.beginPath(); ctx.arc(S/2, S/2, r, 0, Math.PI * 2);
+      ctx.strokeStyle = gold + a; ctx.lineWidth = r > 50 ? 2 : 1.5; ctx.stroke();
+    });
+    // 8-pointed star
+    ctx.strokeStyle = gold + '0.48)'; ctx.lineWidth = 1.2;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      ctx.beginPath();
+      ctx.moveTo(S/2 + Math.cos(a)*18,               S/2 + Math.sin(a)*18);
+      ctx.lineTo(S/2 + Math.cos(a+Math.PI/8)*60,     S/2 + Math.sin(a+Math.PI/8)*60);
+      ctx.lineTo(S/2 + Math.cos(a+Math.PI/4)*18,     S/2 + Math.sin(a+Math.PI/4)*18);
+      ctx.stroke();
+    }
+    // Radial spokes
+    ctx.strokeStyle = gold + '0.22)'; ctx.lineWidth = 0.7;
+    for (let i = 0; i < 16; i++) {
+      const a = i * Math.PI / 8;
+      ctx.beginPath();
+      ctx.moveTo(S/2 + Math.cos(a)*80, S/2 + Math.sin(a)*80);
+      ctx.lineTo(S/2 + Math.cos(a)*S*0.68, S/2 + Math.sin(a)*S*0.68);
+      ctx.stroke();
+    }
+    // Diamond grid
+    ctx.strokeStyle = gold + '0.15)'; ctx.lineWidth = 0.5;
+    for (let i = -S; i < S*2; i += 72) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i+S, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i-S, S); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
   // ── Load real painting texture from URL (public domain, Wikimedia Commons) ──
   const _loader = new THREE.TextureLoader();
   function loadPaintingTex(url) {
@@ -403,8 +460,20 @@ window.GameMap = (function () {
     group.add(hole);
 
     scene.add(group);
+
+    // Floor glow ring — colour matches key type, pulsed by tickFloatItems
+    const _ringColor = key === 'yellow' ? 0xffe040 : key === 'blue' ? 0x44aaff : 0xff5544;
+    const _ringMat = new THREE.MeshBasicMaterial({
+      color: _ringColor, transparent: true, opacity: 0.32,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    const floorRing = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.58, 28), _ringMat);
+    floorRing.rotation.x = -Math.PI / 2;
+    floorRing.position.set(x, 0.015, z);
+    scene.add(floorRing);
+
     // tickFloatItems will drive group.position.y and group.rotation.y each frame
-    keycardPickups.push({ mesh: group, key, x, z, collected: false });
+    keycardPickups.push({ mesh: group, key, x, z, collected: false, floorRing });
   }
 
   // ── Flat rug on the floor ──────────────────────────────
@@ -651,6 +720,148 @@ window.GameMap = (function () {
     finial.position.set(x, 1.87, z);
     scene.add(finial);
     addWallAABB(x, z, 5.0, 5.0);
+  }
+
+  // ── Grand lobby chandelier ───────────────────────────────────────────────────
+  function lobbyChandelier(scene, x, z) {
+    const goldM   = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.18, metalness: 0.88 });
+    const darkM   = new THREE.MeshStandardMaterial({ color: 0xa07820, roughness: 0.28, metalness: 0.82 });
+    const crystalM = new THREE.MeshStandardMaterial({
+      color: 0xe8f0ff, roughness: 0.04, metalness: 0.05,
+      emissive: 0xb0c8ff, emissiveIntensity: 0.72,
+      transparent: true, opacity: 0.80,
+    });
+
+    const Y_TOP    = WALL_H;           // 6.0 — ceiling bottom
+    const Y_HUB    = Y_TOP  - 1.22;   // 4.78 — main assembly hub
+    const Y_R1     = Y_HUB  - 0.08;   // 4.70 — outer ring
+    const Y_R2     = Y_HUB  - 0.50;   // 4.28 — mid ring
+    const Y_R3     = Y_HUB  - 0.88;   // 3.90 — inner ring
+    const Y_FINIAL = Y_HUB  - 1.24;   // 3.54 — bottom finial
+
+    // Ceiling mount cap
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.13, 0.16, 10), goldM);
+    cap.position.set(x, Y_TOP - 0.08, z);
+    scene.add(cap);
+    // Central hanging rod
+    box(scene, 0.046, 1.10, 0.046, x, Y_TOP - 0.63, z, goldM);
+    // Hub sphere
+    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), goldM);
+    hub.position.set(x, Y_HUB, z);
+    scene.add(hub);
+
+    // ── Ring 1 — outer (r = 1.52) ──────────────────────────────
+    const R1 = 1.52;
+    const t1 = new THREE.Mesh(new THREE.TorusGeometry(R1, 0.038, 7, 40), goldM);
+    t1.rotation.x = Math.PI / 2; t1.position.set(x, Y_R1, z); scene.add(t1);
+    // 4 horizontal spokes from hub to ring
+    for (let s = 0; s < 4; s++) {
+      const a = s * Math.PI / 2 + Math.PI / 4;
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(R1, 0.015, 0.015), darkM);
+      spoke.position.set(x + Math.cos(a) * R1 / 2, Y_R1, z + Math.sin(a) * R1 / 2);
+      spoke.rotation.y = -a;
+      scene.add(spoke);
+    }
+    // 14 crystal drops
+    for (let c = 0; c < 14; c++) {
+      const a = (c / 14) * Math.PI * 2;
+      const cx = x + Math.cos(a) * R1, cz = z + Math.sin(a) * R1;
+      box(scene, 0.012, 0.21, 0.012, cx, Y_R1 - 0.105, cz, darkM);
+      const cr = new THREE.Mesh(new THREE.SphereGeometry(0.052, 6, 4), crystalM);
+      cr.position.set(cx, Y_R1 - 0.26, cz); scene.add(cr);
+    }
+
+    // ── Ring 2 — mid (r = 1.06) ──────────────────────────────
+    const R2 = 1.06;
+    const t2 = new THREE.Mesh(new THREE.TorusGeometry(R2, 0.030, 7, 30), goldM);
+    t2.rotation.x = Math.PI / 2; t2.position.set(x, Y_R2, z); scene.add(t2);
+    // 4 spokes
+    for (let s = 0; s < 4; s++) {
+      const a = s * Math.PI / 2;
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(R2, 0.013, 0.013), darkM);
+      spoke.position.set(x + Math.cos(a) * R2 / 2, Y_R2, z + Math.sin(a) * R2 / 2);
+      spoke.rotation.y = -a;
+      scene.add(spoke);
+    }
+    // 10 crystal drops
+    for (let c = 0; c < 10; c++) {
+      const a = (c / 10) * Math.PI * 2;
+      const cx = x + Math.cos(a) * R2, cz = z + Math.sin(a) * R2;
+      box(scene, 0.011, 0.17, 0.011, cx, Y_R2 - 0.085, cz, darkM);
+      const cr = new THREE.Mesh(new THREE.SphereGeometry(0.046, 6, 4), crystalM);
+      cr.position.set(cx, Y_R2 - 0.21, cz); scene.add(cr);
+    }
+
+    // ── Ring 3 — inner (r = 0.60) ──────────────────────────────
+    const R3 = 0.60;
+    const t3 = new THREE.Mesh(new THREE.TorusGeometry(R3, 0.024, 7, 22), goldM);
+    t3.rotation.x = Math.PI / 2; t3.position.set(x, Y_R3, z); scene.add(t3);
+    // 6 crystal drops
+    for (let c = 0; c < 6; c++) {
+      const a = (c / 6) * Math.PI * 2;
+      const cx = x + Math.cos(a) * R3, cz = z + Math.sin(a) * R3;
+      box(scene, 0.010, 0.13, 0.010, cx, Y_R3 - 0.065, cz, darkM);
+      const cr = new THREE.Mesh(new THREE.SphereGeometry(0.040, 6, 4), crystalM);
+      cr.position.set(cx, Y_R3 - 0.175, cz); scene.add(cr);
+    }
+
+    // ── Bottom finial ──────────────────────────────────────────
+    const fin = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), goldM);
+    fin.position.set(x, Y_FINIAL, z); scene.add(fin);
+    const finTip = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.07, 0.22, 6), goldM);
+    finTip.position.set(x, Y_FINIAL - 0.22, z); scene.add(finTip);
+    // Centre crystal cluster
+    for (let i = 0; i < 5; i++) {
+      const a = i * Math.PI * 2 / 5;
+      const cr = new THREE.Mesh(new THREE.SphereGeometry(0.044, 6, 4), crystalM);
+      cr.position.set(x + Math.cos(a) * 0.11, Y_FINIAL - 0.22, z + Math.sin(a) * 0.11);
+      scene.add(cr);
+    }
+    const centre = new THREE.Mesh(new THREE.SphereGeometry(0.065, 7, 5), crystalM);
+    centre.position.set(x, Y_FINIAL - 0.38, z); scene.add(centre);
+  }
+
+  // ── Gilded pillar (Crown Vault) — warm stone shaft + gold accents ───────────
+  function gildedPillar(scene, x, z) {
+    const shaftM  = new THREE.MeshStandardMaterial({ color: 0x786050, roughness: 0.70, metalness: 0.06 });
+    const goldM   = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.20, metalness: 0.88 });
+    const dkGoldM = new THREE.MeshStandardMaterial({ color: 0xa07820, roughness: 0.28, metalness: 0.82 });
+
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.55, WALL_H - 0.36, 8), shaftM);
+    shaft.position.set(x, (WALL_H - 0.36) / 2 + 0.18, z);
+    shaft.castShadow = shaft.receiveShadow = true;
+    scene.add(shaft);
+    addWallAABB(x, z, 1.5, 1.5);
+
+    // Gold base plinth + astragal band
+    box(scene, 1.55, 0.22, 1.55, x, 0.11, z, goldM);
+    box(scene, 1.35, 0.13, 1.35, x, 0.31, z, dkGoldM);
+
+    // Three gold torus rings up the shaft
+    [[0, 0], [0.6, 1], [-0.6, 1]].forEach(([offset, w]) => {
+      const y = (WALL_H - 0.36) / 2 + 0.18 + offset;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.52, w ? 0.026 : 0.042, 6, 16), w ? dkGoldM : goldM);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(x, y, z);
+      scene.add(ring);
+    });
+
+    // Gold capital flange + neck band
+    box(scene, 1.55, 0.22, 1.55, x, WALL_H - 0.11, z, goldM);
+    box(scene, 1.35, 0.13, 1.35, x, WALL_H - 0.31, z, dkGoldM);
+  }
+
+  // ── Velvet rope barrier around a display case ───────────────────────────────
+  function displayCaseRopes(scene, x, z) {
+    const R = 1.42;
+    stanchion(scene, x - R, z - R);
+    stanchion(scene, x + R, z - R);
+    stanchion(scene, x - R, z + R);
+    stanchion(scene, x + R, z + R);
+    velvetRope(scene, x - R, z - R, x + R, z - R);
+    velvetRope(scene, x - R, z + R, x + R, z + R);
+    velvetRope(scene, x - R, z - R, x - R, z + R);
+    velvetRope(scene, x + R, z - R, x + R, z + R);
   }
 
   // ── Painting spotlight: small ceiling track light + visible cone ────────────
@@ -902,6 +1113,7 @@ window.GameMap = (function () {
 
     // Lobby fountain — grand centerpiece
     lobbyFountain(scene, 0, 26);
+    lobbyChandelier(scene, 0, 26);
 
     // Ceiling lamps above existing point lights
     [[-8, 10], [8, 10], [-8, 30], [8, 30]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
@@ -1271,9 +1483,12 @@ window.GameMap = (function () {
     // Display cases
     displayCase(scene,  14, 70);
     displayCaseContents(scene,  14, 70, 'coins');
+    displayCaseRopes(scene,  14, 70);
     displayCase(scene, -14, 70);
     displayCaseContents(scene, -14, 70, 'ring');
+    displayCaseRopes(scene, -14, 70);
     displayCase(scene,   0, 88);
+    displayCaseRopes(scene,   0, 88);
 
     // Blue keycard in display case
     keycard(scene, 'blue', 14, 70);
@@ -1293,6 +1508,10 @@ window.GameMap = (function () {
     jadeFig.position.set(0, 1.45, 88);
     scene.add(jadeFig);
     stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine' });
+    { const jRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.52, 24),
+        new THREE.MeshBasicMaterial({ color: 0x44ff88, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+      jRing.rotation.x = -Math.PI / 2; jRing.position.set(0, 0.96, 88); scene.add(jRing);
+      jadeFig.userData.floorRing = jRing; }
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
@@ -1419,6 +1638,7 @@ window.GameMap = (function () {
     // Display case with coin cache
     displayCase(scene, 42, 77);
     displayCaseContents(scene, 42, 77, 'gems');
+    displayCaseRopes(scene, 42, 77);
     coinCache(scene, 42, 77, 4, 1.55);
 
     // Ceiling lamps
@@ -1549,6 +1769,10 @@ window.GameMap = (function () {
     paintingSpotlight(scene, -49.9, 3.5, 77, 'west');
     const monetMesh = box(scene, 0.05, 1.4, 2.1, -49.75, 3.5, 77, M.monet);
     stealables.push({ mesh: monetMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas' });
+    { const mRing = new THREE.Mesh(new THREE.RingGeometry(0.65, 1.05, 32),
+        new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+      mRing.rotation.x = -Math.PI / 2; mRing.position.set(-49.5, 0.02, 77); scene.add(mRing);
+      monetMesh.userData.floorRing = mRing; }
     placard(scene, -49.9, 2.6, 77, 'Les Nymphéas', 'Claude Monet, c. 1906', true);
 
     // Rug
@@ -1644,6 +1868,10 @@ window.GameMap = (function () {
     const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
     crownMesh.userData.float = true;
     stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false });
+    { const cRing = new THREE.Mesh(new THREE.RingGeometry(0.80, 1.28, 36),
+        new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false }));
+      cRing.rotation.x = -Math.PI / 2; cRing.position.set(0, 0.02, 140); scene.add(cRing);
+      crownMesh.userData.floorRing = cRing; }
 
     // Velvet rope barrier around the Crown pedestal
     stanchion(scene, -3.8, 136.5);
@@ -1671,6 +1899,10 @@ window.GameMap = (function () {
     scepter.position.set(-9, 1.5, 135);
     scene.add(scepter);
     stealables.push({ mesh: scepter, item: 'scepter', x: -9, z: 135, taken: false, bonus: true, label: 'Royal Scepter' });
+    { const sRing = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.60, 24),
+        new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
+      sRing.rotation.x = -Math.PI / 2; sRing.position.set(-9, 0.02, 135); scene.add(sRing);
+      scepter.userData.floorRing = sRing; }
 
     // Guard spawns — Crown Vault (4 guards)
     guardData.push({
@@ -1731,11 +1963,25 @@ window.GameMap = (function () {
     wallSconce(scene,  24.75, 2.9, 130, -1);
     wallSconce(scene,  24.75, 2.9, 155, -1);
 
-    // Crown Vault pillars (architectural grandeur)
+    // Crown Vault pillars — gilded (gold accents match obsidian floor)
     [-12, 12].forEach(px => {
-      pillar(scene, px, 127);
-      pillar(scene, px, 152);
+      gildedPillar(scene, px, 127);
+      gildedPillar(scene, px, 152);
     });
+
+    // Crown Vault ceiling mural — dark arabesque panels just below ceiling
+    {
+      const muralTex = makeVaultMuralTex();
+      muralTex.repeat.set(3.2, 2.8);
+      const muralMat = new THREE.MeshStandardMaterial({
+        map: muralTex, color: 0x1a1408,
+        emissive: 0xc89010, emissiveMap: muralTex, emissiveIntensity: 0.18,
+        roughness: 0.90, metalness: 0.0,
+      });
+      const mural = new THREE.Mesh(new THREE.BoxGeometry(49, 0.014, 44), muralMat);
+      mural.position.set(0, WALL_H - 0.022, 137.5);
+      scene.add(mural);
+    }
 
     // Crown Vault ceiling lamps above point lights
     [[-10, 125], [10, 125], [0, 140], [-10, 155], [10, 155]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));

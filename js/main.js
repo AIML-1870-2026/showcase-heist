@@ -431,7 +431,6 @@
     for (let i = 0; i < SPARK_COUNT; i++) {
       if (sparkLife[i] >= sparkMaxLife[i]) continue;
       sparkLife[i] += dt;
-      const t = sparkLife[i] / sparkMaxLife[i];
       sparkPos[i * 3]     += sparkVel[i * 3] * dt;
       sparkPos[i * 3 + 1] += (sparkVel[i * 3 + 1] - 9.8 * sparkLife[i]) * dt;
       sparkPos[i * 3 + 2] += sparkVel[i * 3 + 2] * dt;
@@ -578,10 +577,24 @@
         kc.mesh.position.y = 0.75 + Math.sin(floatT * 2 + kc.x) * 0.08;
         kc.mesh.rotation.y += dt * 1.2;
       }
+      if (kc.floorRing) {
+        kc.floorRing.visible = !kc.collected;
+        if (!kc.collected) {
+          kc.floorRing.material.opacity = 0.20 + Math.sin(floatT * 3.2 + kc.x) * 0.13;
+          const s = 0.93 + Math.sin(floatT * 2.4 + kc.z) * 0.07;
+          kc.floorRing.scale.set(s, 1, s);
+        }
+      }
     });
     G.stealables.forEach(st => {
       if (st.mesh && st.mesh.userData.floorRing) {
-        st.mesh.userData.floorRing.visible = !st.taken;
+        const ring = st.mesh.userData.floorRing;
+        ring.visible = !st.taken;
+        if (!st.taken) {
+          ring.material.opacity = 0.24 + Math.sin(floatT * 2.6 + st.z) * 0.14;
+          const s = 0.94 + Math.sin(floatT * 1.8 + st.x) * 0.06;
+          ring.scale.set(s, 1, s);
+        }
       }
       if (!st.taken && st.mesh) {
         st.mesh.position.y = 1.5 + Math.sin(floatT * 1.5 + st.z) * 0.1;
