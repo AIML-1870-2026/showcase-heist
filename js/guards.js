@@ -322,27 +322,34 @@ window.Guards = (function () {
     g.add(head);
 
     // ── Hair — alternating ponytail / bun based on index ──
-    const hairIdx = _gIdx % 2; // alternates 0/1 per guard
+    // Guard head: radius=0.25, centre=(0, 1.70, −0.02).
+    // Cap shell radius 0.265 at same centre; thetaLength PI*0.62 covers crown,
+    // sides and upper back — no bare-scalp gaps.
+    const GHY = 1.70, GHZ = -0.02, GCR = 0.265;
+    const hairIdx = _gIdx % 2;
     if (hairIdx === 0) {
-      // Ponytail style
-      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.060, 0.28, 6), matHair);
-      upper.position.set(0, 1.82, 0.22); upper.rotation.x = 0.38; g.add(upper);
-      const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.020, 0.26, 5), matHair);
-      lower.position.set(0, 1.58, 0.40); lower.rotation.x = 0.65; g.add(lower);
-      const band = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.014, 5, 10), matBand);
-      band.position.set(0, 1.70, 0.32); band.rotation.x = Math.PI / 2 + 0.40; g.add(band);
-      // Hair cap over head
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.258, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.48), matHair);
-      cap.position.set(0, 1.70, -0.02); g.add(cap);
+      // Ponytail — cap first, then root buried inside it so there's no seam.
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(GCR, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), matHair);
+      cap.position.set(0, GHY, GHZ); g.add(cap);
+      const root = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.070, 0.18, 8), matHair);
+      root.position.set(0, GHY + 0.06, GHZ + 0.22); root.rotation.x = 0.42; g.add(root);
+      const mid = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.050, 0.26, 7), matHair);
+      mid.position.set(0, GHY - 0.06, GHZ + 0.38); mid.rotation.x = 0.68; g.add(mid);
+      const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.014, 0.22, 6), matHair);
+      tip.position.set(0, GHY - 0.20, GHZ + 0.52); tip.rotation.x = 0.80; g.add(tip);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.015, 6, 10), matBand);
+      band.position.set(0, GHY + 0.00, GHZ + 0.27); band.rotation.x = Math.PI / 2 + 0.42; g.add(band);
     } else {
-      // Bun style — two buns on top
-      [-0.18, 0.18].forEach(xOff => {
-        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.088, 8, 6), matHair);
-        bun.position.set(xOff, 1.96, 0.0); bun.scale.set(1, 0.85, 1); g.add(bun);
+      // Space-bun style — slightly shorter cap so bun tops are visible.
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(GCR, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), matHair);
+      cap.position.set(0, GHY, GHZ); g.add(cap);
+      [-0.17, 0.17].forEach(x => {
+        // Stem bridges cap surface to bun — no floating gap.
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.056, 0.08, 7), matHair);
+        stem.position.set(x, GHY + 0.24, GHZ); g.add(stem);
+        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.092, 9, 7), matHair);
+        bun.position.set(x, GHY + 0.32, GHZ); bun.scale.set(1, 0.88, 1.05); g.add(bun);
       });
-      // Hair cap over head
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.258, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.48), matHair);
-      cap.position.set(0, 1.70, -0.02); g.add(cap);
     }
 
     // Blob shadow — flat dark disc on the floor
