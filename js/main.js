@@ -1471,6 +1471,12 @@
 
     $('btn-solo').onclick = () => showCustomize('solo');
     $('btn-coop').onclick = () => showCustomize('coop');
+    // How to Play manual
+    const _howBtn   = document.getElementById('btn-howtoplay');
+    const _howPanel = document.getElementById('howtoplay-overlay');
+    const _howClose = document.getElementById('btn-closemanual');
+    if (_howBtn   && _howPanel) _howBtn.onclick   = () => { _howPanel.style.display = 'block'; };
+    if (_howClose && _howPanel) _howClose.onclick  = () => { _howPanel.style.display = 'none';  };
     // After customization → go to loadout screen
     $('btn-start-heist').onclick = () => {
       applyCustomization();

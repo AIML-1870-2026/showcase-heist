@@ -779,11 +779,51 @@ window.Player = (function () {
         bun.position.set(x, 0.37, 0.04); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
+    } else if (hairStyle === 'longDown') {
+      // Multiple individual strands flowing down from scalp
+      // Strand positions: spread across the back/sides of the head
+      const strandDefs = [
+        // [xOff, yStart, zStart, xLean, zLean, length, topR, botR]
+        // Center back strands
+        [ 0.00,  0.08,  0.22,  0.00,  0.10, 0.72, 0.045, 0.018],
+        [ 0.04,  0.06,  0.23,  0.03,  0.09, 0.66, 0.040, 0.015],
+        [-0.04,  0.06,  0.23, -0.03,  0.09, 0.66, 0.040, 0.015],
+        // Side strands - right
+        [ 0.18,  0.00,  0.14,  0.12,  0.06, 0.58, 0.038, 0.013],
+        [ 0.24, -0.04,  0.06,  0.16,  0.03, 0.52, 0.035, 0.012],
+        [ 0.26, -0.08, -0.04,  0.18, -0.02, 0.48, 0.032, 0.011],
+        // Side strands - left
+        [-0.18,  0.00,  0.14, -0.12,  0.06, 0.58, 0.038, 0.013],
+        [-0.24, -0.04,  0.06, -0.16,  0.03, 0.52, 0.035, 0.012],
+        [-0.26, -0.08, -0.04, -0.18, -0.02, 0.48, 0.032, 0.011],
+        // Inner back fill strands
+        [ 0.09,  0.10,  0.20,  0.06,  0.11, 0.70, 0.036, 0.014],
+        [-0.09,  0.10,  0.20, -0.06,  0.11, 0.70, 0.036, 0.014],
+        [ 0.14,  0.05,  0.18,  0.09,  0.08, 0.62, 0.034, 0.013],
+        [-0.14,  0.05,  0.18, -0.09,  0.08, 0.62, 0.034, 0.013],
+      ];
+      strandDefs.forEach(([xOff, yStart, zStart, xLean, zLean, len, topR, botR]) => {
+        // Each strand is a tapered cylinder group positioned relative to head center
+        const strandG = new THREE.Group();
+        strandG.position.set(xOff, yStart, zStart);
+        // Lean angle: atan2 of (lean distance / length)
+        strandG.rotation.x = Math.atan2(zLean, len) + 0.18;
+        strandG.rotation.z = Math.atan2(xLean, len) * -1;
+        // Upper segment
+        const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(topR, topR * 0.85, len * 0.45, 5), matHair);
+        seg1.position.y = -len * 0.225;
+        strandG.add(seg1);
+        // Lower tapered segment
+        const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(topR * 0.85, botR, len * 0.55, 5), matHair);
+        seg2.position.y = -len * 0.45 - len * 0.275;
+        strandG.add(seg2);
+        head.add(strandG);
+      });
     }
 
     // ── Direction arrow — floor-level, rotates independently toward objective ──
     const arrowMat = new THREE.MeshStandardMaterial({
-      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.2,
+      color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.2,
       roughness: 0.3, metalness: 0.2, depthTest: false,
     });
     // Pivot at player feet — we rotate this pivot's Y independently of the player mesh

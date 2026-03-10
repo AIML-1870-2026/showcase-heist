@@ -69,13 +69,22 @@ window.Security = (function () {
 
   // ── Materials ──────────────────────────────────────────
   const MAT_CAMERA  = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  // Laser beam — additive blending makes beams glow without a real PointLight
-  const MAT_LASER_CORE = new THREE.MeshBasicMaterial({
+  // Red laser (low — jump over)
+  const MAT_LASER_CORE_RED = new THREE.MeshBasicMaterial({
     color: 0xff1800, transparent: true, opacity: 0.98,
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
-  const MAT_LASER_GLOW = new THREE.MeshBasicMaterial({
+  const MAT_LASER_GLOW_RED = new THREE.MeshBasicMaterial({
     color: 0xff0800, transparent: true, opacity: 0.18,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  // Blue laser (high — crouch under)
+  const MAT_LASER_CORE_BLUE = new THREE.MeshBasicMaterial({
+    color: 0x0088ff, transparent: true, opacity: 0.98,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const MAT_LASER_GLOW_BLUE = new THREE.MeshBasicMaterial({
+    color: 0x0044ff, transparent: true, opacity: 0.22,
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
   const MAT_FOV = new THREE.MeshLambertMaterial({
@@ -215,19 +224,24 @@ window.Security = (function () {
       const w   = Math.abs(data.x2 - data.x1);
       const cx  = (data.x1 + data.x2) / 2;
 
+      // Pick color by type: 'low' = red (jump over), 'high' = blue (crouch under)
+      const isHigh = (data.type === 'high');
+      const coreMat = isHigh ? MAT_LASER_CORE_BLUE : MAT_LASER_CORE_RED;
+      const glowMat = isHigh ? MAT_LASER_GLOW_BLUE : MAT_LASER_GLOW_RED;
+
       // Thin core beam
-      this.mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.025, 0.025), MAT_LASER_CORE);
+      this.mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.025, 0.025), coreMat);
       this.mesh.position.set(cx, data.y, data.z);
       scene.add(this.mesh);
 
       // Wider soft glow halo around the core
-      this._glowMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, 0.18), MAT_LASER_GLOW);
+      this._glowMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, 0.18), glowMat);
       this._glowMesh.position.set(cx, data.y, data.z);
       scene.add(this._glowMesh);
 
-      // Emitter boxes at each end — all red
-      const emitColor    = 0xff2200;
-      const emitEmissive = 0xff0800;
+      // Emitter boxes at each end — match beam color
+      const emitColor    = isHigh ? 0x0066dd : 0xff2200;
+      const emitEmissive = isHigh ? 0x0033ff : 0xff0800;
       const emitMat = new THREE.MeshStandardMaterial({ color: emitColor, emissive: emitEmissive, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.1 });
       const emitGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
       [data.x1, data.x2].forEach(ex => {
@@ -264,8 +278,8 @@ window.Security = (function () {
     checkPlayer(playerPos, playerState) {
       if (this.triggered) return false;
 
-      // Z proximity to the laser plane
-      if (Math.abs(playerPos.z - this.z) > 0.55) return false;
+      // Z proximity to the laser plane — reduced for less hair-trigger sensitivity
+      if (Math.abs(playerPos.z - this.z) > 0.32) return false;
 
       // X range
       const minX = Math.min(this.x1, this.x2);
@@ -273,11 +287,12 @@ window.Security = (function () {
       if (playerPos.x < minX || playerPos.x > maxX) return false;
 
       if (this.type === 'low') {
-        // Low laser (Y ≈ 0.5): safe if jumping high enough (Y > 1.5)
-        if (playerPos.y > 1.5) return false;
+        // Low red laser (Y ≈ 0.5): safe if feet are off the ground (jumping)
+        // playerPos.y is the feet position — anything > 0.45 means you've left the ground
+        if (playerPos.y > 0.45) return false;
       } else {
-        // High laser (Y ≈ 2.0): safe if sliding
-        if (playerState === 'sliding') return false;
+        // High blue laser (Y ≈ 2.0): safe if crouching or sliding
+        if (playerState === 'crouching' || playerState === 'sliding') return false;
       }
 
       return true;
@@ -340,6 +355,7 @@ window.Security = (function () {
         laser._glowMesh.visible    = false;
         triggerLaserAlarm();
         UI.showAlert('LASER TRIGGERED!', 3500);
+        UI.showLaserFlash(4000);
         UI.SFX.alarm();
       }
     }

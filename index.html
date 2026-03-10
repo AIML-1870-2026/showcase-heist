@@ -34,10 +34,68 @@
         <button id="btn-solo" class="btn btn-primary">Solo</button>
         <button id="btn-coop" class="btn btn-secondary">Co-op (AI Partner)</button>
         <button id="btn-continue" class="btn btn-ghost hidden">Continue</button>
+        <button id="btn-howtoplay" class="btn btn-ghost">How to Play</button>
       </div>
       <div class="controls-hint">
         <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Run (uses energy, loud!) &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
         <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; V — Aerial View &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── How to Play Modal ─────────────────────────────────── -->
+  <div id="howtoplay-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.88);overflow-y:auto;">
+    <div style="max-width:680px;margin:40px auto;padding:32px;background:#0e0e1a;border:1px solid #c9a84c;border-radius:8px;font-family:'Courier New',monospace;color:#e8d8a8;">
+      <div style="color:#c9a84c;font-size:1.2rem;font-weight:bold;letter-spacing:0.12em;margin-bottom:20px;text-align:center;">── OPERATIVE MANUAL ──</div>
+
+      <div style="color:#c9a84c;font-size:0.8rem;margin-bottom:8px;letter-spacing:0.08em;">MOVEMENT</div>
+      <table style="width:100%;font-size:0.82rem;color:#ccc;border-collapse:collapse;margin-bottom:18px;">
+        <tr><td style="padding:3px 0;color:#fff;width:160px;">WASD / Arrow Keys</td><td>Move your operative</td></tr>
+        <tr><td style="color:#fff;">Mouse</td><td>Rotate camera</td></tr>
+        <tr><td style="color:#fff;">Space</td><td>Jump (double-jump supported)</td></tr>
+        <tr><td style="color:#fff;">Shift</td><td>Crouch — silent movement, avoid high lasers</td></tr>
+        <tr><td style="color:#fff;">Ctrl</td><td>Slide — fast silent burst</td></tr>
+        <tr><td style="color:#fff;">R</td><td>Sprint — fast but loud, drains energy</td></tr>
+      </table>
+
+      <div style="color:#c9a84c;font-size:0.8rem;margin-bottom:8px;letter-spacing:0.08em;">ACTIONS</div>
+      <table style="width:100%;font-size:0.82rem;color:#ccc;border-collapse:collapse;margin-bottom:18px;">
+        <tr><td style="padding:3px 0;color:#fff;width:160px;">E</td><td>Interact — open doors, steal items, hack terminals</td></tr>
+        <tr><td style="color:#fff;">Q</td><td>Throw distraction coin — lures nearby guards</td></tr>
+        <tr><td style="color:#fff;">F</td><td>Deploy smoke bomb — blinds guards briefly</td></tr>
+        <tr><td style="color:#fff;">G</td><td>Non-lethal takedown — must be sneaking behind a guard</td></tr>
+        <tr><td style="color:#fff;">V (hold)</td><td>Aerial overview of the museum</td></tr>
+        <tr><td style="color:#fff;">Tab</td><td>AI Partner commands (Co-op mode)</td></tr>
+        <tr><td style="color:#fff;">Esc</td><td>Pause menu</td></tr>
+      </table>
+
+      <div style="color:#c9a84c;font-size:0.8rem;margin-bottom:8px;letter-spacing:0.08em;">LASERS</div>
+      <div style="font-size:0.82rem;color:#ccc;margin-bottom:18px;line-height:1.8;">
+        <div><span style="color:#ff4444;">■ Red lasers</span> — low beams. <strong style="color:#fff;">Jump over them</strong> (press Space).</div>
+        <div><span style="color:#4488ff;">■ Blue lasers</span> — high beams. <strong style="color:#fff;">Crouch under them</strong> (hold Shift).</div>
+        <div style="margin-top:6px;">Triggering a laser starts the escape countdown — get out fast!</div>
+      </div>
+
+      <div style="color:#c9a84c;font-size:0.8rem;margin-bottom:8px;letter-spacing:0.08em;">SECURITY</div>
+      <div style="font-size:0.82rem;color:#ccc;margin-bottom:18px;line-height:1.8;">
+        <div>Security cameras sweep set arcs. Crouch to avoid detection.</div>
+        <div>Guards patrol routes — distract, avoid, or take them down.</div>
+        <div>Hack terminals to loop cameras for 20 seconds.</div>
+        <div>Cut the breaker to half-blind guards for 30 seconds.</div>
+      </div>
+
+      <div style="color:#c9a84c;font-size:0.8rem;margin-bottom:8px;letter-spacing:0.08em;">OBJECTIVES</div>
+      <div style="font-size:0.82rem;color:#ccc;margin-bottom:24px;line-height:1.8;">
+        <div>1. Enter the Louvre through the front gate.</div>
+        <div>2. Find the Yellow Keycard and reach the Gallery.</div>
+        <div>3. Steal La Joconde from the west gallery wall.</div>
+        <div>4. Find the Blue Keycard and reach the Crown Vault.</div>
+        <div>5. Crack the safe and steal the Crown.</div>
+        <div>6. Escape via the service exit or front gate.</div>
+      </div>
+
+      <div style="text-align:center;">
+        <button id="btn-closemanual" style="background:#c9a84c;color:#0a0806;border:none;padding:10px 32px;font-family:'Courier New',monospace;font-size:0.9rem;font-weight:bold;letter-spacing:0.08em;cursor:pointer;border-radius:4px;">CLOSE MANUAL</button>
       </div>
     </div>
   </div>
@@ -133,6 +191,7 @@
               <button class="hair-btn active" data-style="ponytail">Ponytail</button>
               <button class="hair-btn" data-style="pigtails">Pigtails</button>
               <button class="hair-btn" data-style="spaceBuns">Space Buns</button>
+              <button class="hair-btn" data-style="longDown">Down (Strands)</button>
             </div>
           </div>
 
@@ -355,6 +414,9 @@
 
     <!-- Caught flash overlay -->
     <div id="caught-flash"></div>
+
+    <!-- Laser triggered flash overlay -->
+    <div id="laser-flash" style="display:none;position:fixed;inset:0;z-index:180;pointer-events:none;background:rgba(255,20,0,0.55);"></div>
 
     <!-- Achievement toast (slides in from bottom-right) -->
     <div id="achievement-toast" class="hidden">

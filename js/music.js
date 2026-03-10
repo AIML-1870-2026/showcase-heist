@@ -233,8 +233,8 @@ window.Music = (function () {
 
     const t = ctx.currentTime;
 
-    // ── Spy theme: fade in during stealth, out during alarm ──
-    const targetSpy = alarmActive ? 0.0 : alarmLevel >= 2 ? 0.0 : alarmLevel >= 1 ? 0.15 : 0.55;
+    // ── Spy theme: always audible, quieter during alarm ──
+    const targetSpy = alarmActive ? 0.20 : alarmLevel >= 2 ? 0.25 : alarmLevel >= 1 ? 0.35 : 0.55;
     spyGain.gain.setTargetAtTime(targetSpy, t, 0.9);
     _scheduleSpyNotes(t);
 

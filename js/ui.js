@@ -193,6 +193,26 @@ window.UI = (function () {
     promptEl.classList.add('hidden');
   }
 
+  // ── Laser alarm flash (red strobe) ─────────────────────
+  let _laserFlashInterval = null;
+  function showLaserFlash(duration) {
+    duration = duration || 4000;
+    const el = document.getElementById('laser-flash');
+    if (!el) return;
+    let strobeCount = 0;
+    const maxStrobes = Math.floor(duration / 300);
+    el.style.display = 'block';
+    clearInterval(_laserFlashInterval);
+    _laserFlashInterval = setInterval(() => {
+      strobeCount++;
+      el.style.opacity = (strobeCount % 2 === 0) ? '1' : '0';
+      if (strobeCount >= maxStrobes) {
+        clearInterval(_laserFlashInterval);
+        el.style.display = 'none';
+      }
+    }, 150);
+  }
+
   // ── Alert flash ────────────────────────────────────────
   let _alertTimeout = null;
 
@@ -584,6 +604,7 @@ window.UI = (function () {
     hidePrompt,
     showAlert,
     hideAlert,
+    showLaserFlash,
     updateCoopStatus,
     showCoopStatus,
     updateAlarmTimer,

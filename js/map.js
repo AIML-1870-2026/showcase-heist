@@ -2420,6 +2420,11 @@ window.GameMap = (function () {
     // Gallery ceiling lamps above point lights
     [[-10, 65], [10, 65], [0, 80], [-10, 95], [10, 95]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
 
+    // Gallery chandeliers
+    lobbyChandelier(scene,  0, 72);
+    lobbyChandelier(scene, -8, 88);
+    lobbyChandelier(scene,  8, 88);
+
     // Museum benches (center of gallery)
     galleryBench(scene, -6, 82, 0);
     galleryBench(scene,  6, 82, 0);
@@ -3381,6 +3386,11 @@ window.GameMap = (function () {
     wallLantern(scene,  24.85, 3.2, 158, -1);
     // Crown Vault ceiling lamps above point lights
     [[-10, 125], [10, 125], [0, 140], [-10, 155], [10, 155]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
+
+    // Crown Vault chandeliers
+    lobbyChandelier(scene,  0, 130);
+    lobbyChandelier(scene, -8, 145);
+    lobbyChandelier(scene,  8, 145);
 
     // Vault corner plants (smaller scale)
     [[-22, 118], [22, 118], [-22, 158], [22, 158]].forEach(([px, pz]) => plantPot(scene, px, pz, 0.9));
