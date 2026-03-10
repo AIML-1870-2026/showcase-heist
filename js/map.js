@@ -528,6 +528,7 @@ window.GameMap = (function () {
   const cameraData     = [];
   const guardData      = [];
   const vents          = [];
+  let skylightHatch    = null;
 
   // Pick a random patrol route from multiple options each run
   function _route(...sets) {
@@ -1624,24 +1625,70 @@ window.GameMap = (function () {
     doorGlow(scene, 0, 39.75, 0xf0c040);
 
     // ── FEATURE 2: Skylight in Lobby ceiling (rappel entry) ─────────────────
-    // The full ceiling is already added by roomWalls above. We add a glass skylight
-    // pane and metal frame visible from the rooftop (where rappel players spawn).
-    // The ceiling has no Y-axis collision, so players fall through it freely.
+    // Rappel players start on the rooftop and must pry open this hatch to drop in.
     {
-      const brokenGlassMat = new THREE.MeshStandardMaterial({
+      const HATCH_Y = WALL_H + FLOOR_T + 0.12;  // top surface of the closed hatch
+      const metalFrameMat = new THREE.MeshStandardMaterial({ color: 0x556070, roughness: 0.4, metalness: 0.7 });
+      const hatchBodyMat  = new THREE.MeshStandardMaterial({ color: 0x3a4a52, roughness: 0.55, metalness: 0.85 });
+      const hatchRimMat   = new THREE.MeshStandardMaterial({ color: 0x556070, roughness: 0.35, metalness: 0.90, emissive: 0x102030, emissiveIntensity: 0.2 });
+
+      // Glass pane under the hatch (visible from inside lobby once hatch is open)
+      const glassMat = new THREE.MeshStandardMaterial({
         color: 0x88ccff, roughness: 0.05, metalness: 0.1,
         transparent: true, opacity: 0.22,
         emissive: 0x4488cc, emissiveIntensity: 0.18,
         side: THREE.DoubleSide,
       });
-      const metalFrameMat = new THREE.MeshStandardMaterial({ color: 0x556070, roughness: 0.4, metalness: 0.7 });
-      // Glass pane sits just above the ceiling level — visible from rooftop
-      box(scene, 4.0, 0.06, 4.0, 0, WALL_H + FLOOR_T + 0.05, 20, brokenGlassMat);
-      // Metal frame around the skylight opening
-      box(scene, 4.4, 0.14, 0.14, 0, WALL_H + FLOOR_T + 0.07, 18.07, metalFrameMat); // south edge
-      box(scene, 4.4, 0.14, 0.14, 0, WALL_H + FLOOR_T + 0.07, 21.93, metalFrameMat); // north edge
-      box(scene, 0.14, 0.14, 4.4, -1.93, WALL_H + FLOOR_T + 0.07, 20, metalFrameMat); // west edge
-      box(scene, 0.14, 0.14, 4.4,  1.93, WALL_H + FLOOR_T + 0.07, 20, metalFrameMat); // east edge
+      box(scene, 4.0, 0.06, 4.0, 0, WALL_H + FLOOR_T + 0.03, 20, glassMat);
+
+      // Metal frame lips around the skylight hole (raised above rooftop surface)
+      box(scene, 4.6, 0.16, 0.16, 0, WALL_H + FLOOR_T + 0.08, 17.92, metalFrameMat); // south lip
+      box(scene, 4.6, 0.16, 0.16, 0, WALL_H + FLOOR_T + 0.08, 22.08, metalFrameMat); // north lip
+      box(scene, 0.16, 0.16, 4.6, -2.23, WALL_H + FLOOR_T + 0.08, 20, metalFrameMat); // west lip
+      box(scene, 0.16, 0.16, 4.6,  2.23, WALL_H + FLOOR_T + 0.08, 20, metalFrameMat); // east lip
+
+      // Hatch cover — solid panel the player stands on before opening
+      const hatchMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(4.2, 0.14, 4.2),
+        hatchBodyMat
+      );
+      hatchMesh.position.set(0, HATCH_Y, 20);
+      scene.add(hatchMesh);
+
+      // Hatch rim bevel
+      const rimMesh = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.06, 4.5), hatchRimMat);
+      rimMesh.position.set(0, HATCH_Y - 0.04, 20);
+      scene.add(rimMesh);
+
+      // Hatch handle — raised latch knob
+      const handleMat = new THREE.MeshStandardMaterial({ color: 0xd4aa30, roughness: 0.22, metalness: 0.95, emissive: 0x332200, emissiveIntensity: 0.3 });
+      box(scene, 0.55, 0.08, 0.18, 0, HATCH_Y + 0.11, 20.5, handleMat);   // latch bar
+      box(scene, 0.14, 0.22, 0.14, -0.20, HATCH_Y + 0.11, 20.5, handleMat); // left post
+      box(scene, 0.14, 0.22, 0.14,  0.20, HATCH_Y + 0.11, 20.5, handleMat); // right post
+
+      // Rooftop AC unit near the skylight (visual detail)
+      const acMat  = new THREE.MeshStandardMaterial({ color: 0x4a5060, roughness: 0.65, metalness: 0.6 });
+      const acVent = new THREE.MeshStandardMaterial({ color: 0x2a2e38, roughness: 0.8, metalness: 0.4 });
+      box(scene, 1.8, 0.9, 1.2,  3.5, HATCH_Y + 0.45, 18, acMat);      // AC body
+      box(scene, 1.75, 0.5, 0.08,  3.5, HATCH_Y + 0.50, 17.42, acVent); // front vent grille
+      box(scene, 0.1, 0.7, 1.1, 4.42, HATCH_Y + 0.45, 18, acMat);       // side panel
+
+      // Cable conduit running from AC toward south wall
+      box(scene, 0.12, 0.10, 2.5,  3.8, HATCH_Y + 0.06, 15.5, acMat);
+
+      skylightHatch = {
+        open:    false,
+        opening: false,
+        _animT:  0,
+        mesh:    hatchMesh,
+        rimMesh: rimMesh,
+        x:       0,
+        z:       20,
+        roofY:   HATCH_Y,  // Y at which rooftop floor clamp engages
+        origX:   0,
+        origY:   HATCH_Y,
+        origZ:   20,
+      };
     }
 
     // ── FEATURE 8: Service Exit (west Lobby wall at X=-20, Z=15) ────────────
@@ -3384,6 +3431,7 @@ window.GameMap = (function () {
       cameraData,
       guardData,
       vents,
+      skylightHatch,
     };
   }
 

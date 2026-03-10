@@ -898,6 +898,18 @@ window.Player = (function () {
       onGround = false;
     }
 
+    // Rooftop floor — blocks player from falling through until skylight hatch is opened
+    const _G = window.G;
+    if (_G && _G.loadout && _G.loadout.rappel && _G.skylightHatch && !_G.skylightHatch.open) {
+      const _roofY = _G.skylightHatch.roofY;
+      if (pos.y <= _roofY && vel.y <= 0) {
+        pos.y    = _roofY;
+        vel.y    = 0;
+        onGround = true;
+        jumpCount = 0;
+      }
+    }
+
     // Wall collision — capture position before resolve to detect impact
     const _preX = pos.x, _preZ = pos.z;
     resolveWalls();
@@ -1054,6 +1066,18 @@ window.Player = (function () {
       }
     }
 
+    // Check skylight hatch (rappel entry)
+    if (G.skylightHatch && !G.skylightHatch.open && !G.skylightHatch.opening && pos.y > 5) {
+      const _hx = G.skylightHatch.x - pos.x, _hz = G.skylightHatch.z - pos.z;
+      if (_hx * _hx + _hz * _hz < 3.5 * 3.5) {
+        G.skylightHatch.opening = true;
+        G.skylightHatch._animT  = 0;
+        UI.SFX.door();
+        UI.showAlert('Skylight pried open!', 2000);
+        return;
+      }
+    }
+
     // Check vent shafts
     for (const v of (G.vents || [])) {
       const _dx = v.entryX - pos.x, _dz = v.entryZ - pos.z;
@@ -1201,12 +1225,28 @@ window.Player = (function () {
         found = true; break;
       }
     }
+    if (!found && G.skylightHatch && !G.skylightHatch.open && !G.skylightHatch.opening && pos.y > 5) {
+      const _hx = G.skylightHatch.x - pos.x, _hz = G.skylightHatch.z - pos.z;
+      if (_hx * _hx + _hz * _hz < 3.5 * 3.5) {
+        UI.showPrompt('[E] Pry open skylight hatch');
+        found = true;
+      }
+    }
     if (!found) for (const v of (G.vents || [])) {
       const _dx = v.entryX - pos.x, _dz = v.entryZ - pos.z;
       const _ex = v.exitX  - pos.x, _ez = v.exitZ  - pos.z;
       if (_dx * _dx + _dz * _dz < 2.8 * 2.8 || _ex * _ex + _ez * _ez < 2.8 * 2.8) {
         UI.showPrompt(state === 'crouching' ? '[E] Crawl through vent' : '[Shift+E] Crouch to use vent');
         found = true; break;
+      }
+    }
+
+    // Skylight drop-in prompt — once hatch is open
+    if (!found && G.skylightHatch && G.skylightHatch.open && pos.y > 5) {
+      const _hx = G.skylightHatch.x - pos.x, _hz = G.skylightHatch.z - pos.z;
+      if (_hx * _hx + _hz * _hz < 2.5 * 2.5) {
+        UI.showPrompt('[Walk over] Drop through skylight');
+        found = true;
       }
     }
 

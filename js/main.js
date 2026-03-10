@@ -212,6 +212,7 @@
     window.G.coinPickups    = data.coinPickups;
     window.G.terminals      = data.terminals;
     window.G.vents          = data.vents || [];
+    window.G.skylightHatch  = data.skylightHatch || null;
     Guards.init(scene, data.guardData);
     Security.init(scene, data.laserData, data.cameraData);
   }
@@ -748,6 +749,29 @@
     }
   }
 
+  // ── Skylight hatch slide-open animation ────────────────
+  function tickSkylightHatch(dt) {
+    const G = window.G;
+    if (!G || !G.skylightHatch || !G.skylightHatch.opening) return;
+    const h = G.skylightHatch;
+    h._animT += dt;
+    const t = Math.min(h._animT / 0.8, 1.0);
+    // Ease-out: slide in +X direction and tilt up slightly
+    const ease = 1 - (1 - t) * (1 - t);
+    h.mesh.position.x = h.origX + ease * 5.5;
+    h.mesh.position.y = h.origY + ease * 0.6;
+    h.mesh.rotation.z = ease * 0.55;
+    if (h.rimMesh) {
+      h.rimMesh.position.x = h.origX + ease * 5.5;
+      h.rimMesh.position.y = (h.origY - 0.04) + ease * 0.6;
+      h.rimMesh.rotation.z = ease * 0.55;
+    }
+    if (t >= 1.0) {
+      h.opening = false;
+      h.open    = true;
+    }
+  }
+
   // ── Floating animation for pickups ─────────────────────
   let floatT = 0;
   function tickFloatItems(dt) {
@@ -850,9 +874,19 @@
 
     // Reset modules
     Player.reset();
-    // Rappel perk: spawn on rooftop so player drops through skylight
+    // Rappel perk: spawn on rooftop above the skylight hatch
     if (G.loadout.rappel) {
-      Player.setPosition(0, 8, 5);
+      const h = G.skylightHatch;
+      if (h) {
+        // Reset hatch to closed state
+        h.open    = false;
+        h.opening = false;
+        h._animT  = 0;
+        h.mesh.position.set(h.origX, h.origY, h.origZ);
+        h.mesh.visible = true;
+        if (h.rimMesh) { h.rimMesh.position.set(h.origX, h.origY - 0.04, h.origZ); h.rimMesh.visible = true; }
+      }
+      Player.setPosition(0, (h ? h.roofY + 1.2 : 8), 20);
     }
     Guards.resetAlarm();
     Security.resetAlarm();
@@ -1436,6 +1470,7 @@
       }
     }
     tickFloatItems(dt);
+    tickSkylightHatch(dt);
     tickDustAndSparks(dt);
     tickDustPuffs(dt);
     tickCoin(dt);
