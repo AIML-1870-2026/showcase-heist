@@ -2224,7 +2224,7 @@ window.GameMap = (function () {
     // Wall lanterns — Gallery east wall
     wallLantern(scene,  24.85, 3.2, 62, -1);
     wallLantern(scene,  24.85, 3.2, 68, -1);
-    wallLantern(scene,  24.85, 3.2, 77, -1);
+    wallLantern(scene,  24.85, 3.2, 80, -1);  // moved from 77 — Z=75.5→78.5 is Salon entrance gap
     wallLantern(scene,  24.85, 3.2, 88, -1);
     wallLantern(scene,  24.85, 3.2, 97, -1);
     // Museum visitors removed
@@ -2323,9 +2323,9 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 65, M.vangoghSunflowers, false);
     paintingSpotlight(scene,  24.9, 3.5, 65, 'east');
     placard(scene,  24.9, 2.6, 65, 'Sunflowers', 'Vincent van Gogh, 1888', false);
-    wallPainting(scene,  24.9, 3.5, 75, M.renoir, false);
-    paintingSpotlight(scene,  24.9, 3.5, 75, 'east');
-    placard(scene,  24.9, 2.6, 75, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    wallPainting(scene,  24.9, 3.5, 73, M.renoir, false);  // moved from 75 — frame at Z=75 clipped into Salon entrance gap (Z=75.5→78.5)
+    paintingSpotlight(scene,  24.9, 3.5, 73, 'east');
+    placard(scene,  24.9, 2.6, 73, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
     wallPainting(scene,  24.9, 3.5, 85, M.cezanne, false);
     paintingSpotlight(scene,  24.9, 3.5, 85, 'east');
     placard(scene,  24.9, 2.6, 85, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
