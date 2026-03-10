@@ -696,6 +696,14 @@ window.Player = (function () {
       group.add(eye);
     });
 
+    // ── Pupils ───────────────────────────────────────────
+    const matPupil = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1.0, metalness: 0.0 });
+    [-0.09, 0.09].forEach(xOff => {
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 5), matPupil);
+      pupil.position.set(xOff, 1.875, -0.304);
+      group.add(pupil);
+    });
+
     // ── Nose + smile ──────────────────────────────────────────────────
     const matFace = new THREE.MeshStandardMaterial({ color: 0x1a0a06, roughness: 0.95, metalness: 0.0 });
     // Nose — small oval bump below the goggles
@@ -987,9 +995,6 @@ window.Player = (function () {
       vel.x *= friction;
       vel.z *= friction;
     }
-
-    // Always face camera forward direction (no rotation on movement)
-    playerMesh.rotation.y = yaw + Math.PI;
 
     // Gravity
     vel.y += GRAVITY * dt;
