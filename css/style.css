@@ -876,9 +876,6 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
   animation: alarm-flash 0.6s ease infinite alternate;
 }
@@ -889,28 +886,35 @@ html, body {
 }
 
 #alarm-content {
+  position: absolute;
+  top: 18px;
+  right: 18px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-end;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 10px 14px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(224, 32, 32, 0.45);
 }
 
 #alarm-label {
-  font-size: 0.85rem;
+  font-size: 0.62rem;
   font-weight: bold;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   color: var(--red);
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(224, 32, 32, 0.8);
+  text-shadow: 0 0 8px rgba(224, 32, 32, 0.8);
 }
 
 #alarm-timer {
-  font-size: 4rem;
+  font-size: 2.2rem;
   font-weight: bold;
   font-family: var(--font-ui);
   color: #fff;
-  letter-spacing: 0.1em;
-  text-shadow: 0 0 30px rgba(224, 32, 32, 1), 0 0 60px rgba(224, 32, 32, 0.5);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 16px rgba(224, 32, 32, 1), 0 0 32px rgba(224, 32, 32, 0.5);
 }
 
 /* urgency when ≤ 10s — JS adds .urgent to #alarm-overlay */

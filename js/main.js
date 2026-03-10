@@ -397,10 +397,6 @@
   let _escapeElapsed = 0;
   const _CAM_END  = new THREE.Vector3(-18, 32, 174);
   const _LOOK_END = new THREE.Vector3(0, 10, 205);
-  // Sunrise sky colours — lerp from night to dawn
-  const _SKY_NIGHT   = new THREE.Color(0x0c1018);
-  const _SKY_SUNRISE = new THREE.Color(0xff8030);
-  const _FOG_SUNRISE = new THREE.Color(0xffb060);
 
   function tickEscapeCutscene(dt) {
     _escapeTimer += dt;
@@ -411,11 +407,6 @@
     const ease = t * t * (3 - 2 * t);
     camera.position.lerp(_CAM_END, ease * dt * 1.8 + dt * 0.3);
     camera.lookAt(_LOOK_END);
-
-    // Fade scene background to sunrise as the cutscene plays
-    const skyT = Math.min(1, _escapeTimer / 5.0);
-    scene.background = _SKY_NIGHT.clone().lerp(_SKY_SUNRISE, skyT);
-    if (scene.fog) scene.fog.color.copy(_SKY_NIGHT).lerp(_FOG_SUNRISE, skyT);
 
     // After 5 seconds trigger celebration overlay then win screen
     if (_escapeTimer >= 5.0 && G.phase === 'escaping') {

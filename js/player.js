@@ -703,7 +703,7 @@ window.Player = (function () {
     group.userData.rightLeg = legPivots[1];
 
     // ── Torso ─────────────────────────────────────────────
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.245, 0.72, 8), matSuit);
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.255, 0.245, 0.72, 8), matSuit);
     torso.position.y = 1.32; torso.castShadow = true;
     group.add(torso);
 
@@ -807,8 +807,8 @@ window.Player = (function () {
     group.add(coil);
 
     // ── Neck ─────────────────────────────────────────────
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.12, 7), matSuit);
-    neck.position.y = 1.69;
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.115, 0.18, 7), matSkin);
+    neck.position.y = 1.71;
     group.add(neck);
 
     // ── Head — large, low-poly skin-tone face ─────────────
