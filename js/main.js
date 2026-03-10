@@ -579,6 +579,7 @@
 
   function _setAerial(on) {
     _aerialActive = on;
+    if (window.G) window.G.aerialView = on;
     const btn = document.getElementById('btn-aerial');
     if (btn) btn.classList.toggle('active', on);
     // Hide/show ceiling slabs so aerial view shows the floor plan

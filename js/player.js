@@ -779,56 +779,6 @@ window.Player = (function () {
         bun.position.set(x, 0.37, 0.04); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
-    } else if (hairStyle === 'longDown') {
-      // Multiple individual strands flowing long down the back and sides
-      const strandDefs = [
-        // [xOff, yStart, zStart, xLean, zLean, length, topR, botR]
-        // Center back strands — longest, reach to mid-back
-        [ 0.00,  0.08,  0.22,  0.00,  0.08, 1.60, 0.048, 0.012],
-        [ 0.04,  0.07,  0.23,  0.03,  0.07, 1.52, 0.042, 0.010],
-        [-0.04,  0.07,  0.23, -0.03,  0.07, 1.52, 0.042, 0.010],
-        [ 0.00,  0.05,  0.24,  0.00,  0.06, 1.45, 0.038, 0.010],
-        // Inner back fill strands
-        [ 0.09,  0.10,  0.20,  0.06,  0.08, 1.48, 0.038, 0.010],
-        [-0.09,  0.10,  0.20, -0.06,  0.08, 1.48, 0.038, 0.010],
-        [ 0.14,  0.06,  0.18,  0.09,  0.07, 1.38, 0.036, 0.010],
-        [-0.14,  0.06,  0.18, -0.09,  0.07, 1.38, 0.036, 0.010],
-        // Side strands - right
-        [ 0.18,  0.01,  0.14,  0.10,  0.05, 1.28, 0.038, 0.010],
-        [ 0.22, -0.02,  0.09,  0.13,  0.03, 1.18, 0.035, 0.009],
-        [ 0.25, -0.06,  0.02,  0.15,  0.01, 1.10, 0.032, 0.009],
-        [ 0.26, -0.10, -0.06,  0.16, -0.02, 1.00, 0.029, 0.008],
-        // Side strands - left
-        [-0.18,  0.01,  0.14, -0.10,  0.05, 1.28, 0.038, 0.010],
-        [-0.22, -0.02,  0.09, -0.13,  0.03, 1.18, 0.035, 0.009],
-        [-0.25, -0.06,  0.02, -0.15,  0.01, 1.10, 0.032, 0.009],
-        [-0.26, -0.10, -0.06, -0.16, -0.02, 1.00, 0.029, 0.008],
-        // Front-side framing strands (hang beside the face)
-        [ 0.22, -0.05, -0.12,  0.10, -0.04, 0.90, 0.028, 0.008],
-        [-0.22, -0.05, -0.12, -0.10, -0.04, 0.90, 0.028, 0.008],
-        [ 0.20, -0.02, -0.18,  0.08, -0.06, 0.80, 0.024, 0.007],
-        [-0.20, -0.02, -0.18, -0.08, -0.06, 0.80, 0.024, 0.007],
-      ];
-      strandDefs.forEach(([xOff, yStart, zStart, xLean, zLean, len, topR, botR]) => {
-        const strandG = new THREE.Group();
-        // Project start position onto head surface so strand is always connected
-        const _sMag = Math.sqrt(xOff * xOff + yStart * yStart + zStart * zStart);
-        const _sR   = 0.292 / (_sMag > 0.001 ? _sMag : 1);
-        strandG.position.set(xOff * _sR, yStart * _sR, zStart * _sR);
-        strandG.rotation.x = Math.atan2(zLean, len) + 0.18;
-        strandG.rotation.z = Math.atan2(xLean, len) * -1;
-        // Three segments: upper, mid, tapered tip
-        const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(topR, topR * 0.88, len * 0.35, 5), matHair);
-        seg1.position.y = -len * 0.175;
-        strandG.add(seg1);
-        const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(topR * 0.88, topR * 0.60, len * 0.38, 5), matHair);
-        seg2.position.y = -len * 0.35 - len * 0.19;
-        strandG.add(seg2);
-        const seg3 = new THREE.Mesh(new THREE.CylinderGeometry(topR * 0.60, botR, len * 0.27, 5), matHair);
-        seg3.position.y = -len * 0.35 - len * 0.38 - len * 0.135;
-        strandG.add(seg3);
-        head.add(strandG);
-      });
     }
 
     // ── Direction arrow — floor-level, rotates independently toward objective ──
@@ -1112,6 +1062,12 @@ window.Player = (function () {
     const cy = pos.y + CAM_H_OFFSET + pitch * 3 + currentBob;
     const safe = _safeCameraPos(idealX, idealZ);
     _camTarget.set(safe.x, cy, safe.z);
+    // Skip camera update during aerial view — main.js tickAerialView owns the camera
+    if (window.G && window.G.aerialView) {
+      // Keep camPos in sync so the return-to-ground lerp starts from where we left off
+      camPos.copy(_camTarget);
+      return;
+    }
     camPos.lerp(_camTarget, lerpAlpha);
     camera.position.copy(camPos);
     camera.lookAt(pos.x, pos.y + 1.4, pos.z);
