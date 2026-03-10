@@ -717,7 +717,7 @@ window.Player = (function () {
 
     // Scalp dome — full-circle top cap; slightly larger than head
     const scalpDome = new THREE.Mesh(
-      new THREE.SphereGeometry(0.298, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.52),
+      new THREE.SphereGeometry(0.298, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.46),
       matHair
     );
     head.add(scalpDome);
@@ -778,8 +778,8 @@ window.Player = (function () {
         side.position.set(x, -0.12, 0.05);
         side.rotation.z = x > 0 ? -0.08 : 0.08; head.add(side);
       });
-      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.09, 0.08), matHair);
-      fringe.position.set(0, 0.07, -0.270); head.add(fringe);
+      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.08), matHair);
+      fringe.position.set(0, 0.14, -0.260); head.add(fringe);
       const tipBack = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.07, 0.12), matHair);
       tipBack.position.set(0, -0.60, 0.270); head.add(tipBack);
 
@@ -970,9 +970,6 @@ window.Player = (function () {
       vel.x = (sin * mz - cos * mx) * spd;
       vel.z = (cos * mz + sin * mx) * spd;
 
-      // Face movement direction
-      playerMesh.rotation.y = Math.atan2(vel.x, vel.z) + Math.PI;
-
       // Footstep SFX + noise
       footT -= dt;
       if (footT <= 0) {
@@ -990,6 +987,9 @@ window.Player = (function () {
       vel.x *= friction;
       vel.z *= friction;
     }
+
+    // Always face camera forward direction (no rotation on movement)
+    playerMesh.rotation.y = yaw + Math.PI;
 
     // Gravity
     vel.y += GRAVITY * dt;
