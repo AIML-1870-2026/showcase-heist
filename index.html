@@ -36,7 +36,7 @@
         <button id="btn-continue" class="btn btn-ghost hidden">Continue</button>
       </div>
       <div class="controls-hint">
-        <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Sprint (loud!) &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
+        <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Run (uses energy, loud!) &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
         <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; V — Aerial View &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
       </div>
     </div>
@@ -96,6 +96,26 @@
             <div id="skin-tone-preview" class="hair-color-preview"></div>
           </div>
 
+          <div class="customize-section">
+            <label class="customize-label">Hairstyle</label>
+            <div class="hair-style-row" id="hair-style-btns">
+              <button class="hair-btn active" data-style="ponytail">Ponytail</button>
+              <button class="hair-btn" data-style="pigtails">Pigtails</button>
+              <button class="hair-btn" data-style="spaceBuns">Space Buns</button>
+              <button class="hair-btn" data-style="downStraight">Down (Straight)</button>
+              <button class="hair-btn" data-style="downCurly">Down (Curly)</button>
+            </div>
+          </div>
+
+          <div class="customize-section">
+            <label class="customize-label">Hair Color</label>
+            <div class="hair-color-row">
+              <span class="hair-color-label">Black</span>
+              <input id="hair-color-slider" type="range" min="0" max="100" value="0" />
+              <span class="hair-color-label">White</span>
+            </div>
+            <div id="hair-color-preview" class="hair-color-preview"></div>
+          </div>
 
           <div class="menu-buttons" style="margin-top:16px;">
             <button id="btn-start-heist" class="btn btn-primary">Begin Heist</button>
@@ -252,9 +272,9 @@
       <span id="prompt-text">Interact</span>
     </div>
 
-    <!-- Bottom-left: Stamina bar -->
+    <!-- Bottom-left: Energy / run bar -->
     <div id="stamina-bar-wrap">
-      <span class="distract-label">Stamina</span>
+      <span class="distract-label">Energy [R]</span>
       <div id="stamina-bar"><div id="stamina-fill"></div></div>
     </div>
 
