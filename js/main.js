@@ -903,6 +903,7 @@
       Companion.disable();
     }
 
+    pickMissionVariant();
     UI.initObjectives();
     UI.showHUD();
     UI.showAlarm(false);
@@ -1123,59 +1124,100 @@
     camera.updateProjectionMatrix();
   }
 
-  // ── Nav arrow ──────────────────────────────────────────
-  let _navArrow = null;
-  let _navArrowT = 0;
+  // ── Mission variants — randomised each run ─────────────
+  const MISSION_VARIANTS = [
+    {
+      name: 'Classic Heist',
+      objectives: {
+        enter:    'Break into the Louvre',
+        yellow:   'Find the Yellow Keycard (lobby desk)',
+        gallery:  'Enter the Grande Galerie',
+        painting: 'Steal La Joconde (west wall)',
+        blue:     'Find the Blue Keycard (east gallery)',
+        vault:    'Enter the Crown Vault',
+        crown:    'Steal the Crown Jewel',
+        escape:   'Escape the Louvre',
+      },
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5  },
+        gallery: { x:  0,    z: 39.75 },
+        painting:{ x: -24.9, z: 92    },
+        blue:    { x:  14,   z: 70    },
+        vault:   { x:  0,    z: 99.75 },
+        crown:   { x:  0,    z: 140   },
+        escape:  { x:  0,    z: 163   },
+      },
+    },
+    {
+      name: 'East Wing Approach',
+      objectives: {
+        enter:    'Slip in through the lobby',
+        yellow:   'Locate Yellow Keycard (north lobby)',
+        gallery:  'Sneak into the Grande Galerie',
+        painting: 'Grab La Joconde (far west wall)',
+        blue:     'Locate Blue Keycard (Salon Antiquités)',
+        vault:    'Break into the Crown Vault',
+        crown:    'Take the Crown',
+        escape:   'Escape via service exit or front gate',
+      },
+      navTargets: {
+        yellow:  { x:  8,    z: 22    },
+        gallery: { x:  0,    z: 39.75 },
+        painting:{ x: -24.9, z: 92    },
+        blue:    { x:  37.5, z: 77    },
+        vault:   { x:  0,    z: 99.75 },
+        crown:   { x:  0,    z: 140   },
+        escape:  { x: -20,   z: 15    },
+      },
+    },
+    {
+      name: 'Night Raid',
+      objectives: {
+        enter:    'Infiltrate after hours',
+        yellow:   'Recover Yellow Keycard (west lobby)',
+        gallery:  'Move through the Grande Galerie',
+        painting: 'Swipe La Joconde',
+        blue:     'Find the Blue Keycard',
+        vault:    'Access the Crown Vault',
+        crown:    'Secure the Crown',
+        escape:   'Vanish into the night',
+      },
+      navTargets: {
+        yellow:  { x: -8,   z: 12    },
+        gallery: { x:  0,   z: 39.75 },
+        painting:{ x: -24.9,z: 92    },
+        blue:    { x:  14,  z: 70    },
+        vault:   { x:  0,   z: 99.75 },
+        crown:   { x:  0,   z: 140   },
+        escape:  { x:  0,   z: 163   },
+      },
+    },
+  ];
 
-  const NAV_TARGETS = {
-    yellow:  { x: 0,     z: 16.5  },
-    gallery: { x: 0,     z: 39.75 },
-    painting:{ x: -24.9, z: 92    },
-    blue:    { x: 14,    z: 70    },
-    vault:   { x: 0,     z: 99.75 },
-    crown:   { x: 0,     z: 140   },
-    escape:  { x: 0,     z: 163   },
-  };
+  let NAV_TARGETS = MISSION_VARIANTS[0].navTargets;
 
-  function buildNavArrow() {
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.0,
-      depthTest: false,
+  function pickMissionVariant() {
+    const v = MISSION_VARIANTS[Math.floor(Math.random() * MISSION_VARIANTS.length)];
+    NAV_TARGETS = v.navTargets;
+    // Update objective text in HUD
+    Object.entries(v.objectives).forEach(([id, text]) => {
+      const el = document.querySelector('[data-obj="' + id + '"]');
+      if (el) el.textContent = text;
     });
-    const group = new THREE.Group();
-    // Cone: ConeGeometry points in +Y; rotate -90° around X so it points in +Z
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 8), mat);
-    cone.rotation.x = -Math.PI / 2;
-    cone.position.z = 0.22;
-    group.add(cone);
-    // Short cylinder stem behind the cone tip
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.30, 6), mat);
-    stem.rotation.x = Math.PI / 2;
-    stem.position.z = -0.05;
-    group.add(stem);
-    group.visible = false;
-    group.renderOrder = 999;
-    group.traverse(o => { if (o.isMesh) o.renderOrder = 999; });
-    scene.add(group);
-    _navArrow = group;
+    // Show mission name briefly
+    UI.showAlert('Mission: ' + v.name, 3000);
   }
 
-  function tickNavArrow(playerPos, dt) {
-    if (!_navArrow) return;
-    _navArrowT += dt;
+  function tickNavArrow(playerPos) {
     const obj = UI.getCurrentObjective();
     const target = obj && NAV_TARGETS[obj];
-    if (!target) { _navArrow.visible = false; return; }
+    if (!target) { Player.setDirArrowVisible(false); return; }
     const dx = target.x - playerPos.x;
     const dz = target.z - playerPos.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
-    if (dist < 2) { _navArrow.visible = false; return; }
-    _navArrow.visible = true;
-    const bob = Math.sin(_navArrowT * 2.5) * 0.07;
-    // Offset 1.5 units toward the target so the arrow floats in front of the player
-    const nx = dx / dist, nz = dz / dist;
-    _navArrow.position.set(playerPos.x + nx * 1.5, 1.7 + bob, playerPos.z + nz * 1.5);
-    _navArrow.rotation.y = Math.atan2(dx, dz);
+    if (dist < 2) { Player.setDirArrowVisible(false); return; }
+    Player.setDirArrowVisible(true);
+    Player.setDirArrowAngle(Math.atan2(dx, dz));
   }
 
   // ── Main game loop ─────────────────────────────────────
@@ -1218,7 +1260,7 @@
 
     // World
     updateRoom(playerPos.z);
-    tickNavArrow(playerPos, dt);
+    tickNavArrow(playerPos);
     tickAlarmLight(dt);
 
     // Power breaker timer — runs after tickAlarmLight so it overrides alarm flicker
@@ -1291,7 +1333,6 @@
     buildMap();
     Player.init(scene, camera);
     Companion.init(scene);
-    buildNavArrow();
     Touch.init();
     UI.showScreen('start');
     const _initCp = getCheckpoint();

@@ -49,6 +49,9 @@ window.Player = (function () {
   let _noiseLevel = 0;   // 0..1, drives noise meter HUD
   let _prevVelSpd = 0;   // previous frame speed to detect wall impacts
 
+  // ── Direction arrow (floor-level, points toward objective) ─
+  let _dirArrowCone = null;
+
   // ── Safe-cracking minigame state ───────────────────────
   let _scActive    = false;
   let _scTumbler   = 0;
@@ -525,7 +528,7 @@ window.Player = (function () {
     group.add(packPocket);
 
     // ── Arms ─────────────────────────────────────────────
-    const armPivots = [-0.33, 0.33].map(xOff => {
+    const armPivots = [-0.29, 0.29].map(xOff => {
       const pivot = new THREE.Group();
       pivot.position.set(xOff, 1.60, 0);
 
@@ -614,16 +617,46 @@ window.Player = (function () {
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
 
-    // ── Direction arrow — floor-level in FRONT of character ──
+    // ── Ponytail (female) ──────────────────────────────
+    const matHair = new THREE.MeshStandardMaterial({ color: 0x120800, roughness: 0.96, metalness: 0.0 });
+    const matBand = new THREE.MeshStandardMaterial({ color: 0x330033, roughness: 0.8, metalness: 0.1 });
+    // Upper ponytail — comes out from under back of helmet
+    const ponytailUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.065, 0.30, 6), matHair);
+    ponytailUpper.position.set(0, 1.86, 0.26);
+    ponytailUpper.rotation.x = 0.42;
+    group.add(ponytailUpper);
+    // Lower ponytail — thinner, hangs further back
+    const ponytailLower = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.022, 0.28, 5), matHair);
+    ponytailLower.position.set(0, 1.62, 0.44);
+    ponytailLower.rotation.x = 0.68;
+    group.add(ponytailLower);
+    // Hair band
+    const hairBand = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.016, 5, 10), matBand);
+    hairBand.position.set(0, 1.74, 0.36);
+    hairBand.rotation.x = Math.PI / 2 + 0.42;
+    group.add(hairBand);
+
+    // ── Direction arrow — floor-level, rotates independently toward objective ──
     const arrowMat = new THREE.MeshStandardMaterial({
-      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.0,
+      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.2,
       roughness: 0.3, metalness: 0.2, depthTest: false,
     });
-    const arrowCone = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.34, 5), arrowMat);
-    arrowCone.rotation.x = -Math.PI / 2;   // tip points toward local -Z (character forward)
-    arrowCone.position.set(0, 0.10, -0.88); // floor level, in front
+    // Pivot at player feet — we rotate this pivot's Y independently of the player mesh
+    const arrowPivot = new THREE.Group();
+    arrowPivot.position.set(0, 0.12, 0);
+    const arrowCone = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.36, 5), arrowMat);
+    arrowCone.rotation.x = -Math.PI / 2;  // tip points in local -Z of pivot
+    arrowCone.position.set(0, 0, -0.90);
     arrowCone.renderOrder = 999;
-    group.add(arrowCone);
+    arrowPivot.add(arrowCone);
+    // Small stem behind the cone tip
+    const arrowStem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.28, 5), arrowMat);
+    arrowStem.rotation.x = Math.PI / 2;
+    arrowStem.position.set(0, 0, -0.56);
+    arrowStem.renderOrder = 999;
+    arrowPivot.add(arrowStem);
+    group.add(arrowPivot);
+    _dirArrowCone = arrowPivot;
 
     sc.add(group);
     return group;
@@ -1249,6 +1282,14 @@ window.Player = (function () {
     getPosition()    { return pos.clone(); },
     getPositionRef() { return pos; },
     getYaw()         { return yaw; },
+    setDirArrowAngle(worldAngle) {
+      if (!_dirArrowCone || !playerMesh) return;
+      // localY = worldAngle - playerMesh.rotation.y - PI
+      // because cone tip (after rotation.x=-PI/2) points in local -Z of pivot,
+      // and pivotLocalZ world-direction = pivotY + playerMeshY, with -PI/2 tip: worldAngle = pivotY + playerMeshY + PI
+      _dirArrowCone.rotation.y = worldAngle - playerMesh.rotation.y - Math.PI;
+    },
+    setDirArrowVisible(v) { if (_dirArrowCone) _dirArrowCone.visible = v; },
     getState()       { return state; },
     isCrouching()    { return state === 'crouching'; },
     isSliding()      { return state === 'sliding'; },
