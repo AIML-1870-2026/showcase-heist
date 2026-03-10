@@ -520,7 +520,7 @@
       lastNow = now;
       celT += dt2;
 
-      charMesh.rotation.y = Math.sin(celT * 1.5) * 0.35;
+      charMesh.rotation.y = Math.PI + Math.sin(celT * 1.5) * 0.35;
       paintMesh.position.y = 2.0 + Math.sin(celT * 2.0) * 0.12;
       paintMesh.rotation.z = Math.sin(celT * 1.3) * 0.12;
       crownBase.position.y = 2.3 + Math.cos(celT * 2.2) * 0.12;

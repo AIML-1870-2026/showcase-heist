@@ -2483,12 +2483,12 @@ window.GameMap = (function () {
     placard(scene,  24.9, 2.6, 90, 'Wedding at Cana', 'Paolo Veronese, 1563', false);
 
     // Paintings on gallery north-wall stubs (flanking blue door), facing south
-    wallPaintingNS(scene, -15, 3.5, 99.65, M.paintings[3], false);
-    paintingSpotlight(scene, -15, 3.5, 99.65, 'north');
-    placard(scene, -15, 2.6, 99.65, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
-    wallPaintingNS(scene,  15, 3.5, 99.65, M.paintings[0], false);
-    paintingSpotlight(scene,  15, 3.5, 99.65, 'north');
-    placard(scene,  15, 2.6, 99.65, 'Liberty Leading the People', 'Eugène Delacroix, 1830', false);
+    wallPaintingNS(scene, -15, 3.5, 99.90, M.paintings[3], false);
+    paintingSpotlight(scene, -15, 3.5, 99.90, 'north');
+    placard(scene, -15, 2.6, 99.90, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    wallPaintingNS(scene,  15, 3.5, 99.90, M.paintings[0], false);
+    paintingSpotlight(scene,  15, 3.5, 99.90, 'north');
+    placard(scene,  15, 2.6, 99.90, 'Liberty Leading the People', 'Eugène Delacroix, 1830', false);
 
     // Extra gallery paintings — west wall (between existing)
     // Z=64 was inside the breaker-room doorway gap (Z=62.5→65.5), moved to Z=67
@@ -2520,12 +2520,12 @@ window.GameMap = (function () {
     placard(scene,  24.9, 2.6, 95, 'Irises', 'Vincent van Gogh, 1889', false);
     // (Extra gallery south wall paintings removed — too close to entrance)
     // Extra gallery north wall
-    wallPaintingNS(scene, -8, 3.5, 99.65, M.renoir, false);
-    paintingSpotlight(scene, -8, 3.5, 99.65, 'north');
-    placard(scene, -8, 2.6, 99.65, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
-    wallPaintingNS(scene,  8, 3.5, 99.65, M.cezanne, false);
-    paintingSpotlight(scene,  8, 3.5, 99.65, 'north');
-    placard(scene,  8, 2.6, 99.65, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    wallPaintingNS(scene, -8, 3.5, 99.90, M.renoir, false);
+    paintingSpotlight(scene, -8, 3.5, 99.90, 'north');
+    placard(scene, -8, 2.6, 99.90, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    wallPaintingNS(scene,  8, 3.5, 99.90, M.cezanne, false);
+    paintingSpotlight(scene,  8, 3.5, 99.90, 'north');
+    placard(scene,  8, 2.6, 99.90, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
     // Extra gallery trees (center colonnade)
     lorTree(scene, -10, 75);
     lorTree(scene,  10, 75);
@@ -3251,12 +3251,12 @@ window.GameMap = (function () {
     placard(scene,  24.9, 2.6, 143, 'Wedding at Cana', 'Paolo Veronese, 1563', false);
 
     // Paintings on vault north wall stubs (facing south, visible from inside vault)
-    wallPaintingNS(scene, -12, 3.5, 159.65, M.paintings[1], false);
-    paintingSpotlight(scene, -12, 3.5, 159.65, 'north');
-    placard(scene, -12, 2.6, 159.65, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
-    wallPaintingNS(scene,  12, 3.5, 159.65, M.paintings[3], false);
-    paintingSpotlight(scene,  12, 3.5, 159.65, 'north');
-    placard(scene,  12, 2.6, 159.65, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    wallPaintingNS(scene, -12, 3.5, 159.90, M.paintings[1], false);
+    paintingSpotlight(scene, -12, 3.5, 159.90, 'north');
+    placard(scene, -12, 2.6, 159.90, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
+    wallPaintingNS(scene,  12, 3.5, 159.90, M.paintings[3], false);
+    paintingSpotlight(scene,  12, 3.5, 159.90, 'north');
+    placard(scene,  12, 2.6, 159.90, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
 
     // Extra vault paintings — west wall
     wallPainting(scene, -24.9, 3.5, 120, M.vangoghStarry, true);
@@ -3292,10 +3292,10 @@ window.GameMap = (function () {
     paintingSpotlight(scene,  15, 3.5, 115.10, 'south');
     placard(scene,  15, 2.6, 115.10, 'Impression, Sunrise', 'Claude Monet, 1872', true);
     // Vault north wall extra
-    wallPaintingNS(scene, -6, 3.5, 159.65, M.cezanne, false);
-    paintingSpotlight(scene, -6, 3.5, 159.65, 'north');
-    wallPaintingNS(scene,  6, 3.5, 159.65, M.renoir, false);
-    paintingSpotlight(scene,  6, 3.5, 159.65, 'north');
+    wallPaintingNS(scene, -6, 3.5, 159.90, M.cezanne, false);
+    paintingSpotlight(scene, -6, 3.5, 159.90, 'north');
+    wallPaintingNS(scene,  6, 3.5, 159.90, M.renoir, false);
+    paintingSpotlight(scene,  6, 3.5, 159.90, 'north');
     // Diamond cluster display case in vault entrance area
     {
       const diamondM = new THREE.MeshStandardMaterial({ color: 0xddf4ff, roughness: 0.0, metalness: 0.05, transparent: true, opacity: 0.82, emissive: 0x88ccff, emissiveIntensity: 0.45 });
