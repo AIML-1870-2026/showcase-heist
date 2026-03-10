@@ -1615,10 +1615,10 @@ window.GameMap = (function () {
     wallSconce(scene,  19.75, 2.9,  4, -1);
     wallSconce(scene,  19.75, 2.9, 28, -1);
 
-    // Extra lobby paintings — west wall
-    wallPainting(scene, -19.9, 3.5, 14, M.vangoghSunflowers, true);
-    paintingSpotlight(scene, -19.9, 3.5, 14, 'west');
-    placard(scene, -19.9, 2.6, 14, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    // Extra lobby paintings — west wall (Z=14 was inside the service exit gap Z=13.5→16.5, moved to Z=11)
+    wallPainting(scene, -19.9, 3.5, 11, M.vangoghSunflowers, true);
+    paintingSpotlight(scene, -19.9, 3.5, 11, 'west');
+    placard(scene, -19.9, 2.6, 11, 'Sunflowers', 'Vincent van Gogh, 1888', true);
     wallPainting(scene, -19.9, 3.5, 20, M.monetSunrise, true);
     paintingSpotlight(scene, -19.9, 3.5, 20, 'west');
     placard(scene, -19.9, 2.6, 20, 'Impression, Sunrise', 'Claude Monet, 1872', true);
@@ -1990,11 +1990,12 @@ window.GameMap = (function () {
     box(scene, 2.2, 1.5, 0.08, -4.6, 2.8, 49.5, M.terminal);
     box(scene, 1.9, 1.2, 0.05, -4.6, 2.8, 49.45,
       new THREE.MeshStandardMaterial({ color: 0x001a33, emissive: 0x000d1a, emissiveIntensity: 0.4 }));
-    // Corridor 1 paintings on north/south walls
-    wallPaintingNS(scene, 0, 3.5, 40.35, M.vangoghIrises, true);
-    paintingSpotlight(scene, 0, 3.5, 40.35, 'south');
-    wallPaintingNS(scene, 0, 3.5, 54.65, M.renoir, false);
-    paintingSpotlight(scene, 0, 3.5, 54.65, 'north');
+    // Corridor 1 paintings — south wall stub (west side, X=-3 avoids the center doorway gap)
+    // and west wall center (north face of corridor has no backing wall at X=0)
+    wallPaintingNS(scene, -3, 3.5, 40.35, M.vangoghIrises, true);
+    paintingSpotlight(scene, -3, 3.5, 40.35, 'south');
+    wallPainting(scene, -4.85, 3.5, 47.5, M.renoir, true);
+    paintingSpotlight(scene, -4.85, 3.5, 47.5, 'west');
     // Velvet carpet runner through corridor 1
     rug(scene, 0, 47.5, 3.5, 14, 0x6b1a1a, 0xc8a040);
 
@@ -2292,12 +2293,14 @@ window.GameMap = (function () {
     placard(scene,  15, 2.6, 99.65, 'Liberty Leading the People', 'Eugène Delacroix, 1830', false);
 
     // Extra gallery paintings — west wall (between existing)
-    wallPainting(scene, -24.9, 3.5, 64, M.vangoghStarry, true);
-    paintingSpotlight(scene, -24.9, 3.5, 64, 'west');
-    placard(scene, -24.9, 2.6, 64, 'The Starry Night', 'Vincent van Gogh, 1889', true);
-    wallPainting(scene, -24.9, 3.5, 76, M.vangoghIrises, true);
-    paintingSpotlight(scene, -24.9, 3.5, 76, 'west');
-    placard(scene, -24.9, 2.6, 76, 'Irises', 'Vincent van Gogh, 1889', true);
+    // Z=64 was inside the breaker-room doorway gap (Z=62.5→65.5), moved to Z=67
+    wallPainting(scene, -24.9, 3.5, 67, M.vangoghStarry, true);
+    paintingSpotlight(scene, -24.9, 3.5, 67, 'west');
+    placard(scene, -24.9, 2.6, 67, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    // Z=76 was inside the Galerie gap (Z=75.5→78.5), moved to Z=73
+    wallPainting(scene, -24.9, 3.5, 73, M.vangoghIrises, true);
+    paintingSpotlight(scene, -24.9, 3.5, 73, 'west');
+    placard(scene, -24.9, 2.6, 73, 'Irises', 'Vincent van Gogh, 1889', true);
     wallPainting(scene, -24.9, 3.5, 86, M.monetSunrise, true);
     paintingSpotlight(scene, -24.9, 3.5, 86, 'west');
     placard(scene, -24.9, 2.6, 86, 'Impression, Sunrise', 'Claude Monet, 1872', true);
