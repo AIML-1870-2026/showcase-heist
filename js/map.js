@@ -1532,13 +1532,7 @@ window.GameMap = (function () {
     wallLantern(scene,  19.85, 3.2, 25.5, -1);
     wallLantern(scene,  19.85, 3.2, 32.0, -1);
     wallLantern(scene,  19.85, 3.2, 38.0, -1);
-    // Museum visitors in lobby
-    museumVisitor(scene, -6,   8, 0x2244aa, Math.PI * 0.6);   // blue outfit, looking at painting
-    museumVisitor(scene,  7,  12, 0xaa2222, Math.PI * 1.4);   // red outfit
-    museumVisitor(scene,  4,  26, 0x228833, 0);                // green outfit near fountain
-    museumVisitor(scene, -8,  30, 0x996611, Math.PI * 0.8);   // brown outfit
-    museumVisitor(scene,  6,   6, 0x882288, Math.PI * 1.8);   // purple outfit
-    museumVisitor(scene, -5,  36, 0xcc6611, Math.PI * 0.3);   // orange outfit
+    // Museum visitors removed
     // Yellow keycard door at corridor entrance
     door(scene, 0, 39.75, 'yellow');
 
@@ -2220,14 +2214,7 @@ window.GameMap = (function () {
     wallLantern(scene,  24.85, 3.2, 77, -1);
     wallLantern(scene,  24.85, 3.2, 88, -1);
     wallLantern(scene,  24.85, 3.2, 97, -1);
-    // Museum visitors in gallery
-    museumVisitor(scene,  -5, 72, 0xcc4444, Math.PI * 1.5);  // red, near display case
-    museumVisitor(scene,   3, 72, 0x4466cc, 0);               // blue
-    museumVisitor(scene, -16, 80, 0x44aa44, Math.PI * 0.4);  // green, near Mona Lisa
-    museumVisitor(scene,  -9, 85, 0xdd8811, Math.PI * 1.1);  // amber
-    museumVisitor(scene,  12, 62, 0x7722aa, Math.PI * 0.7);  // purple
-    museumVisitor(scene,   0, 94, 0xcc5533, Math.PI * 1.8);  // terracotta
-    museumVisitor(scene,  16, 90, 0x2288aa, Math.PI * 1.3);  // teal
+    // Museum visitors removed
     // Blue keycard door
     door(scene, 0, 99.75, 'blue');
 

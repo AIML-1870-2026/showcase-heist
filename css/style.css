@@ -188,6 +188,103 @@ html, body {
   box-shadow: 0 0 9px rgba(201, 168, 76, 0.65);
 }
 
+/* ── Hairstyle buttons ──────────────────────────────── */
+.hair-style-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.hair-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.hair-btn:hover { border-color: #888; }
+
+.hair-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201,168,76,0.12);
+}
+
+/* ── Hair color slider ──────────────────────────────── */
+.hair-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.hair-color-label {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  color: #666;
+  letter-spacing: 0.08em;
+}
+
+#hair-color-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 140px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #0a0604, #3d1a08, #7a3c1a, #cb9b40, #e0d0c0);
+  outline: none;
+  cursor: pointer;
+}
+
+#skin-tone-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 140px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #3b1f0f, #7a4a2a, #c48050, #d4a07a, #f5d8c0);
+  outline: none;
+  cursor: pointer;
+}
+
+#skin-tone-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid #222;
+  cursor: pointer;
+}
+
+#hair-color-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid #222;
+  cursor: pointer;
+}
+
+.hair-color-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #444;
+  margin: 0 auto;
+  background: #0a0604;
+  transition: background 0.2s;
+}
+
 #codename-input {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid #444;

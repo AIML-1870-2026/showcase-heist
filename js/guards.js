@@ -26,16 +26,24 @@ window.Guards = (function () {
   let DETECT_TIME  = 1.5;
 
   const _DIFF = {
-    easy:   { BASE_SPEED: 2.8, VISION_RANGE: 7,  DETECT_TIME: 2.5 },
-    normal: { BASE_SPEED: 3.5, VISION_RANGE: 11, DETECT_TIME: 1.5 },
-    hard:   { BASE_SPEED: 4.8, VISION_RANGE: 14, DETECT_TIME: 0.8 },
+    easy:    { BASE_SPEED: 2.8, VISION_RANGE: 7,  DETECT_TIME: 2.5 },
+    normal:  { BASE_SPEED: 3.5, VISION_RANGE: 11, DETECT_TIME: 1.5 },
+    hard:    { BASE_SPEED: 4.8, VISION_RANGE: 14, DETECT_TIME: 0.8 },
+    noguard: { BASE_SPEED: 0,   VISION_RANGE: 0,  DETECT_TIME: 999 },
   };
 
+  let _noGuardMode = false;
+
   function setDifficulty(d) {
+    _noGuardMode = (d === 'noguard');
     const p = _DIFF[d] || _DIFF.normal;
     BASE_SPEED   = p.BASE_SPEED;
     VISION_RANGE = p.VISION_RANGE;
     DETECT_TIME  = p.DETECT_TIME;
+    // Hide all guard meshes in no-guard mode
+    guards.forEach(gr => {
+      if (gr.mesh) gr.mesh.visible = !_noGuardMode;
+    });
   }
 
   // ── Wall occlusion (2D slab test, XZ plane) ────────────
@@ -165,10 +173,14 @@ window.Guards = (function () {
     return mesh;
   }
 
-  // ── Guard body mesh ────────────────────────────────────
+  // ── Guard body mesh (female) ────────────────────────────
+  // Randomise hair + skin colours per guard for variety
+  const _GUARD_HAIR_COLORS = [0x1a0c04, 0x3d1a08, 0x0a0604, 0xcb9b40, 0x7a3c1a];
+  const _GUARD_SKIN_COLORS = [0xf5d8c0, 0xd4a07a, 0xc48050, 0x7a4a2a, 0x3b1f0f, 0xb07050];
+  let _guardHairIdx = 0;
+
   function buildGuardMesh(scene) {
     const g = new THREE.Group();
-    const matCap    = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.80, metalness: 0.10 });
     const matVest   = new THREE.MeshStandardMaterial({ color: 0x16181f, roughness: 0.78, metalness: 0.08 });
     const matStrap  = new THREE.MeshStandardMaterial({ color: 0x252530, roughness: 0.88, metalness: 0.08 });
     const matBoot   = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.50, metalness: 0.30 });
@@ -176,13 +188,17 @@ window.Guards = (function () {
     const matPatch  = new THREE.MeshStandardMaterial({ color: 0xdde0e8, roughness: 0.80, metalness: 0.0  });
     const matMetal  = new THREE.MeshStandardMaterial({ color: 0x556677, roughness: 0.45, metalness: 0.75 });
     const matBelt   = new THREE.MeshStandardMaterial({ color: 0x1e1e28, roughness: 0.70, metalness: 0.15 });
+    const _gIdx     = _guardHairIdx++;
+    const matHair   = new THREE.MeshStandardMaterial({ color: _GUARD_HAIR_COLORS[_gIdx % _GUARD_HAIR_COLORS.length], roughness: 0.92, metalness: 0.0 });
+    const matBand   = new THREE.MeshStandardMaterial({ color: 0x1a1a28, roughness: 0.80, metalness: 0.10 });
+    const matSkin   = new THREE.MeshStandardMaterial({ color: _GUARD_SKIN_COLORS[_gIdx % _GUARD_SKIN_COLORS.length], roughness: 0.88, metalness: 0.0 });
 
-    // ── Legs ───────────────────────────────────────────
-    const legPivots = [-0.14, 0.14].map(xOff => {
+    // ── Legs (slightly wider hips for feminine silhouette) ──
+    const legPivots = [-0.15, 0.15].map(xOff => {
       const pivot = new THREE.Group();
       pivot.position.set(xOff, 0.88, 0);
 
-      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.095, 0.50, 7), MAT_BODY);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.112, 0.098, 0.50, 7), MAT_BODY);
       thigh.position.y = -0.25; thigh.castShadow = true;
       pivot.add(thigh);
 
@@ -209,14 +225,14 @@ window.Guards = (function () {
     g.userData.leftLeg  = legPivots[0];
     g.userData.rightLeg = legPivots[1];
 
-    // ── Torso ──────────────────────────────────────────
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.22, 0.62, 8), MAT_BODY);
+    // ── Torso (narrower waist, feminine proportions) ────
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.62, 8), MAT_BODY);
     body.position.y = 1.15; body.castShadow = true;
     g.add(body);
     g.userData.bodyMesh = body;
 
     // Tactical vest (front plate)
-    const vest = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.52, 0.08), matVest);
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.52, 0.08), matVest);
     vest.position.set(0, 1.18, -0.23);
     g.add(vest);
     // Vest "LOUVRE SÉCURITÉ" name patch
@@ -224,16 +240,16 @@ window.Guards = (function () {
     namePatch.position.set(0, 1.15, -0.268);
     g.add(namePatch);
     // Vest top strap / collar
-    const vestTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.07, 0.07), matStrap);
+    const vestTop = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.07, 0.07), matStrap);
     vestTop.position.set(0, 1.46, -0.22);
     g.add(vestTop);
     // Vest horizontal straps
     [1.30, 1.10].forEach(y => {
-      const s = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.026, 0.09), matStrap);
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.026, 0.09), matStrap);
       s.position.set(0, y, -0.21);
       g.add(s);
     });
-    // Walkie-talkie on left shoulder (positive X = left in world after rotation)
+    // Walkie-talkie on left shoulder
     const radioBody = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.14, 0.05), matVest);
     radioBody.position.set(0.24, 1.40, -0.18);
     g.add(radioBody);
@@ -251,31 +267,31 @@ window.Guards = (function () {
       g.add(pouch);
     });
 
-    // ── Arms ───────────────────────────────────────────
-    const armPivots = [-0.32, 0.32].map(xOff => {
+    // ── Arms (slightly slimmer) ─────────────────────────
+    const armPivots = [-0.30, 0.30].map(xOff => {
       const pivot = new THREE.Group();
       pivot.position.set(xOff, 1.42, 0);
 
       // Shoulder armor pad
-      const shoulder = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.14), matVest);
+      const shoulder = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.11, 0.13), matVest);
       shoulder.position.set(0, -0.04, 0);
       pivot.add(shoulder);
 
-      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.084, 0.076, 0.36, 7), MAT_BODY);
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.070, 0.36, 7), MAT_BODY);
       upper.position.y = -0.20; upper.castShadow = true;
       pivot.add(upper);
 
-      // Elbow pad (box, not sphere)
-      const elbowPad = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.10), matVest);
+      // Elbow pad
+      const elbowPad = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.10, 0.10), matVest);
       elbowPad.position.set(0, -0.38, 0.01);
       pivot.add(elbowPad);
 
-      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.066, 0.32, 7), MAT_BODY);
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.058, 0.32, 7), MAT_BODY);
       fore.position.y = -0.55; fore.castShadow = true;
       pivot.add(fore);
 
       // Box glove
-      const glove = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.13), matGlove);
+      const glove = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.12), matGlove);
       glove.position.set(0, -0.73, -0.01);
       pivot.add(glove);
 
@@ -285,7 +301,7 @@ window.Guards = (function () {
     g.userData.leftArm  = armPivots[0];
     g.userData.rightArm = armPivots[1];
 
-    // Pistol in right hand (negative X arm pivot = right after +PI rotation)
+    // Pistol in right hand
     const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.10, 0.14), matMetal);
     gunBody.position.set(0, -0.73, -0.08);
     armPivots[1].add(gunBody);
@@ -295,36 +311,39 @@ window.Guards = (function () {
     armPivots[1].add(gunBarrel);
 
     // ── Neck ───────────────────────────────────────────
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.12, 7), MAT_HEAD);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.12, 7), matSkin);
     neck.position.y = 1.53;
     g.add(neck);
 
-    // ── Head — large low-poly skin face ────────────────
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 7, 5), MAT_HEAD);
+    // ── Head ────────────────────────────────────────────
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 7, 5), matSkin);
     head.position.set(0, 1.70, -0.02);
     head.castShadow = true;
     g.add(head);
 
-    // ── Tactical baseball cap ───────────────────────────
-    // Front panel (structured, boxy)
-    const capFront = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.22, 0.46), matCap);
-    capFront.position.set(0, 1.92, 0.01);
-    capFront.scale.set(1, 1, 0.85);
-    g.add(capFront);
-    // Dome on top
-    const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), matCap);
-    capDome.position.set(0, 1.96, 0.02);
-    capDome.scale.set(0.96, 0.68, 0.90);
-    capDome.castShadow = true;
-    g.add(capDome);
-    // Brim (extends forward only)
-    const capBrim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.03, 0.22), matCap);
-    capBrim.position.set(0, 1.82, -0.26);
-    g.add(capBrim);
-    // "LOUVRE" patch on front of cap
-    const capPatch = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.025), matPatch);
-    capPatch.position.set(0, 1.93, -0.24);
-    g.add(capPatch);
+    // ── Hair — alternating ponytail / bun based on index ──
+    const hairIdx = _gIdx % 2; // alternates 0/1 per guard
+    if (hairIdx === 0) {
+      // Ponytail style
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.060, 0.28, 6), matHair);
+      upper.position.set(0, 1.82, 0.22); upper.rotation.x = 0.38; g.add(upper);
+      const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.020, 0.26, 5), matHair);
+      lower.position.set(0, 1.58, 0.40); lower.rotation.x = 0.65; g.add(lower);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.014, 5, 10), matBand);
+      band.position.set(0, 1.70, 0.32); band.rotation.x = Math.PI / 2 + 0.40; g.add(band);
+      // Hair cap over head
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.258, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.48), matHair);
+      cap.position.set(0, 1.70, -0.02); g.add(cap);
+    } else {
+      // Bun style — two buns on top
+      [-0.18, 0.18].forEach(xOff => {
+        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.088, 8, 6), matHair);
+        bun.position.set(xOff, 1.96, 0.0); bun.scale.set(1, 0.85, 1); g.add(bun);
+      });
+      // Hair cap over head
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.258, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.48), matHair);
+      cap.position.set(0, 1.70, -0.02); g.add(cap);
+    }
 
     // Blob shadow — flat dark disc on the floor
     const blobShadow = new THREE.Mesh(
@@ -955,11 +974,13 @@ window.Guards = (function () {
   // ── Public API ─────────────────────────────────────────
   function init(scene, spawnData) {
     buildNavGrid();
+    _guardHairIdx = 0; // reset per run so colours are consistent
     guards = spawnData.map(d => new Guard(d, scene));
   }
 
   let _visionFrame = 0;
   function update(dt, playerPos, isCrouching) {
+    if (_noGuardMode) return; // exploration mode — no guards active
     // Stagger vision checks across 3 frames — only ~1/3 of guards check vision per frame.
     // Alerted guards always check (they're chasing) to keep catch logic responsive.
     _visionFrame = (_visionFrame + 1) % 3;

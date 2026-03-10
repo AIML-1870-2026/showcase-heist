@@ -944,13 +944,66 @@
     // ── Character preview (mini Three.js scene) ────────────
     let _prevRdr = null, _prevScene = null, _prevCam = null, _prevMesh = null, _prevRaf = null;
 
+    // Skin tone: slider 0-100 → hex color (deep to light)
+    function _skinSliderToHex(val) {
+      const stops = [
+        { v: 0,   r: 0x3b, g: 0x1f, b: 0x0f },
+        { v: 25,  r: 0x7a, g: 0x4a, b: 0x2a },
+        { v: 50,  r: 0xc4, g: 0x80, b: 0x50 },
+        { v: 75,  r: 0xd4, g: 0xa0, b: 0x7a },
+        { v: 100, r: 0xf5, g: 0xd8, b: 0xc0 },
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i], b = stops[i + 1];
+        if (val >= a.v && val <= b.v) {
+          const t = (val - a.v) / (b.v - a.v);
+          const r = Math.round(a.r + (b.r - a.r) * t);
+          const g = Math.round(a.g + (b.g - a.g) * t);
+          const bl = Math.round(a.b + (b.b - a.b) * t);
+          return (r << 16) | (g << 8) | bl;
+        }
+      }
+      return 0xc48050;
+    }
+
+    // Hair color: slider 0-100 → hex color
+    function _hairSliderToHex(val) {
+      // 0=black, 25=dark brown, 50=medium brown, 75=blonde, 100=white
+      const stops = [
+        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },
+        { v: 25,  r: 0x3d, g: 0x1a, b: 0x08 },
+        { v: 50,  r: 0x7a, g: 0x3c, b: 0x1a },
+        { v: 75,  r: 0xcb, g: 0x9b, b: 0x40 },
+        { v: 100, r: 0xe0, g: 0xd0, b: 0xc0 },
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i], b = stops[i + 1];
+        if (val >= a.v && val <= b.v) {
+          const t = (val - a.v) / (b.v - a.v);
+          const r = Math.round(a.r + (b.r - a.r) * t);
+          const g = Math.round(a.g + (b.g - a.g) * t);
+          const bl = Math.round(a.b + (b.b - a.b) * t);
+          return (r << 16) | (g << 8) | bl;
+        }
+      }
+      return 0x0a0604;
+    }
+
     function _previewColors() {
       const ss = document.querySelector('#suit-swatches .color-swatch.active');
       const es = document.querySelector('#eye-swatches .color-swatch.active');
+      const hs = document.querySelector('#hair-style-btns .hair-btn.active');
+      const hairSlider = document.getElementById('hair-color-slider');
+      const skinSlider = document.getElementById('skin-tone-slider');
+      const hairVal = hairSlider ? Number(hairSlider.value) : 0;
+      const skinVal = skinSlider ? Number(skinSlider.value) : 50;
       return {
-        suit:      ss && !ss.dataset.suitTheme ? Number(ss.dataset.color) : 0x1a1a2e,
-        eye:       es ? Number(es.dataset.color) : 0x88ccff,
-        suitTheme: ss ? (ss.dataset.suitTheme || null) : null,
+        suit:       ss && !ss.dataset.suitTheme ? Number(ss.dataset.color) : 0x1a1a2e,
+        eye:        es ? Number(es.dataset.color) : 0x88ccff,
+        suitTheme:  ss ? (ss.dataset.suitTheme || null) : null,
+        hairStyle:  hs ? hs.dataset.style : 'ponytail',
+        hairColor:  _hairSliderToHex(hairVal),
+        skinColor:  _skinSliderToHex(skinVal),
       };
     }
 
@@ -958,8 +1011,8 @@
       if (!_prevScene || !_prevMesh) return;
       const rot = _prevMesh.rotation.y;
       _prevScene.remove(_prevMesh);
-      const { suit, eye, suitTheme } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
       _prevMesh.rotation.y = rot;
       _prevScene.add(_prevMesh);
     }
@@ -982,8 +1035,8 @@
       _prevCam = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 50);
       _prevCam.position.set(0, 1.2, 4.0);
       _prevCam.lookAt(0, 1.0, 0);
-      const { suit, eye, suitTheme } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
       _prevScene.add(_prevMesh);
       (function loop() {
         _prevRaf = requestAnimationFrame(loop);
@@ -1009,11 +1062,17 @@
     function applyCustomization() {
       const suitSw = document.querySelector('#suit-swatches .color-swatch.active');
       const eyeSw  = document.querySelector('#eye-swatches .color-swatch.active');
+      const hairBtn  = document.querySelector('#hair-style-btns .hair-btn.active');
+      const hairSlider = document.getElementById('hair-color-slider');
+      const skinSlider = document.getElementById('skin-tone-slider');
       const name   = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
       window.G.playerCustom = {
         suitColor:  suitSw && !suitSw.dataset.suitTheme ? Number(suitSw.dataset.color) : 0x1a1a2e,
         suitTheme:  suitSw ? (suitSw.dataset.suitTheme || null) : null,
         eyeColor:   eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
+        hairStyle:  hairBtn ? hairBtn.dataset.style : 'ponytail',
+        hairColor:  _hairSliderToHex(hairSlider ? Number(hairSlider.value) : 0),
+        skinColor:  _skinSliderToHex(skinSlider ? Number(skinSlider.value) : 50),
         codename:   name,
       };
       const nameEl = $('codename-display');
@@ -1035,6 +1094,40 @@
         _previewUpdate();
       };
     });
+
+    document.querySelectorAll('#hair-style-btns .hair-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#hair-style-btns .hair-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _previewUpdate();
+      };
+    });
+
+    (function () {
+      const hairSlider  = document.getElementById('hair-color-slider');
+      const hairPreview = document.getElementById('hair-color-preview');
+      function updateHairPreview() {
+        const hex = _hairSliderToHex(Number(hairSlider.value));
+        const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff;
+        hairPreview.style.background = 'rgb(' + r + ',' + g + ',' + b + ')';
+        _previewUpdate();
+      }
+      if (hairSlider) hairSlider.addEventListener('input', updateHairPreview);
+      updateHairPreview();
+    }());
+
+    (function () {
+      const skinSlider  = document.getElementById('skin-tone-slider');
+      const skinPreview = document.getElementById('skin-tone-preview');
+      function updateSkinPreview() {
+        const hex = _skinSliderToHex(Number(skinSlider.value));
+        const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff;
+        skinPreview.style.background = 'rgb(' + r + ',' + g + ',' + b + ')';
+        _previewUpdate();
+      }
+      if (skinSlider) skinSlider.addEventListener('input', updateSkinPreview);
+      updateSkinPreview();
+    }());
 
     $('btn-solo').onclick = () => showCustomize('solo');
     $('btn-coop').onclick = () => showCustomize('coop');
@@ -1132,7 +1225,7 @@
         enter:    'Break into the Louvre',
         yellow:   'Find the Yellow Keycard (lobby desk)',
         gallery:  'Enter the Grande Galerie',
-        painting: 'Steal La Joconde (west wall)',
+        painting: 'Steal the Mona Lisa (west wall)',
         blue:     'Find the Blue Keycard (east gallery)',
         vault:    'Enter the Crown Vault',
         crown:    'Steal the Crown Jewel',
@@ -1154,7 +1247,7 @@
         enter:    'Slip in through the lobby',
         yellow:   'Locate Yellow Keycard (north lobby)',
         gallery:  'Sneak into the Grande Galerie',
-        painting: 'Grab La Joconde (far west wall)',
+        painting: 'Grab the Mona Lisa (far west wall)',
         blue:     'Locate Blue Keycard (Salon Antiquités)',
         vault:    'Break into the Crown Vault',
         crown:    'Take the Crown',
@@ -1176,7 +1269,7 @@
         enter:    'Infiltrate after hours',
         yellow:   'Recover Yellow Keycard (west lobby)',
         gallery:  'Move through the Grande Galerie',
-        painting: 'Swipe La Joconde',
+        painting: 'Swipe the Mona Lisa',
         blue:     'Find the Blue Keycard',
         vault:    'Access the Crown Vault',
         crown:    'Secure the Crown',
@@ -1190,6 +1283,72 @@
         vault:   { x:  0,   z: 99.75 },
         crown:   { x:  0,   z: 140   },
         escape:  { x:  0,   z: 163   },
+      },
+    },
+    {
+      name: 'West Vent Infiltration',
+      objectives: {
+        enter:    'Slip through the front entrance',
+        yellow:   'Reach the west vent grate (x=-14, lobby)',
+        gallery:  'Crawl through vent into the Grande Galerie',
+        painting: 'Steal the Mona Lisa (west wall)',
+        blue:     'Find the Blue Keycard (east gallery)',
+        vault:    'Break into the Crown Vault',
+        crown:    'Take the Crown Jewel',
+        escape:   'Escape out the front',
+      },
+      navTargets: {
+        yellow:  { x: -14,  z: 34    },
+        gallery: { x: -14,  z: 60    },
+        painting:{ x: -24.9,z: 92    },
+        blue:    { x:  14,  z: 70    },
+        vault:   { x:  0,   z: 99.75 },
+        crown:   { x:  0,   z: 140   },
+        escape:  { x:  0,   z: 163   },
+      },
+    },
+    {
+      name: 'East Vent Shortcut',
+      objectives: {
+        enter:    'Enter through the lobby',
+        yellow:   'Find Yellow Keycard (north lobby)',
+        gallery:  'Enter the Grande Galerie',
+        painting: 'Steal the Mona Lisa',
+        blue:     'Use the east vent to bypass the vault corridor',
+        vault:    'Drop into the Crown Vault',
+        crown:    'Grab the Crown',
+        escape:   'Escape via the front gate',
+      },
+      navTargets: {
+        yellow:  { x:  0,   z: 16.5  },
+        gallery: { x:  0,   z: 39.75 },
+        painting:{ x: -24.9,z: 92    },
+        blue:    { x:  14,  z: 96    },
+        vault:   { x:  14,  z: 118   },
+        crown:   { x:  0,   z: 140   },
+        escape:  { x:  0,   z: 163   },
+      },
+    },
+    {
+      name: 'Ghost Protocol',
+      objectives: {
+        enter:    'Access via the lobby trapdoor tunnel',
+        yellow:   'Crawl the west vent into the gallery',
+        gallery:  'Surface inside the Grande Galerie',
+        painting: 'Take the Mona Lisa',
+        blue:     'Slip through the east vent to the vault',
+        vault:    'Surface inside the Crown Vault',
+        crown:    'Secure the Crown Jewel',
+        escape:   'Drop into the tunnel and exit the Louvre',
+      },
+      navTargets: {
+        yellow:  { x: -14,  z: 34    },
+        gallery: { x: -14,  z: 60    },
+        painting:{ x: -24.9,z: 92    },
+        blue:    { x:  14,  z: 96    },
+        vault:   { x:  14,  z: 118   },
+        crown:   { x:  0,   z: 140   },
+        escape:  { x:  0,   z: 28    },
       },
     },
   ];

@@ -28,6 +28,7 @@
         <button class="diff-btn" data-diff="easy">Easy</button>
         <button class="diff-btn active" data-diff="normal">Normal</button>
         <button class="diff-btn" data-diff="hard">Hard</button>
+        <button class="diff-btn" data-diff="noguard">No Guards</button>
       </div>
       <div class="menu-buttons">
         <button id="btn-solo" class="btn btn-primary">Solo</button>
@@ -82,6 +83,37 @@
               <div class="color-swatch" data-color="0xff4444" style="background:#ff4444;" title="Blood Red"></div>
               <div class="color-swatch" data-color="0xffaa22" style="background:#ffaa22;" title="Amber"></div>
             </div>
+          </div>
+
+          <div class="customize-section">
+            <label class="customize-label">Skin Tone</label>
+            <div class="hair-color-row">
+              <span class="hair-color-label">Deep</span>
+              <input id="skin-tone-slider" type="range" min="0" max="100" value="50" />
+              <span class="hair-color-label">Light</span>
+            </div>
+            <div id="skin-tone-preview" class="hair-color-preview"></div>
+          </div>
+
+          <div class="customize-section">
+            <label class="customize-label">Hairstyle</label>
+            <div class="hair-style-row" id="hair-style-btns">
+              <button class="hair-btn active" data-style="ponytail">Ponytail</button>
+              <button class="hair-btn" data-style="pigtails">Pigtails</button>
+              <button class="hair-btn" data-style="spaceBuns">Space Buns</button>
+              <button class="hair-btn" data-style="downStraight">Down (Straight)</button>
+              <button class="hair-btn" data-style="downCurly">Down (Curly)</button>
+            </div>
+          </div>
+
+          <div class="customize-section">
+            <label class="customize-label">Hair Color</label>
+            <div class="hair-color-row">
+              <span class="hair-color-label">Black</span>
+              <input id="hair-color-slider" type="range" min="0" max="100" value="0" />
+              <span class="hair-color-label">White</span>
+            </div>
+            <div id="hair-color-preview" class="hair-color-preview"></div>
           </div>
 
           <div class="menu-buttons" style="margin-top:16px;">

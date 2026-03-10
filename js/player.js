@@ -427,13 +427,16 @@ window.Player = (function () {
     const suitHex   = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
     const eyeHex    = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
     const suitTheme = custom.suitTheme || null;
+    const hairStyle = custom.hairStyle || 'ponytail';
+    const hairHex   = custom.hairColor !== undefined ? custom.hairColor : 0x0a0604;
+    const skinHex   = custom.skinColor !== undefined ? custom.skinColor : 0xd4a07a;
 
     const matSuit = suitTheme
       ? new THREE.MeshStandardMaterial({ map: makeSuitTex(suitTheme), roughness: 0.78, metalness: 0.05 })
       : new THREE.MeshStandardMaterial({ color: suitHex, roughness: 0.82, metalness: 0.05 });
     const matVest   = new THREE.MeshStandardMaterial({ color: 0x141420, roughness: 0.80, metalness: 0.06 });
     const matHelmet = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.12 });
-    const matSkin   = new THREE.MeshStandardMaterial({ color: 0xd4a07a, roughness: 0.80, metalness: 0.0  });
+    const matSkin   = new THREE.MeshStandardMaterial({ color: skinHex,  roughness: 0.80, metalness: 0.0  });
     const matGogF   = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.45, metalness: 0.70 });
     const matGogL   = new THREE.MeshStandardMaterial({ color: eyeHex, emissive: eyeHex, emissiveIntensity: 0.9, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85 });
     const matStrap  = new THREE.MeshStandardMaterial({ color: 0x252535, roughness: 0.90, metalness: 0.10 });
@@ -617,24 +620,75 @@ window.Player = (function () {
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
 
-    // ── Ponytail (female) ──────────────────────────────
-    const matHair = new THREE.MeshStandardMaterial({ color: 0x120800, roughness: 0.96, metalness: 0.0 });
+    // ── Hair (style + color driven by customization) ───────
+    const matHair = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.92, metalness: 0.0 });
     const matBand = new THREE.MeshStandardMaterial({ color: 0x330033, roughness: 0.8, metalness: 0.1 });
-    // Upper ponytail — comes out from under back of helmet
-    const ponytailUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.065, 0.30, 6), matHair);
-    ponytailUpper.position.set(0, 1.86, 0.26);
-    ponytailUpper.rotation.x = 0.42;
-    group.add(ponytailUpper);
-    // Lower ponytail — thinner, hangs further back
-    const ponytailLower = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.022, 0.28, 5), matHair);
-    ponytailLower.position.set(0, 1.62, 0.44);
-    ponytailLower.rotation.x = 0.68;
-    group.add(ponytailLower);
-    // Hair band
-    const hairBand = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.016, 5, 10), matBand);
-    hairBand.position.set(0, 1.74, 0.36);
-    hairBand.rotation.x = Math.PI / 2 + 0.42;
-    group.add(hairBand);
+
+    if (hairStyle === 'ponytail') {
+      // Single ponytail from back of helmet
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.065, 0.30, 6), matHair);
+      upper.position.set(0, 1.86, 0.26); upper.rotation.x = 0.42; group.add(upper);
+      const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.022, 0.28, 5), matHair);
+      lower.position.set(0, 1.62, 0.44); lower.rotation.x = 0.68; group.add(lower);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.016, 5, 10), matBand);
+      band.position.set(0, 1.74, 0.36); band.rotation.x = Math.PI / 2 + 0.42; group.add(band);
+
+    } else if (hairStyle === 'pigtails') {
+      // Two symmetrical ponytails, one each side
+      [-0.24, 0.24].forEach(xOff => {
+        const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.052, 0.26, 6), matHair);
+        upper.position.set(xOff, 1.80, 0.18); upper.rotation.x = 0.3; upper.rotation.z = xOff > 0 ? -0.5 : 0.5; group.add(upper);
+        const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.018, 0.26, 5), matHair);
+        lower.position.set(xOff * 1.3, 1.58, 0.32); lower.rotation.x = 0.6; lower.rotation.z = xOff > 0 ? -0.4 : 0.4; group.add(lower);
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.050, 0.014, 5, 10), matBand);
+        band.position.set(xOff * 1.1, 1.70, 0.26); band.rotation.x = Math.PI / 2 + 0.35; group.add(band);
+      });
+
+    } else if (hairStyle === 'spaceBuns') {
+      // Two bun spheres on top-sides of helmet
+      [-0.22, 0.22].forEach(xOff => {
+        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), matHair);
+        bun.position.set(xOff, 2.18, 0.0); bun.scale.set(1, 0.88, 1); group.add(bun);
+        // Wraparound hair strand connecting bun to helmet
+        const strand = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.035, 0.18, 6), matHair);
+        strand.position.set(xOff * 0.85, 2.06, 0.0); strand.rotation.z = xOff > 0 ? -0.25 : 0.25; group.add(strand);
+      });
+
+    } else if (hairStyle === 'downStraight') {
+      // Side panels + back curtain of straight hair
+      // Back curtain
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.60, 0.06), matHair);
+      back.position.set(0, 1.62, 0.31); back.rotation.x = 0.18; group.add(back);
+      // Two side panels
+      [-0.28, 0.28].forEach(xOff => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.52, 0.08), matHair);
+        side.position.set(xOff, 1.66, 0.05); side.rotation.z = xOff > 0 ? -0.10 : 0.10; group.add(side);
+      });
+      // Top cap of hair over helmet
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.295, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.45), matHair);
+      cap.position.set(0, 2.06, 0.02); group.add(cap);
+
+    } else if (hairStyle === 'downCurly') {
+      // Curly hair: back curtain in wavy segments + side curls
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.55, 0.08), matHair);
+      back.position.set(0, 1.64, 0.30); back.rotation.x = 0.18; group.add(back);
+      // Curly tufts — staggered cylinders at bottom
+      [-0.16, 0, 0.16].forEach((xOff, i) => {
+        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.030, 5, 8, Math.PI * 1.4), matHair);
+        curl.position.set(xOff, 1.38 + i * 0.02, 0.36);
+        curl.rotation.x = Math.PI / 2 + 0.3; group.add(curl);
+      });
+      // Side curls
+      [-0.26, 0.26].forEach((xOff, i) => {
+        const side = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.038, 0.44, 6), matHair);
+        side.position.set(xOff, 1.66, 0.04); side.rotation.z = xOff > 0 ? -0.15 : 0.15; group.add(side);
+        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.028, 5, 8, Math.PI * 1.3), matHair);
+        curl.position.set(xOff * 1.1, 1.44, 0.08);
+        curl.rotation.x = Math.PI / 2 + 0.2; group.add(curl);
+      });
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.295, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.45), matHair);
+      cap.position.set(0, 2.06, 0.02); group.add(cap);
+    }
 
     // ── Direction arrow — floor-level, rotates independently toward objective ──
     const arrowMat = new THREE.MeshStandardMaterial({
@@ -1301,9 +1355,14 @@ window.Player = (function () {
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
     // Build a standalone mesh for the customize screen preview (not added to game scene)
-    buildPreviewMesh(suitColor, eyeColor, suitTheme) {
+    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor) {
       const prev = window.G && window.G.playerCustom;
-      if (window.G) window.G.playerCustom = { suitColor, eyeColor, suitTheme: suitTheme || null };
+      if (window.G) window.G.playerCustom = {
+        suitColor, eyeColor, suitTheme: suitTheme || null,
+        hairStyle: hairStyle || 'ponytail',
+        hairColor: hairColor !== undefined ? hairColor : 0x0a0604,
+        skinColor: skinColor !== undefined ? skinColor : 0xd4a07a,
+      };
       const g = buildMesh({ add() {} });
       if (window.G) window.G.playerCustom = prev;
       return g;
