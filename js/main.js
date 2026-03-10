@@ -999,12 +999,17 @@
     function _previewColors() {
       const ss = document.querySelector('#suit-swatches .color-swatch.active');
       const es = document.querySelector('#eye-swatches .color-swatch.active');
+      const hs = document.querySelector('#hair-style-btns .hair-btn.active');
+      const hairSlider = document.getElementById('hair-color-slider');
       const skinSlider = document.getElementById('skin-tone-slider');
+      const hairVal = hairSlider ? Number(hairSlider.value) : 0;
       const skinVal = skinSlider ? Number(skinSlider.value) : 50;
       return {
         suit:       ss && !ss.dataset.suitTheme ? Number(ss.dataset.color) : 0x1a1a2e,
         eye:        es ? Number(es.dataset.color) : 0x88ccff,
         suitTheme:  ss ? (ss.dataset.suitTheme || null) : null,
+        hairStyle:  hs ? hs.dataset.style : 'ponytail',
+        hairColor:  _hairSliderToHex(hairVal),
         skinColor:  _skinSliderToHex(skinVal),
       };
     }
@@ -1013,8 +1018,8 @@
       if (!_prevScene || !_prevMesh) return;
       const rot = _prevMesh.rotation.y;
       _prevScene.remove(_prevMesh);
-      const { suit, eye, suitTheme, skinColor } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, skinColor);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
       _prevMesh.rotation.y = rot;
       _prevScene.add(_prevMesh);
     }
@@ -1037,8 +1042,8 @@
       _prevCam = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 50);
       _prevCam.position.set(0, 1.2, 4.0);
       _prevCam.lookAt(0, 1.0, 0);
-      const { suit, eye, suitTheme, skinColor } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, skinColor);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
       _prevScene.add(_prevMesh);
       (function loop() {
         _prevRaf = requestAnimationFrame(loop);
@@ -1062,14 +1067,18 @@
     }
 
     function applyCustomization() {
-      const suitSw = document.querySelector('#suit-swatches .color-swatch.active');
-      const eyeSw  = document.querySelector('#eye-swatches .color-swatch.active');
+      const suitSw     = document.querySelector('#suit-swatches .color-swatch.active');
+      const eyeSw      = document.querySelector('#eye-swatches .color-swatch.active');
+      const hairBtn    = document.querySelector('#hair-style-btns .hair-btn.active');
+      const hairSlider = document.getElementById('hair-color-slider');
       const skinSlider = document.getElementById('skin-tone-slider');
-      const name   = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
+      const name       = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
       window.G.playerCustom = {
         suitColor:  suitSw && !suitSw.dataset.suitTheme ? Number(suitSw.dataset.color) : 0x1a1a2e,
         suitTheme:  suitSw ? (suitSw.dataset.suitTheme || null) : null,
         eyeColor:   eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
+        hairStyle:  hairBtn  ? hairBtn.dataset.style : 'ponytail',
+        hairColor:  _hairSliderToHex(hairSlider ? Number(hairSlider.value) : 0),
         skinColor:  _skinSliderToHex(skinSlider ? Number(skinSlider.value) : 50),
         codename:   name,
       };
@@ -1105,6 +1114,29 @@
       }
       if (skinSlider) skinSlider.addEventListener('input', updateSkinPreview);
       updateSkinPreview();
+    }());
+
+    // ── Hair style buttons ──────────────────────────────────
+    document.querySelectorAll('#hair-style-btns .hair-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#hair-style-btns .hair-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _previewUpdate();
+      };
+    });
+
+    // ── Hair color slider ───────────────────────────────────
+    (function () {
+      const hairSlider  = document.getElementById('hair-color-slider');
+      const hairPreview = document.getElementById('hair-color-preview');
+      function updateHairPreview() {
+        const hex = _hairSliderToHex(Number(hairSlider.value));
+        const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff;
+        hairPreview.style.background = 'rgb(' + r + ',' + g + ',' + b + ')';
+        _previewUpdate();
+      }
+      if (hairSlider) hairSlider.addEventListener('input', updateHairPreview);
+      if (hairSlider) updateHairPreview();
     }());
 
     // ── Intro cutscene / mission briefing ──────────────────

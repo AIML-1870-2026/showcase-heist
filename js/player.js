@@ -397,6 +397,62 @@ window.Player = (function () {
         ng.addColorStop(0, 'rgba(80,20,180,0)'); ng.addColorStop(0.5, 'rgba(90,30,210,0.16)'); ng.addColorStop(1, 'rgba(20,80,200,0)');
         ctx.fillStyle = ng; ctx.fillRect(0, 0, S, S);
       }
+    } else if (theme === 'rainbow') {
+      const grad = ctx.createLinearGradient(0, 0, S, S);
+      grad.addColorStop(0.00, '#ff0000');
+      grad.addColorStop(0.17, '#ff8800');
+      grad.addColorStop(0.33, '#ffff00');
+      grad.addColorStop(0.50, '#00ff44');
+      grad.addColorStop(0.67, '#0088ff');
+      grad.addColorStop(0.83, '#8800ff');
+      grad.addColorStop(1.00, '#ff0088');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+      // sparkle overlay
+      ctx.globalAlpha = 0.28;
+      for (let i = 0; i < 60; i++) {
+        ctx.beginPath(); ctx.arc(Math.random() * S, Math.random() * S, Math.random() * 2.2 + 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'white'; ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+    } else if (theme === 'sparkpink') {
+      const grad = ctx.createRadialGradient(S*0.5, S*0.45, 0, S/2, S/2, S*0.75);
+      grad.addColorStop(0.0, '#ff80cc'); grad.addColorStop(0.5, '#e8559a'); grad.addColorStop(1.0, '#c0306a');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+      for (let i = 0; i < 280; i++) {
+        const sx = Math.random() * S, sy = Math.random() * S;
+        const r  = Math.random() * 2.2 + 0.4;
+        const a  = 0.5 + Math.random() * 0.5;
+        ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fill();
+      }
+      for (let i = 0; i < 30; i++) {
+        const sx = Math.random() * S, sy = Math.random() * S;
+        ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 3.5 + 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,220,255,${0.6 + Math.random() * 0.4})`; ctx.fill();
+      }
+    } else if (theme === 'flower') {
+      ctx.fillStyle = '#1a0d2e'; ctx.fillRect(0, 0, S, S);
+      const flowerColors = ['#ff69b4','#ff99cc','#ffaadd','#cc44aa','#ff55bb','#ff88cc','#ffdd55','#ff6677'];
+      for (let i = 0; i < 18; i++) {
+        const fx = Math.random() * S, fy = Math.random() * S;
+        const fr = 8 + Math.random() * 10;
+        const petals = 5 + Math.floor(Math.random() * 3);
+        const col = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+        for (let p = 0; p < petals; p++) {
+          const angle = (p / petals) * Math.PI * 2;
+          const px = fx + Math.cos(angle) * fr, py = fy + Math.sin(angle) * fr;
+          ctx.beginPath(); ctx.ellipse(px, py, fr * 0.55, fr * 0.35, angle, 0, Math.PI * 2);
+          ctx.fillStyle = col; ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(fx, fy, fr * 0.38, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffee88'; ctx.fill();
+      }
+      ctx.globalAlpha = 0.22;
+      for (let i = 0; i < 40; i++) {
+        ctx.beginPath(); ctx.arc(Math.random()*S, Math.random()*S, Math.random()*1.5+0.3, 0, Math.PI*2);
+        ctx.fillStyle = 'white'; ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
     } else if (theme === 'snakeskin') {
       ctx.fillStyle = '#0d1a08'; ctx.fillRect(0, 0, S, S);
       const SW = 20, SH = 13;
@@ -963,7 +1019,8 @@ window.Player = (function () {
           UI.showAlert((st.item === 'painting' ? 'Painting' : 'Crown') + ' stolen! ALARM!', 3500);
           UI.completeObjective(st.item);
         }
-        if (window.Security) Security.triggerAlarmLevel(3);
+        // Alert guards but do NOT start countdown — only laser trips start the timer
+        if (window.Guards) Guards.triggerAlarmLevel(3);
         return;
       }
     }
@@ -1336,10 +1393,12 @@ window.Player = (function () {
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
     // Build a standalone mesh for the customize screen preview (not added to game scene)
-    buildPreviewMesh(suitColor, eyeColor, suitTheme, skinColor) {
+    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor) {
       const prev = window.G && window.G.playerCustom;
       if (window.G) window.G.playerCustom = {
         suitColor, eyeColor, suitTheme: suitTheme || null,
+        hairStyle: hairStyle || 'ponytail',
+        hairColor: hairColor !== undefined ? hairColor : 0x0a0604,
         skinColor: skinColor !== undefined ? skinColor : 0xd4a07a,
       };
       const g = buildMesh({ add() {} });
