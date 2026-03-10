@@ -970,6 +970,28 @@
     // Customization screen helpers
     let _pendingMode = 'solo';
 
+    // Hair color: slider 0-100 → hex color (black → white)
+    function _hairSliderToHex(val) {
+      const stops = [
+        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },
+        { v: 25,  r: 0x3d, g: 0x1a, b: 0x08 },
+        { v: 50,  r: 0x7a, g: 0x3c, b: 0x1a },
+        { v: 75,  r: 0xcb, g: 0x9b, b: 0x40 },
+        { v: 100, r: 0xe0, g: 0xd0, b: 0xc0 },
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i], b = stops[i + 1];
+        if (val >= a.v && val <= b.v) {
+          const t = (val - a.v) / (b.v - a.v);
+          const r = Math.round(a.r + (b.r - a.r) * t);
+          const g = Math.round(a.g + (b.g - a.g) * t);
+          const bl = Math.round(a.b + (b.b - a.b) * t);
+          return (r << 16) | (g << 8) | bl;
+        }
+      }
+      return 0x0a0604;
+    }
+
     // ── Character preview (mini Three.js scene) ────────────
     let _prevRdr = null, _prevScene = null, _prevCam = null, _prevMesh = null, _prevRaf = null;
 
