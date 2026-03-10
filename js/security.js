@@ -47,7 +47,7 @@ window.Security = (function () {
   const _SEC_DIFF = {
     easy:    { CAM_SPEED: 0.15, DETECT_TIME: 5.0, ALARM_DURATION: 999 },
     normal:  { CAM_SPEED: 0.45, DETECT_TIME: 1.5, ALARM_DURATION: 360 },
-    hard:    { CAM_SPEED: 0.72, DETECT_TIME: 0.8, ALARM_DURATION: 180 },
+    hard:    { CAM_SPEED: 0.58, DETECT_TIME: 1.1, ALARM_DURATION: 240 },
     noguard: { CAM_SPEED: 0.3,  DETECT_TIME: 999, ALARM_DURATION: 999 },
   };
 

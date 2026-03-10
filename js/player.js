@@ -811,7 +811,10 @@ window.Player = (function () {
       ];
       strandDefs.forEach(([xOff, yStart, zStart, xLean, zLean, len, topR, botR]) => {
         const strandG = new THREE.Group();
-        strandG.position.set(xOff, yStart, zStart);
+        // Project start position onto head surface so strand is always connected
+        const _sMag = Math.sqrt(xOff * xOff + yStart * yStart + zStart * zStart);
+        const _sR   = 0.292 / (_sMag > 0.001 ? _sMag : 1);
+        strandG.position.set(xOff * _sR, yStart * _sR, zStart * _sR);
         strandG.rotation.x = Math.atan2(zLean, len) + 0.18;
         strandG.rotation.z = Math.atan2(xLean, len) * -1;
         // Three segments: upper, mid, tapered tip

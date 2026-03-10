@@ -28,7 +28,7 @@ window.Guards = (function () {
   const _DIFF = {
     easy:    { BASE_SPEED: 0.8, VISION_RANGE: 3,  DETECT_TIME: 9.0 },
     normal:  { BASE_SPEED: 3.5, VISION_RANGE: 11, DETECT_TIME: 1.5 },
-    hard:    { BASE_SPEED: 4.8, VISION_RANGE: 14, DETECT_TIME: 0.8 },
+    hard:    { BASE_SPEED: 4.2, VISION_RANGE: 12, DETECT_TIME: 1.1 },
     noguard: { BASE_SPEED: 0,   VISION_RANGE: 0,  DETECT_TIME: 999 },
   };
 
