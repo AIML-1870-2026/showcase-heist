@@ -40,6 +40,7 @@ window.Player = (function () {
 
   let footT = 0;
   let bobT  = 0;   // head-bob accumulator
+  let _facingYaw = Math.PI; // smoothed facing yaw for mesh rotation
 
   // ── Stamina ────────────────────────────────────────────
   let _stamina         = 1.0;
@@ -978,6 +979,15 @@ window.Player = (function () {
       vel.x = (sin * mz - cos * mx) * spd;
       vel.z = (cos * mz + sin * mx) * spd;
 
+      // Face movement direction — smooth rotation toward velocity angle
+      const targetYaw = Math.atan2(vel.x, vel.z) + Math.PI;
+      let delta = targetYaw - _facingYaw;
+      // Wrap delta to [-π, π] for shortest-path rotation
+      while (delta >  Math.PI) delta -= Math.PI * 2;
+      while (delta < -Math.PI) delta += Math.PI * 2;
+      _facingYaw += delta * Math.min(1, dt * 14);
+      playerMesh.rotation.y = _facingYaw;
+
       // Footstep SFX + noise
       footT -= dt;
       if (footT <= 0) {
@@ -1448,6 +1458,7 @@ window.Player = (function () {
     jumpCount         = 0;
     yaw               = 0;
     pitch             = 0.25;
+    _facingYaw        = 0;
     _stamina          = 1.0;
     _staminaExhausted = false;
     _scActive         = false;
