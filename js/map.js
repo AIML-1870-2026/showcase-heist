@@ -122,6 +122,80 @@ window.GameMap = (function () {
     return tex;
   }
 
+  // ── Corridor 1 floor — warm herringbone parquet wood ─────────────────
+  function makeHerringboneTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const woodColors = ['#7a4e2a', '#8a5e32', '#6a3e1a', '#9a6e3a', '#704828'];
+    const bw = 24, bh = 48; // brick dimensions
+    for (let row = -2; row < S / bh + 2; row++) {
+      for (let col = -2; col < S / bw + 2; col++) {
+        const even = (row + col) % 2 === 0;
+        const wx = col * bw + (even ? 0 : bw / 2);
+        const wy = row * bh;
+        const base = woodColors[Math.abs(row * 7 + col * 3) % woodColors.length];
+        ctx.save();
+        ctx.translate(wx + bw / 2, wy + bh / 2);
+        ctx.rotate(even ? 0 : Math.PI / 2);
+        // Plank
+        ctx.fillStyle = base;
+        ctx.fillRect(-bh / 2, -bw / 2, bh, bw);
+        // Wood grain lines
+        ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+        ctx.lineWidth = 0.8;
+        for (let g = -bh / 2 + 6; g < bh / 2; g += 8) {
+          ctx.beginPath(); ctx.moveTo(g, -bw / 2); ctx.lineTo(g, bw / 2); ctx.stroke();
+        }
+        // Plank border
+        ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(-bh / 2 + 0.6, -bw / 2 + 0.6, bh - 1.2, bw - 1.2);
+        ctx.restore();
+      }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex._tileSize = 3;
+    return tex;
+  }
+
+  // ── Corridor 2 floor — dark slate hexagonal tiles ─────────────────────
+  function makeHexTileTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0a0a12';
+    ctx.fillRect(0, 0, S, S);
+    const r = 30, h = r * Math.sqrt(3);
+    const tileColors = ['#1a1030', '#20183a', '#181028', '#221840'];
+    for (let row = -1; row < S / h + 2; row++) {
+      for (let col = -1; col < S / (r * 3) + 2; col++) {
+        const cx = col * r * 3 + (row % 2) * r * 1.5;
+        const cy = row * h;
+        const fill = tileColors[(row * 5 + col * 3) % tileColors.length];
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+          i === 0 ? ctx.moveTo(cx + Math.cos(a) * (r - 2), cy + Math.sin(a) * (r - 2))
+                  : ctx.lineTo(cx + Math.cos(a) * (r - 2), cy + Math.sin(a) * (r - 2));
+        }
+        ctx.closePath();
+        ctx.fillStyle = fill; ctx.fill();
+        // Purple-ish grout line
+        ctx.strokeStyle = 'rgba(120,60,200,0.40)'; ctx.lineWidth = 2; ctx.stroke();
+        // Inner shimmer highlight
+        ctx.strokeStyle = 'rgba(180,140,255,0.15)'; ctx.lineWidth = 0.8; ctx.stroke();
+      }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex._tileSize = 4;
+    return tex;
+  }
+
   // ── Crown Vault floor — dark obsidian with gold veining ─────────────────────
   function makeVaultFloorTex() {
     const S = 512;
@@ -432,8 +506,10 @@ window.GameMap = (function () {
     scene.add(mesh);
   }
 
-  const _tileTex        = makeMarbleTex();
-  const _galleryFloorTex = makeGalleryFloorTex();
+  const _tileTex          = makeMarbleTex();
+  const _galleryFloorTex  = makeGalleryFloorTex();
+  const _herringboneTex   = makeHerringboneTex();
+  const _hexTileTex       = makeHexTileTex();
   const _ceilTex        = makeTileTex('#2a1a42', '#1a0e2e', 3);   // deep purple ceiling
   const _galleryCeilTex = makeTileTex('#0e1a38', '#080e22', 3);   // deep navy gallery ceiling
   const _vaultCeilTex   = makeTileTex('#0e1a0e', '#060e06', 3);   // deep emerald vault ceiling
@@ -447,8 +523,10 @@ window.GameMap = (function () {
 
   // ── Materials ──────────────────────────────────────────
   const M = {
-    floor:        new THREE.MeshStandardMaterial({ map: _tileTex,         roughness: 0.22, metalness: 0.04 }),
-    galleryFloor: new THREE.MeshStandardMaterial({ map: _galleryFloorTex, roughness: 0.20, metalness: 0.06 }),
+    floor:          new THREE.MeshStandardMaterial({ map: _tileTex,          roughness: 0.22, metalness: 0.04 }),
+    galleryFloor:   new THREE.MeshStandardMaterial({ map: _galleryFloorTex,  roughness: 0.20, metalness: 0.06 }),
+    corridorFloor1: new THREE.MeshStandardMaterial({ map: _herringboneTex,   roughness: 0.30, metalness: 0.02 }),
+    corridorFloor2: new THREE.MeshStandardMaterial({ map: _hexTileTex,       roughness: 0.18, metalness: 0.08 }),
     wall:         new THREE.MeshStandardMaterial({ color: 0x7a4a22, roughness: 0.88, metalness: 0.0  }),  // warm amber stone
     galleryWall:  new THREE.MeshStandardMaterial({ color: 0x1e1848, roughness: 0.88, metalness: 0.0  }),  // deep midnight blue
     vaultWall:    new THREE.MeshStandardMaterial({ color: 0x0c2a18, roughness: 0.88, metalness: 0.0  }),  // deep emerald
@@ -1983,7 +2061,7 @@ window.GameMap = (function () {
     //  CORRIDOR 1  cx=0  cz=47.5  10×15
     //  Guard checkpoint / break room
     // ════════════════════════════════
-    floor(scene, 0, 47.5, 10, 15);
+    floor(scene, 0, 47.5, 10, 15, M.corridorFloor1);
     ceiling(scene, 0, 47.5, 10, 15);
     wall(scene, -5, 47.5, WALL_T, 15, M.corridorWall);
     wall(scene,  5, 47.5, WALL_T, 15, M.corridorWall);
@@ -2031,6 +2109,61 @@ window.GameMap = (function () {
         new THREE.MeshBasicMaterial({ color: 0xddaa44, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
       wRing.rotation.x = -Math.PI / 2; wRing.position.set(-3, 0.02, 47); scene.add(wRing);
       pwatch.userData.floorRing = wRing; }
+
+    // Corridor 1 — water cooler against west wall
+    {
+      const coolerBodyMat = new THREE.MeshStandardMaterial({ color: 0xd8dde0, roughness: 0.40, metalness: 0.22 });
+      const coolerBlueMat = new THREE.MeshStandardMaterial({ color: 0x3a7ecf, roughness: 0.22, metalness: 0.08, transparent: true, opacity: 0.72 });
+      // Main cabinet
+      box(scene, 0.52, 1.05, 0.46, -3.6, 0.525, 52.5, coolerBodyMat);
+      // Water jug on top (semi-transparent blue)
+      const jugMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.38, 10), coolerBlueMat);
+      jugMesh.position.set(-3.6, 1.24, 52.5); scene.add(jugMesh);
+      // Drip tray
+      box(scene, 0.38, 0.04, 0.18, -3.6, 1.04, 52.5, _moldMat);
+      // Dispenser buttons (tiny)
+      box(scene, 0.08, 0.06, 0.04, -3.73, 0.82, 52.4,
+        new THREE.MeshStandardMaterial({ color: 0xe03030, roughness: 0.3, metalness: 0.4 }));  // hot
+      box(scene, 0.08, 0.06, 0.04, -3.73, 0.72, 52.4,
+        new THREE.MeshStandardMaterial({ color: 0x3060e0, roughness: 0.3, metalness: 0.4 }));  // cold
+    }
+
+    // Corridor 1 — coffee mug on the guard break table
+    {
+      const mugMat = new THREE.MeshStandardMaterial({ color: 0x1a1008, roughness: 0.65, metalness: 0.05 });
+      const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.040, 0.08, 8), mugMat);
+      mugBody.position.set(2.2, 0.915, 48.2); scene.add(mugBody);
+      // Handle (torus segment)
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.010, 5, 8, Math.PI), mugMat);
+      handle.rotation.y = Math.PI / 2; handle.position.set(2.165, 0.915, 48.2); scene.add(handle);
+    }
+
+    // Corridor 1 — potted fern in south-east corner
+    {
+      const potMat  = new THREE.MeshStandardMaterial({ color: 0x8a4a20, roughness: 0.72, metalness: 0.0 });
+      const soilMat = new THREE.MeshStandardMaterial({ color: 0x2a1a0a, roughness: 0.95, metalness: 0.0 });
+      const fernMat = new THREE.MeshStandardMaterial({ color: 0x1a6010, roughness: 0.80, metalness: 0.0 });
+      // Terracotta pot
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.14, 0.28, 8), potMat);
+      pot.position.set(3.5, 0.14, 41.5); scene.add(pot);
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.03, 8), soilMat);
+      soil.position.set(3.5, 0.295, 41.5); scene.add(soil);
+      // Simple fern fronds (flat ellipses fanned out)
+      for (let i = 0; i < 7; i++) {
+        const ang = (i / 7) * Math.PI * 2;
+        const frond = new THREE.Mesh(new THREE.SphereGeometry(0.14, 5, 4), fernMat);
+        frond.scale.set(0.5, 0.32, 1.0);
+        frond.position.set(
+          3.5 + Math.cos(ang) * 0.18,
+          0.50 + Math.abs(Math.sin(ang)) * 0.06,
+          41.5 + Math.sin(ang) * 0.18
+        );
+        frond.rotation.y = ang; scene.add(frond);
+      }
+      // Central upright frond
+      const top = new THREE.Mesh(new THREE.SphereGeometry(0.10, 5, 4), fernMat);
+      top.scale.set(0.45, 0.55, 0.45); top.position.set(3.5, 0.62, 41.5); scene.add(top);
+    }
 
     // ════════════════════════════════
     //  GALLERY  cx=0  cz=77.5  50×45
@@ -2154,6 +2287,59 @@ window.GameMap = (function () {
         new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       cRing.rotation.x = -Math.PI / 2; cRing.position.set(8, 0.02, 96); scene.add(cRing);
       chalice.userData.floorRing = cRing; }
+
+    // Gallery marble busts — on tall pedestals between pillars
+    {
+      const bustMat = new THREE.MeshStandardMaterial({ color: 0xeae0d0, roughness: 0.55, metalness: 0.04 });
+      const bustPositions = [
+        [18, 65], [-18, 65], [18, 88], [-8, 96],
+      ];
+      bustPositions.forEach(([bx, bz]) => {
+        // Pedestal plinth
+        box(scene, 0.55, 0.90, 0.55, bx, 0.45, bz, M.pedestal);
+        // Neck / torso
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.28, 8), bustMat);
+        torso.position.set(bx, 1.04, bz);
+        scene.add(torso);
+        // Head
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 8), bustMat);
+        head.position.set(bx, 1.37, bz);
+        scene.add(head);
+        // Slight face-forward tilt
+        head.rotation.x = -0.12;
+        // Simple nose bump
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.04, 5, 4), bustMat);
+        nose.position.set(bx, 1.37, bz - 0.19);
+        nose.scale.set(0.7, 0.6, 0.5);
+        scene.add(nose);
+        addWallAABB(bx, bz, 0.7, 0.7);
+      });
+    }
+
+    // Gallery floor-standing urns flanking the Mona Lisa alcove
+    {
+      const urnMat = new THREE.MeshStandardMaterial({ color: 0x1a1040, roughness: 0.60, metalness: 0.12 });
+      const goldBand = new THREE.MeshStandardMaterial({ color: 0xc89830, roughness: 0.30, metalness: 0.72 });
+      [86, 98].forEach(uz => {
+        const ux = -22;
+        // Urn base disc
+        const uBase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 10), goldBand);
+        uBase.position.set(ux, 0.03, uz); scene.add(uBase);
+        // Urn body — tapered
+        const uBody = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.72, 10), urnMat);
+        uBody.position.set(ux, 0.39, uz); scene.add(uBody);
+        // Gold mid-band ring
+        const uRing = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.022, 6, 14), goldBand);
+        uRing.rotation.x = Math.PI / 2; uRing.position.set(ux, 0.55, uz); scene.add(uRing);
+        // Urn neck
+        const uNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.16, 0.22, 10), urnMat);
+        uNeck.position.set(ux, 0.86, uz); scene.add(uNeck);
+        // Urn mouth
+        const uMouth = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.030, 6, 14), goldBand);
+        uMouth.rotation.x = Math.PI / 2; uMouth.position.set(ux, 0.99, uz); scene.add(uMouth);
+        addWallAABB(ux, uz, 0.5, 0.5);
+      });
+    }
 
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
@@ -2752,7 +2938,7 @@ window.GameMap = (function () {
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
     //  Maintenance / service passage
     // ════════════════════════════════
-    floor(scene, 0, 107.5, 10, 15);
+    floor(scene, 0, 107.5, 10, 15, M.corridorFloor2);
     ceiling(scene, 0, 107.5, 10, 15);
     wall(scene, -5, 107.5, WALL_T, 15, M.corridorWall);
     wall(scene,  5, 107.5, WALL_T, 15, M.corridorWall);
@@ -2777,6 +2963,62 @@ window.GameMap = (function () {
     box(scene, 0.55, 0.22, 0.35, 3.5, 0.86, 109, M.terminal);    // item on table
     // Coin cache — maintenance crew left spare coins
     coinCache(scene, 3.5, 109, 2, 0.89);
+
+    // Corridor 2 — fire extinguisher on east wall
+    {
+      const extMat = new THREE.MeshStandardMaterial({ color: 0xcc2010, roughness: 0.40, metalness: 0.35 });
+      const extSilMat = new THREE.MeshStandardMaterial({ color: 0xd0d0c8, roughness: 0.32, metalness: 0.55 });
+      // Tank cylinder
+      const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.42, 10), extMat);
+      tank.position.set(4.62, 0.9, 102); scene.add(tank);
+      // Valve top
+      const valve = new THREE.Mesh(new THREE.SphereGeometry(0.062, 7, 5), extSilMat);
+      valve.position.set(4.62, 1.14, 102); scene.add(valve);
+      // Nozzle hose (thin box)
+      box(scene, 0.025, 0.025, 0.22, 4.62, 0.82, 102.11, extSilMat);
+    }
+
+    // Corridor 2 — wall-mounted security panel / warning sign on west wall
+    {
+      const warnMat = new THREE.MeshStandardMaterial({ color: 0xd4a800, roughness: 0.55, metalness: 0.10 });
+      const warnFaceMat = new THREE.MeshStandardMaterial({ color: 0x080606, roughness: 0.60, metalness: 0.0 });
+      // Panel housing
+      box(scene, 0.08, 0.55, 0.38, -4.73, 2.2, 111, warnMat);
+      // Dark face
+      box(scene, 0.05, 0.44, 0.28, -4.73, 2.2, 111, warnFaceMat);
+      // Tiny blinking light dots (3 small spheres)
+      [[2.35, 110.9], [2.0, 111.0], [1.65, 111.1]].forEach(([ly, lz], i) => {
+        const lMat = new THREE.MeshStandardMaterial({
+          color: i === 0 ? 0x00ff44 : (i === 1 ? 0xff4400 : 0x4488ff),
+          emissive: i === 0 ? 0x00ff44 : (i === 1 ? 0xff4400 : 0x4488ff),
+          emissiveIntensity: 1.4, roughness: 0.2,
+        });
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.025, 5, 4), lMat);
+        dot.position.set(-4.71, ly, lz); scene.add(dot);
+      });
+    }
+
+    // Corridor 2 — maintenance trolley (wheeled cart) on east side
+    {
+      const cartMat = new THREE.MeshStandardMaterial({ color: 0x505558, roughness: 0.55, metalness: 0.40 });
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.80, metalness: 0.12 });
+      // Cart body (open frame shelves)
+      box(scene, 0.80, 0.06, 0.48, 3.5, 0.18, 103.5, cartMat);   // bottom shelf
+      box(scene, 0.80, 0.06, 0.48, 3.5, 0.75, 103.5, cartMat);   // mid shelf
+      box(scene, 0.80, 0.06, 0.48, 3.5, 1.30, 103.5, cartMat);   // top shelf
+      // Vertical poles
+      [[-0.36, -0.20], [-0.36, 0.20], [0.36, -0.20], [0.36, 0.20]].forEach(([ox, oz]) => {
+        box(scene, 0.04, 1.20, 0.04, 3.5 + ox, 0.78, 103.5 + oz, cartMat);
+      });
+      // Wheels
+      [[-0.30, -0.18], [-0.30, 0.18], [0.30, -0.18], [0.30, 0.18]].forEach(([ox, oz]) => {
+        const w = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.018, 5, 10), wheelMat);
+        w.rotation.x = Math.PI / 2; w.position.set(3.5 + ox, 0.07, 103.5 + oz); scene.add(w);
+      });
+      // Item on top shelf — folded linen stack (light box)
+      box(scene, 0.55, 0.14, 0.30, 3.5, 1.37, 103.5,
+        new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.80, metalness: 0.0 }));
+    }
 
     // ════════════════════════════════
     //  CROWN VAULT  cx=0  cz=137.5  50×45
@@ -2879,6 +3121,62 @@ window.GameMap = (function () {
         new THREE.MeshBasicMaterial({ color: 0xf0e8c0, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
       iRing.rotation.x = -Math.PI / 2; iRing.position.set(9, 0.02, 135); scene.add(iRing);
       ivFig.userData.floorRing = iRing; }
+
+    // Crown Vault — tall imposing columns flanking vault entrance
+    [-18, -10, 10, 18].forEach(cx => {
+      pillar(scene, cx, 118);
+    });
+
+    // Crown Vault — decorative gold torch sconces on north wall
+    {
+      const sconceMat = new THREE.MeshStandardMaterial({ color: 0xc89030, roughness: 0.28, metalness: 0.82 });
+      const flameMat  = new THREE.MeshStandardMaterial({
+        color: 0xff8800, emissive: 0xff5500, emissiveIntensity: 2.0, roughness: 0.3, transparent: true, opacity: 0.88,
+      });
+      [-18, -6, 6, 18].forEach(tx => {
+        // Wall bracket
+        box(scene, 0.08, 0.08, 0.30, tx, 3.8, 159.85, sconceMat);
+        // Torch pole
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.030, 0.50, 7), sconceMat);
+        pole.position.set(tx, 3.7, 159.7); scene.add(pole);
+        // Flame flicker (cone shape)
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.068, 0.22, 7), flameMat);
+        flame.position.set(tx, 4.05, 159.7); scene.add(flame);
+        // Warm glow point light
+        const torchLight = new THREE.PointLight(0xff9020, 1.2, 8);
+        torchLight.position.set(tx, 4.1, 159.5);
+        scene.add(torchLight);
+      });
+    }
+
+    // Crown Vault — tapestry banners hanging on east/west walls
+    {
+      const tapMat = new THREE.MeshStandardMaterial({ color: 0x4a1a00, roughness: 0.90, metalness: 0.0 });
+      const tapGoldMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.55, metalness: 0.40 });
+      // West wall banners
+      [-17, -5].forEach(bz => {
+        box(scene, 0.06, 3.50, 1.20, -24.85, 3.25, bz + 130, tapMat);
+        box(scene, 0.04, 0.12, 1.30, -24.85, 4.90, bz + 130, tapGoldMat);  // top rod
+        box(scene, 0.04, 0.12, 1.30, -24.85, 1.50, bz + 130, tapGoldMat);  // bottom weight
+      });
+      // East wall banners
+      [-17, -5].forEach(bz => {
+        box(scene, 0.06, 3.50, 1.20,  24.85, 3.25, bz + 130, tapMat);
+        box(scene, 0.04, 0.12, 1.30,  24.85, 4.90, bz + 130, tapGoldMat);
+        box(scene, 0.04, 0.12, 1.30,  24.85, 1.50, bz + 130, tapGoldMat);
+      });
+    }
+
+    // Crown Vault — wide velvet ropes near vault entrance (south barrier)
+    {
+      stanchion(scene, -14, 119);
+      stanchion(scene, -7,  119);
+      stanchion(scene,  7,  119);
+      stanchion(scene,  14, 119);
+      velvetRope(scene, -14, 119, -7, 119);
+      velvetRope(scene,  -7, 119,  7, 119);
+      velvetRope(scene,   7, 119, 14, 119);
+    }
 
     // Guard spawns — Crown Vault (4 guards, randomized routes each run)
     guardData.push({

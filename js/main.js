@@ -128,40 +128,58 @@
     scene.add(sun);
     scene.add(sun.target);
 
-    // Lobby — cool blue-white overhead pools
+    // Lobby — warm golden chandelier glow
     [ [-8, 4.5, 10], [8, 4.5, 10], [-8, 4.5, 30], [8, 4.5, 30] ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0x90b0d8, 0.70, 26);
+      const pt = new THREE.PointLight(0xe8b460, 0.82, 28);
       pt.position.set(x, y, z);
       pt._baseIntensity = pt.intensity;
       scene.add(pt);
       flickerLights.push(pt);
     });
 
-    // Gallery — cool blue-gray overhead glow
+    // Corridor 1 — eerie security-room teal
+    [ [0, 4.5, 44], [0, 4.5, 51] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0x40d8a0, 0.60, 18);
+      pt.position.set(x, y, z);
+      pt._baseIntensity = pt.intensity;
+      scene.add(pt);
+      flickerLights.push(pt);
+    });
+
+    // Gallery — warm amber dramatic art-gallery glow
     [ [-10, 5, 65], [10, 5, 65], [0, 5, 80], [-10, 5, 95], [10, 5, 95] ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0xa0b8d8, 0.58, 22);
+      const pt = new THREE.PointLight(0xff8833, 0.70, 24);
       pt.position.set(x, y, z);
       pt._baseIntensity = pt.intensity;
       scene.add(pt);
       flickerLights.push(pt);
     });
 
-    // Crown Vault — cool deep blue tactical light
-    [ [-10, 4.5, 125], [10, 4.5, 125], [0, 4.5, 140], [-10, 4.5, 155], [10, 4.5, 155] ].forEach(([x, y, z]) => {
-      const pt = new THREE.PointLight(0x7090c0, 0.72, 26);
+    // Corridor 2 — deep violet mystery
+    [ [0, 4.5, 104], [0, 4.5, 111] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0x9050d8, 0.60, 18);
       pt.position.set(x, y, z);
       pt._baseIntensity = pt.intensity;
       scene.add(pt);
       flickerLights.push(pt);
     });
-    // Cool blue accent on crown pedestal
-    const vaultAccent = new THREE.PointLight(0x90b0e0, 0.45, 16);
+
+    // Crown Vault — deep crimson dramatic light
+    [ [-10, 4.5, 125], [10, 4.5, 125], [0, 4.5, 140], [-10, 4.5, 155], [10, 4.5, 155] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0xc02828, 0.80, 28);
+      pt.position.set(x, y, z);
+      pt._baseIntensity = pt.intensity;
+      scene.add(pt);
+      flickerLights.push(pt);
+    });
+    // Gold accent on crown pedestal
+    const vaultAccent = new THREE.PointLight(0xffd060, 0.60, 14);
     vaultAccent.position.set(0, 3, 140);
     vaultAccent._baseIntensity = vaultAccent.intensity;
     scene.add(vaultAccent);
     flickerLights.push(vaultAccent);
 
-    // Gallery painting spotlights — cool gallery lighting
+    // Gallery painting spotlights — warm amber gallery lighting
     [
       // [sx, sz,  tx, ty, tz]  — light pos → painting target
       [-20, 92,  -24.9, 3.8, 92],   // famous painting (stealable)
@@ -169,7 +187,7 @@
       [ 20, 80,   24.9, 3.5, 80],   // gallery east
       [ 20, 60,   24.9, 3.5, 60],   // gallery east 2
     ].forEach(([sx, sz, tx, ty, tz]) => {
-      const spot = new THREE.SpotLight(0xd0e4ff, 0.85, 14, Math.PI / 8, 0.38);
+      const spot = new THREE.SpotLight(0xffcc88, 0.90, 14, Math.PI / 8, 0.38);
       spot.position.set(sx, 5.5, sz);
       spot.target.position.set(tx, ty, tz);
       spot.castShadow = false;
@@ -1094,6 +1112,7 @@
       const hairBtn    = document.querySelector('#hair-style-btns .hair-btn.active');
       const hairSlider = document.getElementById('hair-color-slider');
       const skinSlider = document.getElementById('skin-tone-slider');
+      const petBtn     = document.querySelector('#pet-btns .pet-btn.active');
       const name       = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
       window.G.playerCustom = {
         suitColor:  suitSw && !suitSw.dataset.suitTheme ? Number(suitSw.dataset.color) : 0x1a1a2e,
@@ -1102,6 +1121,7 @@
         hairStyle:  hairBtn  ? hairBtn.dataset.style : 'ponytail',
         hairColor:  _hairSliderToHex(hairSlider ? Number(hairSlider.value) : 0),
         skinColor:  _skinSliderToHex(skinSlider ? Number(skinSlider.value) : 50),
+        pet:        petBtn   ? petBtn.dataset.pet   : 'none',
         codename:   name,
       };
       const nameEl = $('codename-display');
@@ -1137,6 +1157,14 @@
       if (skinSlider) skinSlider.addEventListener('input', updateSkinPreview);
       updateSkinPreview();
     }());
+
+    // ── Pet sidekick buttons ────────────────────────────────
+    document.querySelectorAll('#pet-btns .pet-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#pet-btns .pet-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      };
+    });
 
     // ── Hair style buttons ──────────────────────────────────
     document.querySelectorAll('#hair-style-btns .hair-btn').forEach(btn => {

@@ -52,6 +52,135 @@ window.Player = (function () {
   // ── Direction arrow (floor-level, points toward objective) ─
   let _dirArrowCone = null;
 
+  // ── Pet sidekick ───────────────────────────────────────
+  let _petMesh  = null;
+  let _petType  = 'none';
+  let _petTrail = [];
+  const PET_TRAIL_FRAMES = 44;  // frames of delay (~0.75 s at 60 fps)
+
+  function buildPetMesh(type) {
+    if (!type || type === 'none') return null;
+    const g = new THREE.Group();
+
+    if (type === 'dog') {
+      const mD  = new THREE.MeshStandardMaterial({ color: 0xc8841a, roughness: 0.85 });
+      const mDk = new THREE.MeshStandardMaterial({ color: 0x4a2a0a, roughness: 0.85 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.34), mD);
+      body.position.y = 0.22; g.add(body);
+      const hd = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.18, 0.20), mD);
+      hd.position.set(0, 0.36, -0.16); g.add(hd);
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.10), mDk);
+      snout.position.set(0, 0.32, -0.27); g.add(snout);
+      [-0.08, 0.08].forEach(x => {
+        const ear = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.04), mDk);
+        ear.position.set(x, 0.50, -0.14); ear.rotation.z = x > 0 ? -0.3 : 0.3; g.add(ear);
+      });
+      [[-0.08,-0.15],[0.08,-0.15],[-0.08,0.12],[0.08,0.12]].forEach(([lx,lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.18, 5), mD);
+        leg.position.set(lx, 0.09, lz); g.add(leg);
+      });
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.01, 0.18, 5), mD);
+      tail.position.set(0, 0.28, 0.20); tail.rotation.x = -0.7; g.add(tail);
+
+    } else if (type === 'cat') {
+      const mC  = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.85 });
+      const mCk = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.85 });
+      const mEy = new THREE.MeshStandardMaterial({ color: 0x44ff88, emissive: 0x22aa44, emissiveIntensity: 0.8 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.30), mC);
+      body.position.y = 0.20; g.add(body);
+      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 6), mC);
+      hd.position.set(0, 0.36, -0.14); g.add(hd);
+      [-0.07, 0.07].forEach(x => {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 4), mC);
+        ear.position.set(x, 0.48, -0.14); g.add(ear);
+      });
+      [-0.04, 0.04].forEach(x => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.015, 5, 4), mEy);
+        eye.position.set(x, 0.37, -0.24); g.add(eye);
+      });
+      [[-0.06,-0.12],[0.06,-0.12],[-0.06,0.10],[0.06,0.10]].forEach(([lx,lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.020, 0.16, 5), mC);
+        leg.position.set(lx, 0.08, lz); g.add(leg);
+      });
+      const t1 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.012, 0.22, 5), mCk);
+      t1.position.set(0, 0.22, 0.17); t1.rotation.x = -0.9; g.add(t1);
+      const t2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.006, 0.18, 5), mCk);
+      t2.position.set(0, 0.38, 0.28); t2.rotation.x = -2.0; g.add(t2);
+
+    } else if (type === 'bird') {
+      const mB  = new THREE.MeshStandardMaterial({ color: 0x44aaff, roughness: 0.7 });
+      const mBk = new THREE.MeshStandardMaterial({ color: 0x112244, roughness: 0.7 });
+      const mBe = new THREE.MeshStandardMaterial({ color: 0xffbb00, roughness: 0.6 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), mB);
+      body.position.y = 0.28; body.scale.set(1, 1.2, 1); g.add(body);
+      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), mB);
+      hd.position.set(0, 0.43, -0.07); g.add(hd);
+      [-0.04, 0.04].forEach(x => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 5, 4), mBk);
+        eye.position.set(x, 0.44, -0.12); g.add(eye);
+      });
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 5), mBe);
+      beak.position.set(0, 0.42, -0.18); beak.rotation.x = -Math.PI / 2; g.add(beak);
+      [-1, 1].forEach(s => {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.18), mBk);
+        wing.position.set(s * 0.16, 0.29, 0); wing.rotation.z = s * 0.4; g.add(wing);
+      });
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.04, 0.12), mBk);
+      tail.position.set(0, 0.23, 0.12); tail.rotation.x = 0.4; g.add(tail);
+
+    } else if (type === 'snake') {
+      const mS  = new THREE.MeshStandardMaterial({ color: 0x228822, roughness: 0.75 });
+      const mSs = new THREE.MeshStandardMaterial({ color: 0x336633, roughness: 0.8 });
+      const mTo = new THREE.MeshStandardMaterial({ color: 0xff2222, roughness: 0.9 });
+      const mSe = new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff4400, emissiveIntensity: 0.5 });
+      [[0,0.06,0],[0.06,0.07,0.08],[0,0.07,0.16],[-0.06,0.08,0.24],
+       [0,0.09,0.30],[0.06,0.09,0.38],[0,0.09,0.44],[-0.05,0.09,0.50],[0,0.10,0.55]
+      ].forEach((p, i) => {
+        const r = i === 0 ? 0.02 : Math.min(0.035 + i * 0.003, 0.055);
+        const seg = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), i % 2 === 0 ? mS : mSs);
+        seg.position.set(p[0], p[1], p[2]); g.add(seg);
+      });
+      const sHd = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 6), mS);
+      sHd.position.set(0, 0.11, 0.60); sHd.scale.set(1.3, 0.75, 1.2); g.add(sHd);
+      const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.06), mTo);
+      tongue.position.set(0, 0.10, 0.66); g.add(tongue);
+      [-0.025, 0.025].forEach(x => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.012, 5, 4), mSe);
+        eye.position.set(x, 0.13, 0.63); g.add(eye);
+      });
+
+    } else if (type === 'penguin') {
+      const mBl = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.85 });
+      const mWh = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.80 });
+      const mOr = new THREE.MeshStandardMaterial({ color: 0xff8800, roughness: 0.6 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.13, 9, 7), mBl);
+      body.position.y = 0.22; body.scale.set(0.85, 1.15, 0.85); g.add(body);
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), mWh);
+      belly.position.set(0, 0.21, -0.06); belly.scale.set(0.75, 1.0, 0.5); g.add(belly);
+      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), mBl);
+      hd.position.set(0, 0.40, -0.02); g.add(hd);
+      [-0.04, 0.04].forEach(x => {
+        const ew = new THREE.Mesh(new THREE.SphereGeometry(0.024, 5, 4), mWh);
+        ew.position.set(x, 0.42, -0.09); g.add(ew);
+        const ep = new THREE.Mesh(new THREE.SphereGeometry(0.014, 5, 4), mBl);
+        ep.position.set(x, 0.42, -0.11); g.add(ep);
+      });
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.06, 4), mOr);
+      beak.position.set(0, 0.40, -0.14); beak.rotation.x = -Math.PI / 2; g.add(beak);
+      [-1, 1].forEach(s => {
+        const fl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.04), mBl);
+        fl.position.set(s * 0.18, 0.24, 0.01); fl.rotation.z = s * 0.5; g.add(fl);
+      });
+      [-0.05, 0.05].forEach(x => {
+        const ft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.10), mOr);
+        ft.position.set(x, 0.04, -0.02); g.add(ft);
+      });
+    }
+
+    g.scale.setScalar(0.55);
+    return g;
+  }
+
   // ── Safe-cracking minigame state ───────────────────────
   let _scActive    = false;
   let _scTumbler   = 0;
@@ -655,100 +784,123 @@ window.Player = (function () {
     // ── Goggles on the face at actual eye level ───────────
     [-0.097, 0.097].forEach(xOff => {
       const frame = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.092, 0.058), matGogF);
-      frame.position.set(xOff, 1.86, -0.308);
+      frame.position.set(xOff, 1.86, -0.335);
       group.add(frame);
       const lens = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.070, 0.030), matGogL);
-      lens.position.set(xOff, 1.86, -0.326);
+      lens.position.set(xOff, 1.86, -0.353);
       group.add(lens);
     });
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.028, 0.045), matGogF);
-    bridge.position.set(0, 1.86, -0.311);
+    bridge.position.set(0, 1.86, -0.338);
     group.add(bridge);
 
-    // ── Hair — sphere dome hugs the head, style pieces emerge from its surface ──
-    // Head-local: (0,0,0)=head centre, radius=0.29. +Z=back, -Z=face.
-    // Using a SphereGeometry (r=0.305, same segment counts as head) for the
-    // scalp cap means the hair follows the head's round shape exactly.
-    // thetaLength=PI*0.52 goes just past the equator so the edge tucks under
-    // and the seam between hair and skin is hidden.
-    const matHair = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.92, metalness: 0.0 });
-    const matBand = new THREE.MeshStandardMaterial({ color: 0x1a0014, roughness: 0.8, metalness: 0.1 });
+    // ── Nose + smile ──────────────────────────────────────────────────
+    const matFace = new THREE.MeshStandardMaterial({ color: 0x1a0a06, roughness: 0.95, metalness: 0.0 });
+    // Nose — small oval bump below the goggles
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.026, 7, 5), matSkin);
+    nose.position.set(0, 1.82, -0.320);
+    nose.scale.set(1.1, 0.82, 0.62);
+    group.add(nose);
+    // Smile — five small dark beads in a U-curve (ends higher → smile shape)
+    [-2, -1, 0, 1, 2].forEach(i => {
+      const t   = i / 2;
+      const ang = t * (Math.PI * 0.42);
+      const bead = new THREE.Mesh(new THREE.SphereGeometry(0.011, 5, 4), matFace);
+      bead.position.set(
+        Math.sin(ang) * 0.058,
+        1.796 + (1 - Math.cos(ang)) * 0.022,
+        -0.316
+      );
+      group.add(bead);
+    });
 
-    // Hair dome — r=0.305, same 7×5 topology as the head sphere (r=0.29).
-    // Sits just outside the head surface with no visible gap.
-    const scalp = new THREE.Mesh(
-      new THREE.SphereGeometry(0.305, 7, 5, 0, Math.PI * 2, 0, Math.PI * 0.52),
+    // ── Hair — hemisphere scalp dome + back panel for full seamless coverage ─
+    // Head-local: (0,0,0)=head centre, radius=0.29. +Z=back, −Z=face.
+    // Dome (thetaLength=PI*0.52) covers crown → just past equator all around.
+    // Back panel (phiStart=0, phiLength=PI) covers right→back→left below dome.
+    const matHair = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.88, metalness: 0.0 });
+    const matBand = new THREE.MeshStandardMaterial({ color: 0x330033, roughness: 0.8, metalness: 0.1 });
+
+    // Scalp dome — full-circle top cap; slightly larger than head
+    const scalpDome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.298, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.52),
       matHair
     );
-    scalp.position.set(0, 0, 0);
-    head.add(scalp);
+    head.add(scalpDome);
+
+    // Back panel — covers rear of head from dome rim down to neckline
+    const backPanel = new THREE.Mesh(
+      new THREE.SphereGeometry(0.298, 10, 5, 0, Math.PI, Math.PI * 0.46, Math.PI * 0.30),
+      matHair
+    );
+    head.add(backPanel);
 
     if (hairStyle === 'ponytail') {
-      // Small round bun on the back of the dome where the tail gathers.
-      const bun = new THREE.Mesh(new THREE.SphereGeometry(0.09, 7, 6), matHair);
-      bun.position.set(0, 0.05, 0.30); head.add(bun);
-      // Tail pivot buried inside the dome/bun. rotation.x=2.6 → mostly DOWN.
+      const ptBand = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.018, 7, 12), matBand);
+      ptBand.position.set(0, 0.14, 0.25); ptBand.rotation.x = 2.25;
+      head.add(ptBand);
       const ptG = new THREE.Group();
-      ptG.position.set(0, 0.05, 0.24);
-      ptG.rotation.x = 2.6;
+      ptG.position.set(0, 0.14, 0.27); ptG.rotation.x = 2.2;
       head.add(ptG);
-      const ptRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.070, 0.060, 0.20, 8), matHair);
-      ptRoot.position.y = 0.10; ptG.add(ptRoot);
-      const ptMid = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.042, 0.24, 7), matHair);
-      ptMid.position.y = 0.32; ptG.add(ptMid);
-      const ptTip = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.010, 0.22, 6), matHair);
-      ptTip.position.y = 0.53; ptG.add(ptTip);
-      const ptBand = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.015, 6, 12), matBand);
-      ptBand.position.y = 0.20; ptBand.rotation.x = Math.PI / 2; ptG.add(ptBand);
+      const ptRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.080, 0.070, 0.22, 9), matHair);
+      ptRoot.position.y = 0.11; ptG.add(ptRoot);
+      const ptMid  = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.050, 0.28, 8), matHair);
+      ptMid.position.y  = 0.36; ptG.add(ptMid);
+      const ptTip  = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.010, 0.26, 7), matHair);
+      ptTip.position.y  = 0.65; ptG.add(ptTip);
 
     } else if (hairStyle === 'pigtails') {
       // Pivots on the sides of the dome, just inside the surface.
       [-1, 1].forEach(side => {
+        const pgBand = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.016, 7, 11), matBand);
+        pgBand.position.set(side * 0.22, 0.10, 0.22);
+        pgBand.rotation.x = 1.80; pgBand.rotation.z = side * -0.40;
+        head.add(pgBand);
         const pgG = new THREE.Group();
-        pgG.position.set(side * 0.27, 0.00, 0.10);
-        pgG.rotation.x = 1.9;
-        pgG.rotation.z = side * -0.55;
+        pgG.position.set(side * 0.22, 0.10, 0.23);
+        pgG.rotation.x = 1.80; pgG.rotation.z = side * -0.50;
         head.add(pgG);
-        const pgRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.052, 0.18, 7), matHair);
-        pgRoot.position.y = 0.09; pgG.add(pgRoot);
-        const pgTail = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.018, 0.24, 6), matHair);
-        pgTail.position.y = 0.30; pgG.add(pgTail);
-        const pgBand = new THREE.Mesh(new THREE.TorusGeometry(0.050, 0.014, 6, 10), matBand);
-        pgBand.position.y = 0.18; pgBand.rotation.x = Math.PI / 2; pgG.add(pgBand);
+        const pgRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.055, 0.22, 8), matHair);
+        pgRoot.position.y = 0.11; pgG.add(pgRoot);
+        const pgMid  = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.020, 0.24, 7), matHair);
+        pgMid.position.y  = 0.34; pgG.add(pgMid);
       });
 
     } else if (hairStyle === 'spaceBuns') {
-      [-0.21, 0.21].forEach(x => {
-        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.110, 9, 7), matHair);
-        bun.position.set(x, 0.22, 0.00); bun.scale.set(1, 0.88, 1.0); head.add(bun);
+      [-0.22, 0.22].forEach(x => {
+        const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 9), matHair);
+        stalk.position.set(x, 0.30, 0.04); head.add(stalk);
+        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.118, 10, 8), matHair);
+        bun.position.set(x, 0.41, 0.04); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
     } else if (hairStyle === 'longStraight') {
-      // Back panel top edge starts at the dome equator (y=0).
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.60, 0.05), matHair);
-      back.position.set(0, -0.30, 0.31); head.add(back);
-      [-0.27, 0.27].forEach(x => {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.60, 0.24), matHair);
-        side.position.set(x, -0.30, 0.07);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.84, 0.07), matHair);
+      back.position.set(0, -0.18, 0.282); head.add(back);
+      [-0.295, 0.295].forEach(x => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.76, 0.30), matHair);
+        side.position.set(x, -0.12, 0.05);
         side.rotation.z = x > 0 ? -0.08 : 0.08; head.add(side);
       });
-      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.07), matHair);
-      fringe.position.set(0, 0.06, -0.28); head.add(fringe);
+      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.09, 0.08), matHair);
+      fringe.position.set(0, 0.07, -0.270); head.add(fringe);
+      const tipBack = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.07, 0.12), matHair);
+      tipBack.position.set(0, -0.60, 0.270); head.add(tipBack);
 
     } else if (hairStyle === 'downCurly') {
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.58, 0.06), matHair);
-      back.position.set(0, -0.29, 0.31); head.add(back);
-      [-0.17, 0, 0.17].forEach((x, i) => {
-        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.032, 6, 9, Math.PI * 1.5), matHair);
-        curl.position.set(x, -0.56, 0.34 + i * 0.01);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.80, 0.07), matHair);
+      back.position.set(0, -0.16, 0.282); head.add(back);
+      [-0.16, 0, 0.16].forEach((x, i) => {
+        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.035, 7, 10, Math.PI * 1.5), matHair);
+        curl.position.set(x, -0.47, 0.30 + i * 0.005);
         curl.rotation.x = Math.PI / 2 + 0.28; head.add(curl);
       });
-      [-0.27, 0.27].forEach(x => {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.58, 0.22), matHair);
-        side.position.set(x, -0.28, 0.07);
+      [-0.295, 0.295].forEach(x => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.72, 0.30), matHair);
+        side.position.set(x, -0.10, 0.05);
         side.rotation.z = x > 0 ? -0.10 : 0.10; head.add(side);
-        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.026, 6, 8, Math.PI * 1.35), matHair);
-        curl.position.set(x * 1.05, -0.53, 0.13);
+        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.057, 0.029, 7, 9, Math.PI * 1.4), matHair);
+        curl.position.set(x * 1.05, -0.43, 0.11);
         curl.rotation.x = Math.PI / 2 + 0.22; head.add(curl);
       });
     }
@@ -1031,6 +1183,17 @@ window.Player = (function () {
     camPos.lerp(_camTarget, lerpAlpha);
     camera.position.copy(camPos);
     camera.lookAt(pos.x, pos.y + 1.4, pos.z);
+
+    // ── Pet trail ─────────────────────────────────────────
+    if (_petMesh) {
+      _petTrail.push({ x: pos.x, z: pos.z, ry: playerMesh ? playerMesh.rotation.y : 0 });
+      if (_petTrail.length > PET_TRAIL_FRAMES) {
+        const snap = _petTrail.shift();
+        const petY = _petType === 'bird' ? 0.5 : 0;
+        _petMesh.position.set(snap.x, petY, snap.z);
+        _petMesh.rotation.y = snap.ry;
+      }
+    }
   }
 
   // ── Interact (E key) ───────────────────────────────────
@@ -1405,6 +1568,16 @@ window.Player = (function () {
     _rightLeg  = playerMesh.userData.rightLeg;
     _leftArm   = playerMesh.userData.leftArm;
     _rightArm  = playerMesh.userData.rightArm;
+
+    // Rebuild pet
+    if (_petMesh) { scene.remove(_petMesh); _petMesh = null; }
+    _petTrail = [];
+    const _pc = window.G && window.G.playerCustom;
+    _petType  = (_pc && _pc.pet) ? _pc.pet : 'none';
+    if (_petType && _petType !== 'none') {
+      _petMesh = buildPetMesh(_petType);
+      if (_petMesh) { _petMesh.position.set(pos.x - 1, 0, pos.z); scene.add(_petMesh); }
+    }
   }
 
   function setCaught() {
