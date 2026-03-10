@@ -427,8 +427,6 @@ window.Player = (function () {
     const suitHex   = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
     const eyeHex    = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
     const suitTheme = custom.suitTheme || null;
-    const hairStyle = custom.hairStyle || 'ponytail';
-    const hairHex   = custom.hairColor !== undefined ? custom.hairColor : 0x0a0604;
     const skinHex   = custom.skinColor !== undefined ? custom.skinColor : 0xd4a07a;
 
     const matSuit = suitTheme
@@ -620,78 +618,6 @@ window.Player = (function () {
     gogStrap.position.set(0, 2.06, 0.02);
     group.add(gogStrap);
 
-    // ── Hair (style + color driven by customization) ───────
-    const matHair = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.92, metalness: 0.0 });
-    const matBand = new THREE.MeshStandardMaterial({ color: 0x330033, roughness: 0.8, metalness: 0.1 });
-
-    if (hairStyle === 'ponytail') {
-      // Gathered base at nape — wide flat blob where hair is pulled together
-      const base = new THREE.Mesh(new THREE.SphereGeometry(0.105, 7, 5), matHair);
-      base.position.set(0, 1.89, 0.26); base.scale.set(0.98, 0.80, 0.68); group.add(base);
-      // Tail hangs mostly straight down, z stays shallow so it doesn't arc backward
-      const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0,     1.87, 0.28),
-        new THREE.Vector3(0,     1.70, 0.30),
-        new THREE.Vector3(0.01,  1.50, 0.28),
-        new THREE.Vector3(0,     1.28, 0.22),
-      ]);
-      group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.056, 8, false), matHair));
-      // Tapered tip
-      const tipCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0,    1.28, 0.22),
-        new THREE.Vector3(0,    1.14, 0.16),
-      ]);
-      group.add(new THREE.Mesh(new THREE.TubeGeometry(tipCurve, 5, 0.022, 7, false), matHair));
-      // Band sitting flush around tail
-      const band = new THREE.Mesh(new THREE.TorusGeometry(0.050, 0.016, 6, 10), matBand);
-      band.position.set(0, 1.70, 0.30); band.rotation.x = Math.PI / 2; group.add(band);
-
-    } else if (hairStyle === 'pigtails') {
-      [-1, 1].forEach(side => {
-        const xB = side * 0.26;
-        // Gathered base at each side
-        const base = new THREE.Mesh(new THREE.SphereGeometry(0.090, 7, 5), matHair);
-        base.position.set(xB, 1.88, 0.18); base.scale.set(0.82, 0.82, 0.65); group.add(base);
-        // Tail fans out sideways and hangs down — z stays near head, x spreads wide
-        const curve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(xB,          1.86, 0.20),
-          new THREE.Vector3(xB * 1.20,   1.70, 0.20),
-          new THREE.Vector3(xB * 1.32,   1.50, 0.16),
-          new THREE.Vector3(xB * 1.30,   1.28, 0.12),
-        ]);
-        group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 10, 0.044, 7, false), matHair));
-        // Tapered tip
-        const tipCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(xB * 1.30, 1.28, 0.12),
-          new THREE.Vector3(xB * 1.28, 1.14, 0.08),
-        ]);
-        group.add(new THREE.Mesh(new THREE.TubeGeometry(tipCurve, 4, 0.018, 6, false), matHair));
-        // Band
-        const band = new THREE.Mesh(new THREE.TorusGeometry(0.040, 0.014, 6, 10), matBand);
-        band.position.set(xB * 1.20, 1.70, 0.20);
-        band.rotation.x = Math.PI / 2; band.rotation.z = -side * 0.28; group.add(band);
-      });
-
-    } else if (hairStyle === 'spaceBuns') {
-      [-1, 1].forEach(side => {
-        const xOff = side * 0.22;
-        // Flat donut = recognizable wound bun shape (much better than a sphere)
-        const bun = new THREE.Mesh(new THREE.TorusGeometry(0.084, 0.056, 7, 14), matHair);
-        bun.position.set(xOff, 2.36, 0.01);
-        bun.rotation.x = Math.PI / 2; // lie flat on top of helmet
-        group.add(bun);
-        // Center knot fills the hole
-        const knot = new THREE.Mesh(new THREE.SphereGeometry(0.040, 6, 5), matHair);
-        knot.position.set(xOff, 2.36, 0.01); group.add(knot);
-        // Thin band ring on top of bun
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.012, 5, 12), matBand);
-        ring.position.set(xOff, 2.36, 0.01); ring.rotation.x = Math.PI / 2; group.add(ring);
-        // Stem hidden inside helmet provides seamless base
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.050, 0.18, 6), matHair);
-        stem.position.set(xOff, 2.21, 0.01); group.add(stem);
-      });
-
-    }
 
     // ── Direction arrow — floor-level, rotates independently toward objective ──
     const arrowMat = new THREE.MeshStandardMaterial({
@@ -1398,12 +1324,10 @@ window.Player = (function () {
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
     // Build a standalone mesh for the customize screen preview (not added to game scene)
-    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor) {
+    buildPreviewMesh(suitColor, eyeColor, suitTheme, skinColor) {
       const prev = window.G && window.G.playerCustom;
       if (window.G) window.G.playerCustom = {
         suitColor, eyeColor, suitTheme: suitTheme || null,
-        hairStyle: hairStyle || 'ponytail',
-        hairColor: hairColor !== undefined ? hairColor : 0x0a0604,
         skinColor: skinColor !== undefined ? skinColor : 0xd4a07a,
       };
       const g = buildMesh({ add() {} });

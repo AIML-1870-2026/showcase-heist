@@ -1000,43 +1000,16 @@
       return 0xc48050;
     }
 
-    // Hair color: slider 0-100 → hex color
-    function _hairSliderToHex(val) {
-      // 0=black, 25=dark brown, 50=medium brown, 75=blonde, 100=white
-      const stops = [
-        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },
-        { v: 25,  r: 0x3d, g: 0x1a, b: 0x08 },
-        { v: 50,  r: 0x7a, g: 0x3c, b: 0x1a },
-        { v: 75,  r: 0xcb, g: 0x9b, b: 0x40 },
-        { v: 100, r: 0xe0, g: 0xd0, b: 0xc0 },
-      ];
-      for (let i = 0; i < stops.length - 1; i++) {
-        const a = stops[i], b = stops[i + 1];
-        if (val >= a.v && val <= b.v) {
-          const t = (val - a.v) / (b.v - a.v);
-          const r = Math.round(a.r + (b.r - a.r) * t);
-          const g = Math.round(a.g + (b.g - a.g) * t);
-          const bl = Math.round(a.b + (b.b - a.b) * t);
-          return (r << 16) | (g << 8) | bl;
-        }
-      }
-      return 0x0a0604;
-    }
 
     function _previewColors() {
       const ss = document.querySelector('#suit-swatches .color-swatch.active');
       const es = document.querySelector('#eye-swatches .color-swatch.active');
-      const hs = document.querySelector('#hair-style-btns .hair-btn.active');
-      const hairSlider = document.getElementById('hair-color-slider');
       const skinSlider = document.getElementById('skin-tone-slider');
-      const hairVal = hairSlider ? Number(hairSlider.value) : 0;
       const skinVal = skinSlider ? Number(skinSlider.value) : 50;
       return {
         suit:       ss && !ss.dataset.suitTheme ? Number(ss.dataset.color) : 0x1a1a2e,
         eye:        es ? Number(es.dataset.color) : 0x88ccff,
         suitTheme:  ss ? (ss.dataset.suitTheme || null) : null,
-        hairStyle:  hs ? hs.dataset.style : 'ponytail',
-        hairColor:  _hairSliderToHex(hairVal),
         skinColor:  _skinSliderToHex(skinVal),
       };
     }
@@ -1045,8 +1018,8 @@
       if (!_prevScene || !_prevMesh) return;
       const rot = _prevMesh.rotation.y;
       _prevScene.remove(_prevMesh);
-      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
+      const { suit, eye, suitTheme, skinColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, skinColor);
       _prevMesh.rotation.y = rot;
       _prevScene.add(_prevMesh);
     }
@@ -1069,8 +1042,8 @@
       _prevCam = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 50);
       _prevCam.position.set(0, 1.2, 4.0);
       _prevCam.lookAt(0, 1.0, 0);
-      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
+      const { suit, eye, suitTheme, skinColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, skinColor);
       _prevScene.add(_prevMesh);
       (function loop() {
         _prevRaf = requestAnimationFrame(loop);
@@ -1096,16 +1069,12 @@
     function applyCustomization() {
       const suitSw = document.querySelector('#suit-swatches .color-swatch.active');
       const eyeSw  = document.querySelector('#eye-swatches .color-swatch.active');
-      const hairBtn  = document.querySelector('#hair-style-btns .hair-btn.active');
-      const hairSlider = document.getElementById('hair-color-slider');
       const skinSlider = document.getElementById('skin-tone-slider');
       const name   = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
       window.G.playerCustom = {
         suitColor:  suitSw && !suitSw.dataset.suitTheme ? Number(suitSw.dataset.color) : 0x1a1a2e,
         suitTheme:  suitSw ? (suitSw.dataset.suitTheme || null) : null,
         eyeColor:   eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
-        hairStyle:  hairBtn ? hairBtn.dataset.style : 'ponytail',
-        hairColor:  _hairSliderToHex(hairSlider ? Number(hairSlider.value) : 0),
         skinColor:  _skinSliderToHex(skinSlider ? Number(skinSlider.value) : 50),
         codename:   name,
       };
@@ -1129,26 +1098,6 @@
       };
     });
 
-    document.querySelectorAll('#hair-style-btns .hair-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#hair-style-btns .hair-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        _previewUpdate();
-      };
-    });
-
-    (function () {
-      const hairSlider  = document.getElementById('hair-color-slider');
-      const hairPreview = document.getElementById('hair-color-preview');
-      function updateHairPreview() {
-        const hex = _hairSliderToHex(Number(hairSlider.value));
-        const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff;
-        hairPreview.style.background = 'rgb(' + r + ',' + g + ',' + b + ')';
-        _previewUpdate();
-      }
-      if (hairSlider) hairSlider.addEventListener('input', updateHairPreview);
-      updateHairPreview();
-    }());
 
     (function () {
       const skinSlider  = document.getElementById('skin-tone-slider');
