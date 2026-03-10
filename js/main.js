@@ -1355,7 +1355,6 @@
       '',
       'GOOD LUCK.  DON\'T GET CAUGHT.',
     ];
-    const INTRO_DURATION = 7500;   // ms total auto-advance
     const INTRO_CHAR_MS  = 22;     // ms per character
 
     function _showIntro(mode) {
@@ -1368,56 +1367,106 @@
       screen.classList.remove('hidden');
       screen.classList.add('active');
 
-      const textEl = $('intro-text');
-      const barEl  = $('intro-bar');
-      let charIdx  = 0, lineIdx = 0, charTimer = 0;
-      let totalChars = INTRO_LINES.join('\n').length;
-      let printed    = 0;
-      let done       = false;
+      const textEl  = $('intro-text');
+      const barEl   = $('intro-bar');
+      const contEl  = $('intro-continue');
+
+      // Split INTRO_LINES into sections separated by blank lines
+      const INTRO_SECTIONS = [];
+      let buf = [];
+      for (const line of INTRO_LINES) {
+        if (line === '') { if (buf.length) { INTRO_SECTIONS.push(buf.join('\n')); buf = []; } }
+        else { buf.push(line); }
+      }
+      if (buf.length) INTRO_SECTIONS.push(buf.join('\n'));
+
+      let sectionIdx   = 0;
+      let completedText = '';   // all text shown so far (fully typed sections)
+      let typing       = false;
+      let done         = false;
+      let _raf         = null;
+      let _charTimer   = 0;
+      let _lastT       = performance.now();
+      let _typingTarget = '';
+      let _typingIdx   = 0;
 
       textEl.textContent = '';
-      if (barEl) barEl.style.width = '0%';
+      if (barEl)   barEl.style.width = '0%';
+      if (contEl)  contEl.style.opacity = '0';
 
       function finish() {
         if (done) return;
         done = true;
-        textEl.textContent = INTRO_LINES.join('\n');
-        if (barEl) barEl.style.width = '100%';
-        clearTimeout(_introAutoTimer);
+        cleanup();
+        if (contEl) contEl.style.opacity = '0';
         setTimeout(() => {
           screen.classList.add('hidden');
           screen.classList.remove('active');
           startGame(mode);
-        }, 600);
+        }, 400);
       }
 
-      // Typewriter: append one char at a time using rAF
-      let _introLastT = performance.now();
-      let _introRaf = null;
-      function _introTick(now) {
-        if (done) return;
-        const dt = now - _introLastT;
-        _introLastT = now;
-        charTimer += dt;
-        const full = INTRO_LINES.join('\n');
-        while (charTimer >= INTRO_CHAR_MS && printed < full.length) {
-          charTimer -= INTRO_CHAR_MS;
-          printed++;
-          textEl.textContent = full.slice(0, printed);
-          if (barEl) barEl.style.width = (printed / full.length * 100) + '%';
+      function cleanup() {
+        if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+        document.removeEventListener('keydown', onKey);
+      }
+
+      function showContinueHint() {
+        if (!contEl) return;
+        const isLast = sectionIdx >= INTRO_SECTIONS.length - 1;
+        contEl.textContent = isLast ? '[ Press E to begin ]' : '[ Press E to continue ]';
+        contEl.style.opacity = '1';
+      }
+
+      function completeCurrentSection() {
+        if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+        _typingIdx = _typingTarget.length;
+        textEl.textContent = _typingTarget;
+        completedText = _typingTarget;
+        typing = false;
+        if (barEl) barEl.style.width = ((sectionIdx + 1) / INTRO_SECTIONS.length * 100) + '%';
+        showContinueHint();
+      }
+
+      function startSection(idx) {
+        typing = true;
+        if (contEl) contEl.style.opacity = '0';
+        const sec = INTRO_SECTIONS[idx];
+        _typingTarget = completedText ? completedText + '\n\n' + sec : sec;
+        _typingIdx    = completedText.length + (completedText ? 2 : 0);
+        _charTimer    = 0;
+        _lastT        = performance.now();
+
+        function tick(now) {
+          const dt = now - _lastT;
+          _lastT = now;
+          _charTimer += dt;
+          while (_charTimer >= INTRO_CHAR_MS && _typingIdx < _typingTarget.length) {
+            _charTimer -= INTRO_CHAR_MS;
+            _typingIdx++;
+            textEl.textContent = _typingTarget.slice(0, _typingIdx);
+          }
+          if (_typingIdx >= _typingTarget.length) { completeCurrentSection(); return; }
+          _raf = requestAnimationFrame(tick);
         }
-        if (printed >= full.length) { finish(); return; }
-        _introRaf = requestAnimationFrame(_introTick);
+        _raf = requestAnimationFrame(tick);
       }
-      _introRaf = requestAnimationFrame(_introTick);
 
-      // Auto-finish after INTRO_DURATION
-      const _introAutoTimer = setTimeout(finish, INTRO_DURATION);
+      function onKey(e) {
+        if (e.code !== 'KeyE') return;
+        if (typing) {
+          completeCurrentSection();
+        } else {
+          sectionIdx++;
+          if (sectionIdx >= INTRO_SECTIONS.length) { finish(); }
+          else { startSection(sectionIdx); }
+        }
+      }
 
-      $('btn-skip-intro').onclick = () => {
-        if (_introRaf) cancelAnimationFrame(_introRaf);
-        finish();
-      };
+      document.addEventListener('keydown', onKey);
+      startSection(0);
+
+      $('btn-skip-intro').onclick = () => { cleanup(); finish(); };
     }
 
     $('btn-solo').onclick = () => showCustomize('solo');

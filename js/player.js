@@ -779,37 +779,6 @@ window.Player = (function () {
         bun.position.set(x, 0.37, 0.04); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
-    } else if (hairStyle === 'longStraight') {
-      // Back panel: top at y=0 (equator where sphere is widest) so it overlaps the head
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.84, 0.07), matHair);
-      back.position.set(0, -0.42, 0.282); head.add(back);
-      [-0.295, 0.295].forEach(x => {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.76, 0.30), matHair);
-        side.position.set(x, -0.38, 0.05);
-        side.rotation.z = x > 0 ? -0.08 : 0.08; head.add(side);
-      });
-      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.08), matHair);
-      fringe.position.set(0, 0.14, -0.260); head.add(fringe);
-      const tipBack = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.07, 0.12), matHair);
-      tipBack.position.set(0, -0.84, 0.270); head.add(tipBack);
-
-    } else if (hairStyle === 'downCurly') {
-      // Back panel: top at y=0 (equator) so it overlaps the head sphere
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.80, 0.07), matHair);
-      back.position.set(0, -0.40, 0.282); head.add(back);
-      [-0.16, 0, 0.16].forEach((x, i) => {
-        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.035, 7, 10, Math.PI * 1.5), matHair);
-        curl.position.set(x, -0.71, 0.30 + i * 0.005);
-        curl.rotation.x = Math.PI / 2 + 0.28; head.add(curl);
-      });
-      [-0.295, 0.295].forEach(x => {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.72, 0.30), matHair);
-        side.position.set(x, -0.36, 0.05);
-        side.rotation.z = x > 0 ? -0.10 : 0.10; head.add(side);
-        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.057, 0.029, 7, 9, Math.PI * 1.4), matHair);
-        curl.position.set(x * 1.05, -0.67, 0.11);
-        curl.rotation.x = Math.PI / 2 + 0.22; head.add(curl);
-      });
     }
 
     // ── Direction arrow — floor-level, rotates independently toward objective ──
