@@ -26,7 +26,7 @@ window.Guards = (function () {
   let DETECT_TIME  = 1.5;
 
   const _DIFF = {
-    easy:    { BASE_SPEED: 2.8, VISION_RANGE: 7,  DETECT_TIME: 2.5 },
+    easy:    { BASE_SPEED: 1.8, VISION_RANGE: 5,  DETECT_TIME: 4.5 },
     normal:  { BASE_SPEED: 3.5, VISION_RANGE: 11, DETECT_TIME: 1.5 },
     hard:    { BASE_SPEED: 4.8, VISION_RANGE: 14, DETECT_TIME: 0.8 },
     noguard: { BASE_SPEED: 0,   VISION_RANGE: 0,  DETECT_TIME: 999 },
@@ -942,9 +942,7 @@ window.Guards = (function () {
     if (level <= alertLevel) return;
     alertLevel = level;
     if (window.G) window.G.alarm.level = level;
-    if (level >= 3 && window.Security) {
-      Security.startAlarmCountdown();
-    }
+    // Countdown is NOT started here — only laser trips (via Security.triggerLaserAlarm) start the timer
   }
 
   function resetAlarm() {

@@ -110,6 +110,13 @@ html, body {
 #customize-screen .screen-content {
   max-width: 620px;
   gap: 12px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+#customize-screen {
+  align-items: flex-start;
+  overflow-y: auto;
 }
 
 .customize-layout {
