@@ -910,41 +910,6 @@ window.GameMap = (function () {
     scroll.position.set(wx + EX * 0.7, y + 0.05, wz); scene.add(scroll);
   }
 
-  // ── Museum visitor (colorful static pedestrian NPC) ─────────────────────────
-  function museumVisitor(scene, x, z, outfitColor, facingY) {
-    const outfitM = new THREE.MeshStandardMaterial({ color: outfitColor, roughness: 0.78, metalness: 0.0 });
-    const skinM   = new THREE.MeshStandardMaterial({ color: 0xd4a070, roughness: 0.72, metalness: 0.0 });
-    const hairM   = new THREE.MeshStandardMaterial({ color: 0x1a0c04, roughness: 0.88, metalness: 0.0 });
-    const shoeM   = new THREE.MeshStandardMaterial({ color: 0x0e0804, roughness: 0.75, metalness: 0.0 });
-    const g = new THREE.Group();
-    // Shoes
-    box(scene, 0.14, 0.09, 0.26, x - 0.09, 0.045, z, shoeM);
-    box(scene, 0.14, 0.09, 0.26, x + 0.09, 0.045, z, shoeM);
-    // Legs
-    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.82, 6), outfitM);
-    legs.position.set(x, 0.50, z); legs.castShadow = true; scene.add(legs);
-    // Torso
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.62, 7), outfitM);
-    torso.position.set(x, 1.12, z); torso.castShadow = true; scene.add(torso);
-    // Head
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), skinM);
-    head.position.set(x, 1.62, z); head.castShadow = true; scene.add(head);
-    // Hair dome
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.168, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.52), hairM);
-    hair.position.set(x, 1.63, z); scene.add(hair);
-    // Arms
-    [-0.23, 0.23].forEach((ox, i) => {
-      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.52, 5), outfitM);
-      arm.position.set(x + ox, 1.12, z);
-      arm.rotation.z = ox > 0 ? 0.28 : -0.28;
-      arm.castShadow = true; scene.add(arm);
-    });
-    if (facingY !== undefined) {
-      // Rotate all parts around the visitor centre
-      [legs, torso, head, hair].forEach(m => m.rotation.y = facingY);
-    }
-  }
-
   function ceilingLamp(scene, x, z) {
     const glassM = new THREE.MeshStandardMaterial({
       color: 0xe0ecff, roughness: 0.12, metalness: 0.0,
@@ -3071,10 +3036,6 @@ window.GameMap = (function () {
     wallLantern(scene,  24.85, 3.2, 146, -1);
     wallLantern(scene,  24.85, 3.2, 153, -1);
     wallLantern(scene,  24.85, 3.2, 158, -1);
-    // Vault visitors
-    museumVisitor(scene, -10, 130, 0xaa3322, Math.PI * 0.5);
-    museumVisitor(scene,  10, 145, 0x3355cc, Math.PI * 1.6);
-    museumVisitor(scene,  -5, 155, 0x228844, Math.PI * 0.2);
     // Crown Vault ceiling lamps above point lights
     [[-10, 125], [10, 125], [0, 140], [-10, 155], [10, 155]].forEach(([lx, lz]) => ceilingLamp(scene, lx, lz));
 
