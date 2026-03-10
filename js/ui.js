@@ -11,6 +11,7 @@ window.UI = (function () {
   const screens = {
     start:    $('start-screen'),
     loadout:  $('loadout-screen'),
+    intro:    $('intro-screen'),
     pause:    $('pause-screen'),
     gameover: $('gameover-screen'),
     win:      $('win-screen'),
@@ -459,7 +460,13 @@ window.UI = (function () {
       _beep(300, 0.10, 0.2, 'triangle');
       _beep(400, 0.10, 0.2, 'triangle', 0.10);
     },
-    footstep() { _beep(70 + Math.random() * 25, 0.04, 0.04, 'triangle'); },
+    footstep()   { _beep(70 + Math.random() * 25, 0.04, 0.04, 'triangle'); },
+    glassBreak() {
+      _beep(1800, 0.06, 0.22, 'sawtooth');
+      _beep(1200, 0.09, 0.18, 'sawtooth', 0.04);
+      _beep(900,  0.12, 0.14, 'sawtooth', 0.08);
+      _beep(600,  0.15, 0.10, 'triangle', 0.14);
+    },
     caught()   { _beep(180, 1.0, 0.5, 'sawtooth'); },
     win()      {
       [523, 659, 784, 1047].forEach((f, i) => _beep(f, 0.35, 0.3, 'sine', i * 0.18));
@@ -488,6 +495,8 @@ window.UI = (function () {
   const LB_KEY = 'lvdl_leaderboard';
   const RATING_COLORS = { S: '#ffd700', A: '#00ff88', B: '#4a9eff', C: '#ff8800' };
 
+  function _fmt(n) { return '€' + Math.round(n).toLocaleString('fr-FR'); }
+
   function showWin(stats) {
     if (stats) {
       const mm = String(Math.floor(stats.time / 60)).padStart(2, '0');
@@ -498,8 +507,30 @@ window.UI = (function () {
       document.getElementById('win-time').textContent    = mm + ':' + ss;
       document.getElementById('win-alerted').textContent = stats.guardsAlerted;
       document.getElementById('win-close').textContent   = stats.closeCalls;
+
+      // Title & subtitle reflect partial vs full heist
+      const titleEl    = document.getElementById('win-title');
+      const subtitleEl = document.getElementById('win-subtitle');
+      if (titleEl)    titleEl.textContent    = stats.partial ? 'Partial Heist!' : 'Heist Complete!';
+      if (subtitleEl) subtitleEl.textContent = stats.partial
+        ? 'You escaped — but not everything was stolen.'
+        : 'You stole the painting and the crown — and got away clean.';
+
+      // ── Score breakdown ──────────────────────────────
+      const lootVal     = stats.money || 0;
+      const timeBonus   = Math.max(0, Math.round(50000000 - stats.time * 80000));
+      const alarmBonus  = stats.guardsAlerted === 0 ? 25000000 : 0;
+      const fullBonus   = stats.partial ? 0 : 50000000;
+      const totalScore  = lootVal + timeBonus + alarmBonus + fullBonus;
+
+      const el = id => document.getElementById(id);
+      if (el('score-loot'))        el('score-loot').textContent        = _fmt(lootVal);
+      if (el('score-time-bonus'))  el('score-time-bonus').textContent  = timeBonus  > 0 ? '+' + _fmt(timeBonus)  : _fmt(0);
+      if (el('score-alarm-bonus')) el('score-alarm-bonus').textContent = alarmBonus > 0 ? '+' + _fmt(alarmBonus) : _fmt(0);
+      if (el('score-full-bonus'))  el('score-full-bonus').textContent  = fullBonus  > 0 ? '+' + _fmt(fullBonus)  : '—';
+
       const moneyEl = document.getElementById('win-money');
-      if (moneyEl) moneyEl.textContent = '€' + (stats.money || 0).toLocaleString('fr-FR');
+      if (moneyEl) moneyEl.textContent = _fmt(totalScore);
 
       // Leaderboard — persist top 5 by time
       const board = JSON.parse(localStorage.getItem(LB_KEY) || '[]');

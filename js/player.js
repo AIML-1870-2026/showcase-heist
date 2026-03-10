@@ -934,6 +934,16 @@ window.Player = (function () {
           _startSafeCrack(st);
           return;
         }
+        // Glass case must be smashed first
+        if (st.hasCase && !st.caseBroken) {
+          st.caseBroken = true;
+          if (st.caseMesh) st.caseMesh.visible = false;
+          UI.SFX.glassBreak();
+          UI.showAlert('Glass smashed! Guards alerted!', 2500);
+          Guards.notifyNoise(pos.x, pos.z, 9);
+          if (window.Security) Security.triggerAlarmLevel(1);
+          return;
+        }
         // UV-locked items require the UV key
         if (st.needsUV && !G.inventory.uvKey) {
           UI.showAlert('Need UV key to unlock case.', 2000);
@@ -1133,6 +1143,8 @@ window.Player = (function () {
       if (_dx * _dx + _dz * _dz < REACH2) {
         const prompt = (st.needsSafe && !st.safeCracked)
           ? '[E] Crack the vault safe'
+          : (st.hasCase && !st.caseBroken)
+          ? '[E] Smash case — ' + (st.label || st.item)
           : '[E] Steal the ' + (st.label || st.item);
         UI.showPrompt(prompt);
         found = true; break;

@@ -326,56 +326,51 @@
   }
 
   // ── Win check ──────────────────────────────────────────
+  let _escapePartial = false;  // true when escaping with partial loot
+
+  function _triggerEscape(partial) {
+    const G = window.G;
+    _escapePartial = partial || false;
+    G.phase = 'escaping';
+    _escapeTimer   = 0;
+    _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
+    UI.completeObjective('escape');
+    Music.stop();
+    document.exitPointerLock();
+  }
+
   function checkWin(pos) {
     const G = window.G;
+    const hasAnyLoot = G.inventory.painting || G.inventory.crown;
+    const hasFullLoot = G.inventory.painting && G.inventory.crown;
 
     // Feature 8: Service exit (west Lobby, X=-20, Z=15)
-    if (G.inventory.painting && G.inventory.crown) {
+    if (hasAnyLoot) {
       const seDx = pos.x - (-20), seDz = pos.z - 15;
       if (seDx * seDx + seDz * seDz < 1.5 * 1.5) {
-        G.phase = 'escaping';
-        _escapeTimer   = 0;
-        _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
-        UI.completeObjective('escape');
-        Music.stop();
-        document.exitPointerLock();
+        _triggerEscape(!hasFullLoot);
         return;
       }
     }
 
     // Feature 8: Helicopter exit (rooftop, rappel perk, X=0 Y>5 Z≈-8)
-    if (G.loadout.rappel && G.inventory.painting && G.inventory.crown) {
-      if (pos.y > 5) {
-        const heDx = pos.x - 0, heDz = pos.z - (-8);
-        if (heDx * heDx + heDz * heDz < 3 * 3) {
-          G.phase = 'escaping';
-          _escapeTimer   = 0;
-          _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
-          UI.completeObjective('escape');
-          Music.stop();
-          document.exitPointerLock();
-          return;
-        }
+    if (G.loadout.rappel && hasAnyLoot && pos.y > 5) {
+      const heDx = pos.x - 0, heDz = pos.z - (-8);
+      if (heDx * heDx + heDz * heDz < 3 * 3) {
+        _triggerEscape(!hasFullLoot);
+        return;
       }
     }
 
     if (pos.z < 163) return;
-    if (G.inventory.painting && G.inventory.crown) {
-      G.phase = 'escaping';
-      _escapeTimer = 0;
-      _escapeElapsed = Math.floor((Date.now() - G._startMs) / 1000);
-      UI.completeObjective('escape');
-      Music.stop();
-      document.exitPointerLock();
+    if (hasAnyLoot) {
+      _triggerEscape(!hasFullLoot);
     } else {
-      // Escaped without the loot
-      const missing = [];
-      if (!G.inventory.painting) missing.push('La Joconde');
-      if (!G.inventory.crown)    missing.push('the Crown');
+      // Escaped with nothing — mission failed
       G.phase = 'gameover';
       Music.stop();
       document.exitPointerLock();
-      UI.showGameOver('Mission Failed', 'You escaped without ' + missing.join(' or ') + '.');
+      UI.showGameOver('Mission Failed', 'You escaped empty-handed.');
     }
   }
 
@@ -400,7 +395,7 @@
       const rating = calcRating(_escapeElapsed, G.guardsAlerted, G.closeCalls);
       checkEndAchievements(_escapeElapsed, G.guardsAlerted, rating);
       UI.stopAmbient();
-      UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating, money: G._moneyStolen });
+      UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating, money: G._moneyStolen, partial: _escapePartial });
     }
   }
 
@@ -1112,6 +1107,92 @@
       updateSkinPreview();
     }());
 
+    // ── Intro cutscene / mission briefing ──────────────────
+    const INTRO_LINES = [
+      'OPERATIVE: ' + ((window.G.playerCustom && window.G.playerCustom.codename) || 'GHOST'),
+      'MISSION:   Le Vol du Louvre',
+      '',
+      'PRIMARY TARGETS',
+      '  La Joconde (Mona Lisa)  ........  Gallery West Wing',
+      '  The Crown of Saint-Louis  .....  Crown Vault B',
+      '',
+      'SECONDARY TARGETS',
+      '  Bonus stealables scattered throughout — take what you can.',
+      '  Glass-cased items trigger a local alarm on smash.',
+      '  Hidden gems in dark corners — worth finding.',
+      '',
+      'INTEL',
+      '  Security: laser grid, cameras, 6 active guards.',
+      '  Alarm response: 3-minute lockdown on full alert.',
+      '  Partial escape is possible — but ratings suffer.',
+      '',
+      'GOOD LUCK.  DON\'T GET CAUGHT.',
+    ];
+    const INTRO_DURATION = 7500;   // ms total auto-advance
+    const INTRO_CHAR_MS  = 22;     // ms per character
+
+    function _showIntro(mode) {
+      const screen = $('intro-screen');
+      if (!screen) { startGame(mode); return; }
+
+      // Refresh codename in case customization ran before this call
+      INTRO_LINES[0] = 'OPERATIVE: ' + ((window.G.playerCustom && window.G.playerCustom.codename) || 'GHOST');
+
+      screen.classList.remove('hidden');
+      screen.classList.add('active');
+
+      const textEl = $('intro-text');
+      const barEl  = $('intro-bar');
+      let charIdx  = 0, lineIdx = 0, charTimer = 0;
+      let totalChars = INTRO_LINES.join('\n').length;
+      let printed    = 0;
+      let done       = false;
+
+      textEl.textContent = '';
+      if (barEl) barEl.style.width = '0%';
+
+      function finish() {
+        if (done) return;
+        done = true;
+        textEl.textContent = INTRO_LINES.join('\n');
+        if (barEl) barEl.style.width = '100%';
+        clearTimeout(_introAutoTimer);
+        setTimeout(() => {
+          screen.classList.add('hidden');
+          screen.classList.remove('active');
+          startGame(mode);
+        }, 600);
+      }
+
+      // Typewriter: append one char at a time using rAF
+      let _introLastT = performance.now();
+      let _introRaf = null;
+      function _introTick(now) {
+        if (done) return;
+        const dt = now - _introLastT;
+        _introLastT = now;
+        charTimer += dt;
+        const full = INTRO_LINES.join('\n');
+        while (charTimer >= INTRO_CHAR_MS && printed < full.length) {
+          charTimer -= INTRO_CHAR_MS;
+          printed++;
+          textEl.textContent = full.slice(0, printed);
+          if (barEl) barEl.style.width = (printed / full.length * 100) + '%';
+        }
+        if (printed >= full.length) { finish(); return; }
+        _introRaf = requestAnimationFrame(_introTick);
+      }
+      _introRaf = requestAnimationFrame(_introTick);
+
+      // Auto-finish after INTRO_DURATION
+      const _introAutoTimer = setTimeout(finish, INTRO_DURATION);
+
+      $('btn-skip-intro').onclick = () => {
+        if (_introRaf) cancelAnimationFrame(_introRaf);
+        finish();
+      };
+    }
+
     $('btn-solo').onclick = () => showCustomize('solo');
     $('btn-coop').onclick = () => showCustomize('coop');
     // After customization → go to loadout screen
@@ -1163,7 +1244,7 @@
         rappel:   _selectedLoadout.has('rappel'),
       };
       UI.showScreen(null);
-      startGame(_pendingMode);
+      _showIntro(_pendingMode);
     };
 
     $('btn-loadout-back').onclick = () => {

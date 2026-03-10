@@ -2128,7 +2128,7 @@ window.GameMap = (function () {
     jadeHead.position.y = 0.29; jadeFig.add(jadeHead);
     jadeFig.position.set(0, 1.45, 88);
     scene.add(jadeFig);
-    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine', value: 2000000 });
+    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine', value: 2000000, hasCase: true, caseBroken: false });
     { const jRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.52, 24),
         new THREE.MeshBasicMaterial({ color: 0x44ff88, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       jRing.rotation.x = -Math.PI / 2; jRing.position.set(0, 0.96, 88); scene.add(jRing);
@@ -2422,7 +2422,7 @@ window.GameMap = (function () {
       egg.position.set(35, 1.06, 82);
       egg.userData.float = true;
       scene.add(egg);
-      stealables.push({ mesh: egg, item: 'egg', x: 35, z: 82, taken: false, bonus: true, label: "Fabergé Egg", value: 12000000 });
+      stealables.push({ mesh: egg, item: 'egg', x: 35, z: 82, taken: false, bonus: true, label: "Fabergé Egg", value: 12000000, hasCase: true, caseBroken: false });
       const eRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
         new THREE.MeshBasicMaterial({ color: 0x44ffaa, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       eRing.rotation.x = -Math.PI / 2; eRing.position.set(35, 0.02, 82); scene.add(eRing);
@@ -3419,6 +3419,72 @@ window.GameMap = (function () {
     makeVentGrate(0, 130);
     // Crown Vault → Lobby tunnel return vent entry
     vents.push({ entryX: 0, entryZ: 130, exitX: 0, exitZ: 28, exitY: 0, label: 'Tunnel' });
+
+    // ── Hidden loot items ────────────────────────────────────────────────────
+    // Small valuables tucked away in corners — no alarm on pickup, add to score.
+    (function addHiddenLoot() {
+      const gemMat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.05, metalness: 0.15, emissive: c, emissiveIntensity: 0.45, transparent: true, opacity: 0.88 });
+      const goldSmall = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.18, metalness: 0.90, emissive: 0x6a4a00, emissiveIntensity: 0.2 });
+
+      // 1. Silver compass — behind the lobby east pillar corner
+      { const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.022, 14),
+          new THREE.MeshStandardMaterial({ color: 0xaaaacc, roughness: 0.14, metalness: 0.95 }));
+        g.add(body);
+        const needle = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.005, 0.1), new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xcc0000, emissiveIntensity: 0.5 }));
+        needle.position.y = 0.015; g.add(needle);
+        g.position.set(14, 0.38, 35.5);
+        scene.add(g);
+        stealables.push({ mesh: g, item: 'compass', x: 14, z: 35.5, taken: false, bonus: true, hidden: true, label: 'Silver Compass', value: 95000 }); }
+
+      // 2. Ruby gem — behind west pillar row in Gallery
+      { const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.055), gemMat(0xff1133));
+        gem.position.set(-22, 0.42, 68); gem.rotation.y = 0.4; scene.add(gem);
+        stealables.push({ mesh: gem, item: 'ruby', x: -22, z: 68, taken: false, bonus: true, hidden: true, label: 'Ruby Gemstone', value: 480000 }); }
+
+      // 3. Gold coin purse — under gallery bench (z≈90, tucked against south wall)
+      { const g = new THREE.Group();
+        const bag = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 6), new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.30, metalness: 0.0 }));
+        bag.scale.set(1, 0.8, 0.75); g.add(bag);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.008, 5, 10), goldSmall);
+        ring.position.y = 0.052; g.add(ring);
+        g.position.set(-5, 0.30, 90.5);
+        scene.add(g);
+        stealables.push({ mesh: g, item: 'coinpurse', x: -5, z: 90.5, taken: false, bonus: true, hidden: true, label: 'Gold Coin Purse', value: 220000 }); }
+
+      // 4. Sapphire — east gallery corner, near the exit corridor entrance
+      { const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.052), gemMat(0x2255ff));
+        gem.position.set(23, 0.40, 97); gem.rotation.z = 0.3; scene.add(gem);
+        stealables.push({ mesh: gem, item: 'sapphire', x: 23, z: 97, taken: false, bonus: true, hidden: true, label: 'Sapphire', value: 560000 }); }
+
+      // 5. Emerald ring — corridor 2, tucked in the west corner (x=-4, z=108)
+      { const g = new THREE.Group();
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.010, 6, 14), goldSmall);
+        const stone = new THREE.Mesh(new THREE.OctahedronGeometry(0.022), gemMat(0x22ff66));
+        stone.position.y = 0.038; g.add(band); g.add(stone);
+        g.position.set(-3.5, 0.35, 108);
+        scene.add(g);
+        stealables.push({ mesh: g, item: 'emeraldring', x: -3.5, z: 108, taken: false, bonus: true, hidden: true, label: 'Emerald Ring', value: 340000 }); }
+
+      // 6. Amethyst pendant — Crown Vault, behind west pillar base (x=-22, z=128)
+      { const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.058), gemMat(0xaa22ff));
+        gem.position.set(-22, 0.44, 128); scene.add(gem);
+        stealables.push({ mesh: gem, item: 'amethyst', x: -22, z: 128, taken: false, bonus: true, hidden: true, label: 'Amethyst Pendant', value: 720000 }); }
+
+      // 7. Diamond shard — vault east corner behind display (x=22, z=150)
+      { const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.048), gemMat(0xeeeeff));
+        gem.position.set(22, 0.40, 150); gem.rotation.x = 0.5; scene.add(gem);
+        stealables.push({ mesh: gem, item: 'diamond', x: 22, z: 150, taken: false, bonus: true, hidden: true, label: 'Diamond Shard', value: 1200000 }); }
+
+      // 8. Antique brooch — lobby west corner near entrance (x=-18, z=5)
+      { const g = new THREE.Group();
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.012, 12), goldSmall);
+        const ctr  = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), gemMat(0xff8800));
+        ctr.position.y = 0.015; g.add(base); g.add(ctr);
+        g.position.set(-18, 0.35, 5);
+        scene.add(g);
+        stealables.push({ mesh: g, item: 'broochlobby', x: -18, z: 5, taken: false, bonus: true, hidden: true, label: 'Antique Brooch', value: 160000 }); }
+    }());
 
     return {
       walls,
