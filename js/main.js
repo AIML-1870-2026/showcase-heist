@@ -31,7 +31,7 @@
   window.G = {
     phase:          'start',   // 'start' | 'playing' | 'paused' | 'gameover' | 'won'
     mode:           'solo',    // 'solo'  | 'coop'
-    difficulty:     'normal',  // 'easy' | 'normal' | 'hard'
+    difficulty:     'easy',    // 'easy' | 'normal' | 'hard'
     walls:          [],
     doors:          [],
     keycardPickups: [],
@@ -1079,8 +1079,8 @@
       Companion.disable();
     }
 
-    pickMissionVariant();
     UI.initObjectives();
+    pickMissionVariant();
     UI.showHUD();
     UI.showAlarm(false);
     UI.hideAlert();
@@ -1248,7 +1248,7 @@
       const hairSlider    = document.getElementById('hair-color-slider');
       const skinSlider    = document.getElementById('skin-tone-slider');
       const sparkleSlider = document.getElementById('sparkle-slider');
-      const petBtn        = document.querySelector('#pet-btns .pet-btn.active');
+
       const shoeSw        = document.querySelector('#shoe-swatches .color-swatch.active');
       const name          = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
       window.G.playerCustom = {
@@ -1261,7 +1261,7 @@
         sparkleIntensity: sparkleSlider ? Number(sparkleSlider.value) : 0,
         shoeColor:        shoeSw && !shoeSw.dataset.shoeTheme ? Number(shoeSw.dataset.color) : 0x111111,
         shoeTheme:        shoeSw ? (shoeSw.dataset.shoeTheme || null) : null,
-        pet:              petBtn ? petBtn.dataset.pet : 'none',
+
         codename:         name,
       };
       const nameEl = $('codename-display');
@@ -1310,13 +1310,6 @@
       updateSkinPreview();
     }());
 
-    // ── Pet sidekick buttons ────────────────────────────────
-    document.querySelectorAll('#pet-btns .pet-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#pet-btns .pet-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      };
-    });
 
     // ── Hair style buttons ──────────────────────────────────
     document.querySelectorAll('#hair-style-btns .hair-btn').forEach(btn => {

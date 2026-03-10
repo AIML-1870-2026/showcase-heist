@@ -52,135 +52,6 @@ window.Player = (function () {
   // ── Direction arrow (floor-level, points toward objective) ─
   let _dirArrowCone = null;
 
-  // ── Pet sidekick ───────────────────────────────────────
-  let _petMesh  = null;
-  let _petType  = 'none';
-  let _petTrail = [];
-  const PET_TRAIL_FRAMES = 18;  // frames of delay (~0.30 s at 60 fps)
-
-  function buildPetMesh(type) {
-    if (!type || type === 'none') return null;
-    const g = new THREE.Group();
-
-    if (type === 'dog') {
-      const mD  = new THREE.MeshStandardMaterial({ color: 0xc8841a, roughness: 0.85 });
-      const mDk = new THREE.MeshStandardMaterial({ color: 0x4a2a0a, roughness: 0.85 });
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.34), mD);
-      body.position.y = 0.22; g.add(body);
-      const hd = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.18, 0.20), mD);
-      hd.position.set(0, 0.36, -0.16); g.add(hd);
-      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.10), mDk);
-      snout.position.set(0, 0.32, -0.27); g.add(snout);
-      [-0.08, 0.08].forEach(x => {
-        const ear = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.04), mDk);
-        ear.position.set(x, 0.50, -0.14); ear.rotation.z = x > 0 ? -0.3 : 0.3; g.add(ear);
-      });
-      [[-0.08,-0.15],[0.08,-0.15],[-0.08,0.12],[0.08,0.12]].forEach(([lx,lz]) => {
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.18, 5), mD);
-        leg.position.set(lx, 0.09, lz); g.add(leg);
-      });
-      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.01, 0.18, 5), mD);
-      tail.position.set(0, 0.28, 0.20); tail.rotation.x = -0.7; g.add(tail);
-
-    } else if (type === 'cat') {
-      const mC  = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.85 });
-      const mCk = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.85 });
-      const mEy = new THREE.MeshStandardMaterial({ color: 0x44ff88, emissive: 0x22aa44, emissiveIntensity: 0.8 });
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.30), mC);
-      body.position.y = 0.20; g.add(body);
-      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 6), mC);
-      hd.position.set(0, 0.36, -0.14); g.add(hd);
-      [-0.07, 0.07].forEach(x => {
-        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 4), mC);
-        ear.position.set(x, 0.48, -0.14); g.add(ear);
-      });
-      [-0.04, 0.04].forEach(x => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.015, 5, 4), mEy);
-        eye.position.set(x, 0.37, -0.24); g.add(eye);
-      });
-      [[-0.06,-0.12],[0.06,-0.12],[-0.06,0.10],[0.06,0.10]].forEach(([lx,lz]) => {
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.020, 0.16, 5), mC);
-        leg.position.set(lx, 0.08, lz); g.add(leg);
-      });
-      const t1 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.012, 0.22, 5), mCk);
-      t1.position.set(0, 0.22, 0.17); t1.rotation.x = -0.9; g.add(t1);
-      const t2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.006, 0.18, 5), mCk);
-      t2.position.set(0, 0.38, 0.28); t2.rotation.x = -2.0; g.add(t2);
-
-    } else if (type === 'bird') {
-      const mB  = new THREE.MeshStandardMaterial({ color: 0x44aaff, roughness: 0.7 });
-      const mBk = new THREE.MeshStandardMaterial({ color: 0x112244, roughness: 0.7 });
-      const mBe = new THREE.MeshStandardMaterial({ color: 0xffbb00, roughness: 0.6 });
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), mB);
-      body.position.y = 0.28; body.scale.set(1, 1.2, 1); g.add(body);
-      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), mB);
-      hd.position.set(0, 0.43, -0.07); g.add(hd);
-      [-0.04, 0.04].forEach(x => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 5, 4), mBk);
-        eye.position.set(x, 0.44, -0.12); g.add(eye);
-      });
-      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 5), mBe);
-      beak.position.set(0, 0.42, -0.18); beak.rotation.x = -Math.PI / 2; g.add(beak);
-      [-1, 1].forEach(s => {
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.18), mBk);
-        wing.position.set(s * 0.16, 0.29, 0); wing.rotation.z = s * 0.4; g.add(wing);
-      });
-      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.04, 0.12), mBk);
-      tail.position.set(0, 0.23, 0.12); tail.rotation.x = 0.4; g.add(tail);
-
-    } else if (type === 'snake') {
-      const mS  = new THREE.MeshStandardMaterial({ color: 0x228822, roughness: 0.75 });
-      const mSs = new THREE.MeshStandardMaterial({ color: 0x336633, roughness: 0.8 });
-      const mTo = new THREE.MeshStandardMaterial({ color: 0xff2222, roughness: 0.9 });
-      const mSe = new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff4400, emissiveIntensity: 0.5 });
-      [[0,0.06,0],[0.06,0.07,0.08],[0,0.07,0.16],[-0.06,0.08,0.24],
-       [0,0.09,0.30],[0.06,0.09,0.38],[0,0.09,0.44],[-0.05,0.09,0.50],[0,0.10,0.55]
-      ].forEach((p, i) => {
-        const r = i === 0 ? 0.02 : Math.min(0.035 + i * 0.003, 0.055);
-        const seg = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), i % 2 === 0 ? mS : mSs);
-        seg.position.set(p[0], p[1], p[2]); g.add(seg);
-      });
-      const sHd = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 6), mS);
-      sHd.position.set(0, 0.11, 0.60); sHd.scale.set(1.3, 0.75, 1.2); g.add(sHd);
-      const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.06), mTo);
-      tongue.position.set(0, 0.10, 0.66); g.add(tongue);
-      [-0.025, 0.025].forEach(x => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.012, 5, 4), mSe);
-        eye.position.set(x, 0.13, 0.63); g.add(eye);
-      });
-
-    } else if (type === 'penguin') {
-      const mBl = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.85 });
-      const mWh = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.80 });
-      const mOr = new THREE.MeshStandardMaterial({ color: 0xff8800, roughness: 0.6 });
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.13, 9, 7), mBl);
-      body.position.y = 0.22; body.scale.set(0.85, 1.15, 0.85); g.add(body);
-      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), mWh);
-      belly.position.set(0, 0.21, -0.06); belly.scale.set(0.75, 1.0, 0.5); g.add(belly);
-      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), mBl);
-      hd.position.set(0, 0.40, -0.02); g.add(hd);
-      [-0.04, 0.04].forEach(x => {
-        const ew = new THREE.Mesh(new THREE.SphereGeometry(0.024, 5, 4), mWh);
-        ew.position.set(x, 0.42, -0.09); g.add(ew);
-        const ep = new THREE.Mesh(new THREE.SphereGeometry(0.014, 5, 4), mBl);
-        ep.position.set(x, 0.42, -0.11); g.add(ep);
-      });
-      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.06, 4), mOr);
-      beak.position.set(0, 0.40, -0.14); beak.rotation.x = -Math.PI / 2; g.add(beak);
-      [-1, 1].forEach(s => {
-        const fl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.04), mBl);
-        fl.position.set(s * 0.18, 0.24, 0.01); fl.rotation.z = s * 0.5; g.add(fl);
-      });
-      [-0.05, 0.05].forEach(x => {
-        const ft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.10), mOr);
-        ft.position.set(x, 0.04, -0.02); g.add(ft);
-      });
-    }
-
-    g.scale.setScalar(0.55);
-    return g;
-  }
-
   // ── Safe-cracking minigame state ───────────────────────
   let _scActive    = false;
   let _scTumbler   = 0;
@@ -1209,16 +1080,6 @@ window.Player = (function () {
     camera.position.copy(camPos);
     camera.lookAt(pos.x, pos.y + 1.4, pos.z);
 
-    // ── Pet trail ─────────────────────────────────────────
-    if (_petMesh) {
-      _petTrail.push({ x: pos.x, z: pos.z, ry: playerMesh ? playerMesh.rotation.y : 0 });
-      if (_petTrail.length > PET_TRAIL_FRAMES) {
-        const snap = _petTrail.shift();
-        const petY = _petType === 'bird' ? 0.5 : 0;
-        _petMesh.position.set(snap.x, petY, snap.z);
-        _petMesh.rotation.y = snap.ry;
-      }
-    }
   }
 
   // ── Interact (E key) ───────────────────────────────────
@@ -1594,15 +1455,6 @@ window.Player = (function () {
     _leftArm   = playerMesh.userData.leftArm;
     _rightArm  = playerMesh.userData.rightArm;
 
-    // Rebuild pet
-    if (_petMesh) { scene.remove(_petMesh); _petMesh = null; }
-    _petTrail = [];
-    const _pc = window.G && window.G.playerCustom;
-    _petType  = (_pc && _pc.pet) ? _pc.pet : 'none';
-    if (_petType && _petType !== 'none') {
-      _petMesh = buildPetMesh(_petType);
-      if (_petMesh) { _petMesh.position.set(pos.x - 1, 0, pos.z); scene.add(_petMesh); }
-    }
   }
 
   function setCaught() {
