@@ -395,26 +395,164 @@
   // ── Escape cutscene ────────────────────────────────────
   let _escapeTimer   = 0;
   let _escapeElapsed = 0;
-  const _CAM_END  = new THREE.Vector3(-18, 32, 174);   // elevated side angle
-  const _LOOK_END = new THREE.Vector3(0, 10, 205);     // looking at pyramid apex area
+  const _CAM_END  = new THREE.Vector3(-18, 32, 174);
+  const _LOOK_END = new THREE.Vector3(0, 10, 205);
+  // Sunrise sky colours — lerp from night to dawn
+  const _SKY_NIGHT   = new THREE.Color(0x0c1018);
+  const _SKY_SUNRISE = new THREE.Color(0xff8030);
+  const _FOG_SUNRISE = new THREE.Color(0xffb060);
+
   function tickEscapeCutscene(dt) {
     _escapeTimer += dt;
     const G = window.G;
 
     // Camera smoothly sweeps to wide shot of the pyramid
     const t = Math.min(1, _escapeTimer / 3.0);
-    const ease = t * t * (3 - 2 * t);  // smoothstep
+    const ease = t * t * (3 - 2 * t);
     camera.position.lerp(_CAM_END, ease * dt * 1.8 + dt * 0.3);
     camera.lookAt(_LOOK_END);
 
-    // After 5 seconds show the win screen
+    // Fade scene background to sunrise as the cutscene plays
+    const skyT = Math.min(1, _escapeTimer / 5.0);
+    scene.background = _SKY_NIGHT.clone().lerp(_SKY_SUNRISE, skyT);
+    if (scene.fog) scene.fog.color.copy(_SKY_NIGHT).lerp(_FOG_SUNRISE, skyT);
+
+    // After 5 seconds trigger celebration overlay then win screen
     if (_escapeTimer >= 5.0 && G.phase === 'escaping') {
-      G.phase = 'won';
+      G.phase = 'celebrating';
       const rating = calcRating(_escapeElapsed, G.guardsAlerted, G.closeCalls);
       checkEndAchievements(_escapeElapsed, G.guardsAlerted, rating);
       UI.stopAmbient();
-      UI.showWin({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating, money: G._moneyStolen, partial: _escapePartial });
+      _showCelebration({ time: _escapeElapsed, guardsAlerted: G.guardsAlerted, closeCalls: G.closeCalls, rating, money: G._moneyStolen, partial: _escapePartial });
     }
+  }
+
+  // ── Celebration overlay ────────────────────────────────
+  let _celebRaf = null;
+  function _showCelebration(stats) {
+    const overlay  = document.getElementById('celebration-screen');
+    const canvas   = document.getElementById('celebration-canvas');
+    if (!overlay || !canvas) {
+      // Fallback: go straight to win
+      window.G.phase = 'won';
+      UI.showWin(stats);
+      return;
+    }
+    overlay.style.display = 'block';
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Build a small Three.js scene for the celebration
+    const celRdr = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    celRdr.setSize(canvas.width, canvas.height, false);
+    celRdr.outputEncoding = THREE.sRGBEncoding;
+    const celScene = new THREE.Scene();
+    celScene.background = new THREE.Color(0xff8030);
+    celScene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const keyL = new THREE.DirectionalLight(0xffe8a0, 1.2);
+    keyL.position.set(3, 6, 3); celScene.add(keyL);
+    const rimL = new THREE.DirectionalLight(0xff6020, 0.5);
+    rimL.position.set(-3, 1, -2); celScene.add(rimL);
+
+    const celCam = new THREE.PerspectiveCamera(55, canvas.width / canvas.height, 0.1, 60);
+    celCam.position.set(0, 1.6, 4.2);
+    celCam.lookAt(0, 1.4, 0);
+
+    // Character mesh using player customisation
+    const custom = window.G.playerCustom || {};
+    const charMesh = Player.buildPreviewMesh(
+      custom.suitColor, custom.eyeColor, custom.suitTheme,
+      custom.hairStyle, custom.hairColor, custom.skinColor,
+      custom.shoeColor, custom.shoeTheme, custom.sparkleIntensity
+    );
+    charMesh.position.set(0, 0, 0);
+    celScene.add(charMesh);
+
+    // Raise arms for celebration: rotate arm groups up
+    const lArm = charMesh.userData.leftArm;
+    const rArm = charMesh.userData.rightArm;
+    if (lArm) lArm.rotation.z =  1.2;
+    if (rArm) rArm.rotation.z = -1.2;
+
+    // Floating painting (coloured rectangle)
+    const paintGeo = new THREE.BoxGeometry(0.55, 0.42, 0.04);
+    const paintMat = new THREE.MeshStandardMaterial({ color: 0xc9a030, emissive: 0x443300, emissiveIntensity: 0.3 });
+    const paintMesh = new THREE.Mesh(paintGeo, paintMat);
+    paintMesh.position.set(-1.1, 2.0, 0.5);
+    celScene.add(paintMesh);
+    // Canvas face on painting
+    const faceGeo = new THREE.PlaneGeometry(0.46, 0.34);
+    const faceC   = document.createElement('canvas'); faceC.width = faceC.height = 128;
+    const fCtx    = faceC.getContext('2d');
+    const grad    = fCtx.createLinearGradient(0,0,128,128);
+    grad.addColorStop(0,'#8b6914'); grad.addColorStop(1,'#d4a850');
+    fCtx.fillStyle = grad; fCtx.fillRect(0,0,128,128);
+    fCtx.fillStyle = '#6a4510'; fCtx.beginPath(); fCtx.ellipse(64,64,22,28,0,0,Math.PI*2); fCtx.fill();
+    const faceTex = new THREE.CanvasTexture(faceC);
+    paintMesh.add(new THREE.Mesh(faceGeo, new THREE.MeshBasicMaterial({ map: faceTex })));
+    paintMesh.children[0].position.z = 0.025;
+
+    // Floating crown
+    const crownMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0x665500, emissiveIntensity: 0.5, roughness: 0.2, metalness: 0.9 });
+    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.10, 8), crownMat);
+    crownBase.position.set(1.0, 2.3, 0.4);
+    celScene.add(crownBase);
+    [0, 1, 2, 3, 4].forEach(i => {
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 5), crownMat);
+      const ang = (i / 5) * Math.PI * 2;
+      spike.position.set(crownBase.position.x + Math.cos(ang) * 0.13, crownBase.position.y + 0.14, crownBase.position.z + Math.sin(ang) * 0.13);
+      celScene.add(spike);
+    });
+
+    // Confetti particles
+    const confettiColors = [0xff69b4, 0xffdd00, 0x44ddff, 0x88ff44, 0xffa500, 0xcc44ff];
+    const confetti = [];
+    for (let i = 0; i < 60; i++) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.06, 0.01),
+        new THREE.MeshBasicMaterial({ color: confettiColors[i % confettiColors.length] })
+      );
+      m.position.set((Math.random() - 0.5) * 5, Math.random() * 4, (Math.random() - 0.5) * 2);
+      m.userData.vy = -(0.4 + Math.random() * 1.2);
+      m.userData.vx = (Math.random() - 0.5) * 0.8;
+      m.userData.spin = (Math.random() - 0.5) * 4;
+      celScene.add(m);
+      confetti.push(m);
+    }
+
+    let celT = 0;
+    let lastNow = performance.now();
+    function celLoop() {
+      _celebRaf = requestAnimationFrame(celLoop);
+      const now = performance.now();
+      const dt2 = Math.min((now - lastNow) / 1000, 0.05);
+      lastNow = now;
+      celT += dt2;
+
+      charMesh.rotation.y = Math.sin(celT * 1.5) * 0.35;
+      paintMesh.position.y = 2.0 + Math.sin(celT * 2.0) * 0.12;
+      paintMesh.rotation.z = Math.sin(celT * 1.3) * 0.12;
+      crownBase.position.y = 2.3 + Math.cos(celT * 2.2) * 0.12;
+
+      confetti.forEach(c => {
+        c.position.y  += c.userData.vy  * dt2;
+        c.position.x  += c.userData.vx  * dt2;
+        c.rotation.z  += c.userData.spin * dt2;
+        if (c.position.y < -1) c.position.y = 4;
+      });
+
+      celRdr.render(celScene, celCam);
+
+      if (celT >= 4.0) {
+        cancelAnimationFrame(_celebRaf);
+        _celebRaf = null;
+        celRdr.dispose();
+        overlay.style.display = 'none';
+        window.G.phase = 'won';
+        UI.showWin(stats);
+      }
+    }
+    celLoop();
   }
 
   // ── Alarm light pulse + flicker ────────────────────────
@@ -1040,17 +1178,23 @@
       const ss = document.querySelector('#suit-swatches .color-swatch.active');
       const es = document.querySelector('#eye-swatches .color-swatch.active');
       const hs = document.querySelector('#hair-style-btns .hair-btn.active');
-      const hairSlider = document.getElementById('hair-color-slider');
-      const skinSlider = document.getElementById('skin-tone-slider');
-      const hairVal = hairSlider ? Number(hairSlider.value) : 0;
-      const skinVal = skinSlider ? Number(skinSlider.value) : 50;
+      const sh = document.querySelector('#shoe-swatches .color-swatch.active');
+      const hairSlider    = document.getElementById('hair-color-slider');
+      const skinSlider    = document.getElementById('skin-tone-slider');
+      const sparkleSlider = document.getElementById('sparkle-slider');
+      const hairVal    = hairSlider    ? Number(hairSlider.value)    : 0;
+      const skinVal    = skinSlider    ? Number(skinSlider.value)    : 50;
+      const sparkleVal = sparkleSlider ? Number(sparkleSlider.value) : 0;
       return {
-        suit:       ss && !ss.dataset.suitTheme ? Number(ss.dataset.color) : 0x1a1a2e,
-        eye:        es ? Number(es.dataset.color) : 0x88ccff,
-        suitTheme:  ss ? (ss.dataset.suitTheme || null) : null,
-        hairStyle:  hs ? hs.dataset.style : 'ponytail',
-        hairColor:  _hairSliderToHex(hairVal),
-        skinColor:  _skinSliderToHex(skinVal),
+        suit:             ss && !ss.dataset.suitTheme ? Number(ss.dataset.color) : 0xff69b4,
+        eye:              es ? Number(es.dataset.color) : 0x88ccff,
+        suitTheme:        ss ? (ss.dataset.suitTheme || null) : null,
+        hairStyle:        hs ? hs.dataset.style : 'ponytail',
+        hairColor:        _hairSliderToHex(hairVal),
+        skinColor:        _skinSliderToHex(skinVal),
+        shoeColor:        sh && !sh.dataset.shoeTheme ? Number(sh.dataset.color) : 0x111111,
+        shoeTheme:        sh ? (sh.dataset.shoeTheme || null) : null,
+        sparkleIntensity: sparkleVal,
       };
     }
 
@@ -1058,8 +1202,8 @@
       if (!_prevScene || !_prevMesh) return;
       const rot = _prevMesh.rotation.y;
       _prevScene.remove(_prevMesh);
-      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity);
       _prevMesh.rotation.y = rot;
       _prevScene.add(_prevMesh);
     }
@@ -1082,8 +1226,8 @@
       _prevCam = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 50);
       _prevCam.position.set(0, 1.2, 4.0);
       _prevCam.lookAt(0, 1.0, 0);
-      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity);
       _prevScene.add(_prevMesh);
       (function loop() {
         _prevRaf = requestAnimationFrame(loop);
@@ -1107,22 +1251,27 @@
     }
 
     function applyCustomization() {
-      const suitSw     = document.querySelector('#suit-swatches .color-swatch.active');
-      const eyeSw      = document.querySelector('#eye-swatches .color-swatch.active');
-      const hairBtn    = document.querySelector('#hair-style-btns .hair-btn.active');
-      const hairSlider = document.getElementById('hair-color-slider');
-      const skinSlider = document.getElementById('skin-tone-slider');
-      const petBtn     = document.querySelector('#pet-btns .pet-btn.active');
-      const name       = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
+      const suitSw        = document.querySelector('#suit-swatches .color-swatch.active');
+      const eyeSw         = document.querySelector('#eye-swatches .color-swatch.active');
+      const hairBtn       = document.querySelector('#hair-style-btns .hair-btn.active');
+      const hairSlider    = document.getElementById('hair-color-slider');
+      const skinSlider    = document.getElementById('skin-tone-slider');
+      const sparkleSlider = document.getElementById('sparkle-slider');
+      const petBtn        = document.querySelector('#pet-btns .pet-btn.active');
+      const shoeSw        = document.querySelector('#shoe-swatches .color-swatch.active');
+      const name          = ($('codename-input').value.trim() || 'Ghost').slice(0, 16);
       window.G.playerCustom = {
-        suitColor:  suitSw && !suitSw.dataset.suitTheme ? Number(suitSw.dataset.color) : 0x1a1a2e,
-        suitTheme:  suitSw ? (suitSw.dataset.suitTheme || null) : null,
-        eyeColor:   eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
-        hairStyle:  hairBtn  ? hairBtn.dataset.style : 'ponytail',
-        hairColor:  _hairSliderToHex(hairSlider ? Number(hairSlider.value) : 0),
-        skinColor:  _skinSliderToHex(skinSlider ? Number(skinSlider.value) : 50),
-        pet:        petBtn   ? petBtn.dataset.pet   : 'none',
-        codename:   name,
+        suitColor:        suitSw && !suitSw.dataset.suitTheme ? Number(suitSw.dataset.color) : 0xff69b4,
+        suitTheme:        suitSw ? (suitSw.dataset.suitTheme || null) : null,
+        eyeColor:         eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
+        hairStyle:        hairBtn  ? hairBtn.dataset.style : 'ponytail',
+        hairColor:        _hairSliderToHex(hairSlider    ? Number(hairSlider.value)    : 0),
+        skinColor:        _skinSliderToHex(skinSlider    ? Number(skinSlider.value)    : 50),
+        sparkleIntensity: sparkleSlider ? Number(sparkleSlider.value) : 0,
+        shoeColor:        shoeSw && !shoeSw.dataset.shoeTheme ? Number(shoeSw.dataset.color) : 0x111111,
+        shoeTheme:        shoeSw ? (shoeSw.dataset.shoeTheme || null) : null,
+        pet:              petBtn ? petBtn.dataset.pet : 'none',
+        codename:         name,
       };
       const nameEl = $('codename-display');
       if (nameEl) nameEl.textContent = '// ' + name.toUpperCase();
@@ -1144,6 +1293,18 @@
       };
     });
 
+    document.querySelectorAll('#shoe-swatches .color-swatch').forEach(sw => {
+      sw.onclick = () => {
+        document.querySelectorAll('#shoe-swatches .color-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+        _previewUpdate();
+      };
+    });
+
+    (function () {
+      const sparkleSlider = document.getElementById('sparkle-slider');
+      if (sparkleSlider) sparkleSlider.addEventListener('input', _previewUpdate);
+    }());
 
     (function () {
       const skinSlider  = document.getElementById('skin-tone-slider');
@@ -1536,7 +1697,7 @@
 
     const G = window.G;
 
-    if (G.phase !== 'playing' && G.phase !== 'escaping') {
+    if (G.phase !== 'playing' && G.phase !== 'escaping' && G.phase !== 'celebrating') {
       renderer.render(scene, camera);
       return;
     }
@@ -1547,9 +1708,11 @@
     const playerPos   = Player.getPositionRef();
     const playerState = Player.getState();
 
-    if (G.phase === 'escaping') {
-      Player.update(dt);   // runs tickDance only during 'escaping'
-      tickEscapeCutscene(dt);
+    if (G.phase === 'escaping' || G.phase === 'celebrating') {
+      if (G.phase === 'escaping') {
+        Player.update(dt);
+        tickEscapeCutscene(dt);
+      }
       renderer.render(scene, camera);
       return;
     }

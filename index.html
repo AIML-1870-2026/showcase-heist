@@ -63,17 +63,47 @@
           </div>
 
           <div class="customize-section">
-            <label class="customize-label">Suit</label>
+            <label class="customize-label">Suit Color</label>
             <div class="swatch-row" id="suit-swatches">
-              <div class="color-swatch active" data-color="0x1a1a2e" style="background:#1a1a2e;" title="Midnight Navy"></div>
-              <div class="color-swatch" data-color="0x5c1a1a" style="background:#5c1a1a;" title="Crimson Shadow"></div>
-              <div class="color-swatch" data-color="0x1a3a1a" style="background:#1a3a1a;" title="Phantom Green"></div>
-              <div class="color-swatch" data-color="0x2a1a4a" style="background:#2a1a4a;" title="Dark Amethyst"></div>
-              <div class="color-swatch" data-color="0x2a1f10" style="background:#2a1f10;" title="Dark Khaki"></div>
-              <div class="color-swatch" data-suit-theme="galaxy" style="background:radial-gradient(circle at 35% 35%,#2a0a5a,#08041a);background-image:radial-gradient(white 1px,transparent 1px),radial-gradient(rgba(180,140,255,0.6) 1px,transparent 1px);background-size:18px 18px,30px 30px;background-position:0 0,9px 9px;" title="Galaxy"></div>
-              <div class="color-swatch" data-suit-theme="snakeskin" style="background:repeating-linear-gradient(120deg,#0d1a08 0px,#0d1a08 5px,#1e3a12 5px,#1e3a12 11px,#0d1a08 11px,#0d1a08 16px);" title="Snakeskin"></div>
-              <div class="color-swatch" data-suit-theme="sparkpink" style="background:radial-gradient(circle at 40% 40%,#ff80cc,#e8559a,#c0306a);" title="Sparkly Pink"></div>
-              <div class="color-swatch" data-suit-theme="flower" style="background:#1a0d2e;border-color:#ff69b4;" title="Flower"></div>
+              <div class="color-swatch active" data-color="0xff69b4" style="background:#ff69b4;" title="Pink"></div>
+              <div class="color-swatch" data-color="0x8b2fc9" style="background:#8b2fc9;" title="Purple"></div>
+              <div class="color-swatch" data-color="0x1a9a40" style="background:#1a9a40;" title="Green"></div>
+              <div class="color-swatch" data-color="0xd4a017" style="background:#d4a017;" title="Gold"></div>
+              <div class="color-swatch" data-color="0xb0b0b0" style="background:#b0b0b0;" title="Silver"></div>
+              <div class="color-swatch" data-color="0x111111" style="background:#111111;" title="Black"></div>
+              <div class="color-swatch" data-color="0x1a50d4" style="background:#1a50d4;" title="Blue"></div>
+              <div class="color-swatch" data-color="0xff6600" style="background:#ff6600;" title="Orange"></div>
+              <div class="color-swatch" data-color="0xffdd00" style="background:#ffdd00;" title="Yellow"></div>
+              <div class="color-swatch" data-color="0xcc1111" style="background:#cc1111;" title="Red"></div>
+              <div class="color-swatch" data-suit-theme="snakeskin" style="background:repeating-linear-gradient(120deg,#0d1a08 0px,#0d1a08 5px,#1e3a12 5px,#1e3a12 11px,#0d1a08 11px,#0d1a08 16px);" title="Snake Skin"></div>
+              <div class="color-swatch" data-suit-theme="galaxy" style="background:radial-gradient(circle at 35% 35%,#2a0a5a,#08041a);" title="Galaxy"></div>
+            </div>
+          </div>
+
+          <div class="customize-section">
+            <label class="customize-label">Suit Sparkle</label>
+            <div class="hair-color-row">
+              <span class="hair-color-label">None</span>
+              <input id="sparkle-slider" type="range" min="0" max="100" value="0" />
+              <span class="hair-color-label">Glam</span>
+            </div>
+          </div>
+
+          <div class="customize-section">
+            <label class="customize-label">Shoe Color</label>
+            <div class="swatch-row" id="shoe-swatches">
+              <div class="color-swatch" data-color="0xff69b4" style="background:#ff69b4;" title="Pink"></div>
+              <div class="color-swatch" data-color="0x8b2fc9" style="background:#8b2fc9;" title="Purple"></div>
+              <div class="color-swatch" data-color="0x1a9a40" style="background:#1a9a40;" title="Green"></div>
+              <div class="color-swatch" data-color="0xd4a017" style="background:#d4a017;" title="Gold"></div>
+              <div class="color-swatch" data-color="0xb0b0b0" style="background:#b0b0b0;" title="Silver"></div>
+              <div class="color-swatch active" data-color="0x111111" style="background:#111111;" title="Black"></div>
+              <div class="color-swatch" data-color="0x1a50d4" style="background:#1a50d4;" title="Blue"></div>
+              <div class="color-swatch" data-color="0xff6600" style="background:#ff6600;" title="Orange"></div>
+              <div class="color-swatch" data-color="0xffdd00" style="background:#ffdd00;" title="Yellow"></div>
+              <div class="color-swatch" data-color="0xcc1111" style="background:#cc1111;" title="Red"></div>
+              <div class="color-swatch" data-shoe-theme="snakeskin" style="background:repeating-linear-gradient(120deg,#0d1a08 0px,#0d1a08 5px,#1e3a12 5px,#1e3a12 11px,#0d1a08 11px,#0d1a08 16px);" title="Snake Skin"></div>
+              <div class="color-swatch" data-shoe-theme="galaxy" style="background:radial-gradient(circle at 35% 35%,#2a0a5a,#08041a);" title="Galaxy"></div>
             </div>
           </div>
 
@@ -214,6 +244,15 @@
         <button id="btn-resume-checkpoint" class="btn btn-secondary hidden">Resume from Gallery</button>
         <button id="btn-go-menu" class="btn btn-ghost">Main Menu</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Celebration Screen -->
+  <div id="celebration-screen" style="display:none;position:fixed;inset:0;z-index:200;background:linear-gradient(180deg,#ff7020 0%,#ffb040 35%,#ffd080 65%,#ffe4b0 100%);overflow:hidden;">
+    <canvas id="celebration-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div id="celebration-text" style="position:absolute;bottom:12%;left:0;right:0;text-align:center;font-family:'Courier New',monospace;color:#3a1a00;text-shadow:0 2px 8px rgba(255,200,80,0.7);">
+      <div style="font-size:2.2rem;font-weight:bold;letter-spacing:0.08em;">CLEAN GETAWAY!</div>
+      <div style="font-size:1.1rem;margin-top:8px;opacity:0.85;">The world's greatest heist — complete.</div>
     </div>
   </div>
 

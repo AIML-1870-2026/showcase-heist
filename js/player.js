@@ -56,7 +56,7 @@ window.Player = (function () {
   let _petMesh  = null;
   let _petType  = 'none';
   let _petTrail = [];
-  const PET_TRAIL_FRAMES = 44;  // frames of delay (~0.75 s at 60 fps)
+  const PET_TRAIL_FRAMES = 18;  // frames of delay (~0.30 s at 60 fps)
 
   function buildPetMesh(type) {
     if (!type || type === 'none') return null;
@@ -504,8 +504,8 @@ window.Player = (function () {
     }
   }
 
-  // ── Themed suit canvas textures ────────────────────────
-  function makeSuitTex(theme) {
+  // ── Themed suit/shoe canvas textures ──────────────────
+  function makeSuitTex(theme, sparkleIntensity, solidColor) {
     const S = 256;
     const c = document.createElement('canvas');
     c.width = c.height = S;
@@ -597,7 +597,39 @@ window.Player = (function () {
           ctx.strokeStyle = 'rgba(4,10,2,0.85)'; ctx.lineWidth = 1.3; ctx.stroke();
         }
       }
+    } else if (!theme && solidColor !== undefined) {
+      // Plain solid colour base
+      const r = (solidColor >> 16) & 0xff;
+      const g = (solidColor >> 8)  & 0xff;
+      const b =  solidColor        & 0xff;
+      ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fillRect(0, 0, S, S);
     }
+
+    // ── Sparkle overlay ────────────────────────────────
+    const sp = sparkleIntensity || 0;
+    if (sp > 0) {
+      const count  = Math.round(sp * 5.5);    // 0 → 0, 100 → 550 dots
+      const maxR   = 0.5 + sp * 0.04;         // dot radius scales with intensity
+      const alphaB = 0.3 + sp * 0.007;        // base alpha
+      for (let i = 0; i < count; i++) {
+        const sx = Math.random() * S;
+        const sy = Math.random() * S;
+        const r  = Math.random() * maxR + 0.3;
+        const a  = alphaB + Math.random() * 0.5;
+        ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${Math.min(1, a)})`; ctx.fill();
+      }
+      // A few larger star-bursts at high intensities
+      if (sp > 40) {
+        const stars = Math.round((sp - 40) * 0.25);
+        for (let i = 0; i < stars; i++) {
+          const sx = Math.random() * S, sy = Math.random() * S;
+          ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 3 + 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,240,180,${0.5 + Math.random() * 0.5})`; ctx.fill();
+        }
+      }
+    }
+
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(3, 5);
@@ -608,24 +640,29 @@ window.Player = (function () {
   function buildMesh(sc) {
     const group = new THREE.Group();
 
-    const custom    = window.G && window.G.playerCustom || {};
-    const suitHex   = custom.suitColor !== undefined ? custom.suitColor : 0x1a1a2e;
-    const eyeHex    = custom.eyeColor  !== undefined ? custom.eyeColor  : 0x88ccff;
-    const suitTheme = custom.suitTheme || null;
-    const hairStyle = custom.hairStyle || 'ponytail';
-    const hairHex   = custom.hairColor !== undefined ? custom.hairColor : 0x0a0604;
-    const skinHex   = custom.skinColor !== undefined ? custom.skinColor : 0xd4a07a;
+    const custom          = window.G && window.G.playerCustom || {};
+    const suitHex         = custom.suitColor      !== undefined ? custom.suitColor      : 0xff69b4;
+    const eyeHex          = custom.eyeColor       !== undefined ? custom.eyeColor       : 0x88ccff;
+    const suitTheme       = custom.suitTheme      || null;
+    const hairStyle       = custom.hairStyle      || 'ponytail';
+    const hairHex         = custom.hairColor      !== undefined ? custom.hairColor      : 0x0a0604;
+    const skinHex         = custom.skinColor      !== undefined ? custom.skinColor      : 0xd4a07a;
+    const shoeHex         = custom.shoeColor      !== undefined ? custom.shoeColor      : 0x111111;
+    const shoeTheme       = custom.shoeTheme      || null;
+    const sparkleIntensity = custom.sparkleIntensity !== undefined ? custom.sparkleIntensity : 0;
 
-    const matSuit = suitTheme
-      ? new THREE.MeshStandardMaterial({ map: makeSuitTex(suitTheme), roughness: 0.78, metalness: 0.05 })
+    const needsTex = suitTheme || sparkleIntensity > 0;
+    const matSuit = needsTex
+      ? new THREE.MeshStandardMaterial({ map: makeSuitTex(suitTheme, sparkleIntensity, suitHex), roughness: 0.78, metalness: 0.05 })
       : new THREE.MeshStandardMaterial({ color: suitHex, roughness: 0.82, metalness: 0.05 });
     const matVest   = new THREE.MeshStandardMaterial({ color: 0x141420, roughness: 0.80, metalness: 0.06 });
-    const matHelmet = new THREE.MeshStandardMaterial({ color: 0x0d0d14, roughness: 0.85, metalness: 0.12 });
     const matSkin   = new THREE.MeshStandardMaterial({ color: skinHex,  roughness: 0.80, metalness: 0.0  });
-    const matGogF   = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.45, metalness: 0.70 });
     const matGogL   = new THREE.MeshStandardMaterial({ color: eyeHex, emissive: eyeHex, emissiveIntensity: 0.9, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85 });
     const matStrap  = new THREE.MeshStandardMaterial({ color: 0x252535, roughness: 0.90, metalness: 0.10 });
-    const matBoot   = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.50, metalness: 0.30 });
+    const shoeNeedsTex = shoeTheme != null;
+    const matBoot   = shoeNeedsTex
+      ? new THREE.MeshStandardMaterial({ map: makeSuitTex(shoeTheme, 0, shoeHex), roughness: 0.50, metalness: 0.30 })
+      : new THREE.MeshStandardMaterial({ color: shoeHex, roughness: 0.50, metalness: 0.30 });
     const matGold   = new THREE.MeshStandardMaterial({ color: 0xc9a84c, roughness: 0.35, metalness: 0.70, emissive: 0x443310, emissiveIntensity: 0.4 });
     const matMetal  = new THREE.MeshStandardMaterial({ color: 0x667788, roughness: 0.40, metalness: 0.80 });
     const matRope   = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.95, metalness: 0.0  });
@@ -781,18 +818,12 @@ window.Player = (function () {
     head.castShadow = true;
     group.add(head);
 
-    // ── Goggles on the face at actual eye level ───────────
-    [-0.097, 0.097].forEach(xOff => {
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.092, 0.058), matGogF);
-      frame.position.set(xOff, 1.86, -0.335);
-      group.add(frame);
-      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.070, 0.030), matGogL);
-      lens.position.set(xOff, 1.86, -0.353);
-      group.add(lens);
+    // ── Eyes (simple glowing dots) ───────────────────────
+    [-0.09, 0.09].forEach(xOff => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 6, 5), matGogL);
+      eye.position.set(xOff, 1.875, -0.278);
+      group.add(eye);
     });
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.028, 0.045), matGogF);
-    bridge.position.set(0, 1.86, -0.338);
-    group.add(bridge);
 
     // ── Nose + smile ──────────────────────────────────────────────────
     const matFace = new THREE.MeshStandardMaterial({ color: 0x1a0a06, roughness: 0.95, metalness: 0.0 });
@@ -801,18 +832,10 @@ window.Player = (function () {
     nose.position.set(0, 1.82, -0.320);
     nose.scale.set(1.1, 0.82, 0.62);
     group.add(nose);
-    // Smile — five small dark beads in a U-curve (ends higher → smile shape)
-    [-2, -1, 0, 1, 2].forEach(i => {
-      const t   = i / 2;
-      const ang = t * (Math.PI * 0.42);
-      const bead = new THREE.Mesh(new THREE.SphereGeometry(0.011, 5, 4), matFace);
-      bead.position.set(
-        Math.sin(ang) * 0.058,
-        1.796 + (1 - Math.cos(ang)) * 0.022,
-        -0.316
-      );
-      group.add(bead);
-    });
+    // Smile — single solid dark bar, lower on face
+    const smile = new THREE.Mesh(new THREE.BoxGeometry(0.108, 0.014, 0.022), matFace);
+    smile.position.set(0, 1.758, -0.308);
+    group.add(smile);
 
     // ── Hair — hemisphere scalp dome + back panel for full seamless coverage ─
     // Head-local: (0,0,0)=head centre, radius=0.29. +Z=back, −Z=face.
@@ -837,41 +860,43 @@ window.Player = (function () {
 
     if (hairStyle === 'ponytail') {
       const ptBand = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.018, 7, 12), matBand);
-      ptBand.position.set(0, 0.14, 0.25); ptBand.rotation.x = 2.25;
+      ptBand.position.set(0, 0.12, 0.26); ptBand.rotation.x = 2.5;
       head.add(ptBand);
+      // Hang downward-back from crown: rotation.x ~2.75 ≈ pointing down+back
       const ptG = new THREE.Group();
-      ptG.position.set(0, 0.14, 0.27); ptG.rotation.x = 2.2;
+      ptG.position.set(0, 0.12, 0.28); ptG.rotation.x = 2.75;
       head.add(ptG);
-      const ptRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.080, 0.070, 0.22, 9), matHair);
-      ptRoot.position.y = 0.11; ptG.add(ptRoot);
-      const ptMid  = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.050, 0.28, 8), matHair);
-      ptMid.position.y  = 0.36; ptG.add(ptMid);
-      const ptTip  = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.010, 0.26, 7), matHair);
-      ptTip.position.y  = 0.65; ptG.add(ptTip);
+      const ptRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.068, 0.24, 9), matHair);
+      ptRoot.position.y = 0.12; ptG.add(ptRoot);
+      const ptMid  = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.048, 0.28, 8), matHair);
+      ptMid.position.y  = 0.38; ptG.add(ptMid);
+      const ptTip  = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.010, 0.24, 7), matHair);
+      ptTip.position.y  = 0.66; ptG.add(ptTip);
 
     } else if (hairStyle === 'pigtails') {
-      // Pivots on the sides of the dome, just inside the surface.
       [-1, 1].forEach(side => {
-        const pgBand = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.016, 7, 11), matBand);
-        pgBand.position.set(side * 0.22, 0.10, 0.22);
-        pgBand.rotation.x = 1.80; pgBand.rotation.z = side * -0.40;
+        const pgBand = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.015, 7, 11), matBand);
+        pgBand.position.set(side * 0.24, -0.05, 0.15);
+        pgBand.rotation.x = 0.10; pgBand.rotation.z = side * -0.20;
         head.add(pgBand);
+        // rotation.x 2.9 ≈ mostly hanging down with slight backward lean
         const pgG = new THREE.Group();
-        pgG.position.set(side * 0.22, 0.10, 0.23);
-        pgG.rotation.x = 1.80; pgG.rotation.z = side * -0.50;
+        pgG.position.set(side * 0.24, -0.05, 0.16);
+        pgG.rotation.x = 2.90; pgG.rotation.z = side * -0.18;
         head.add(pgG);
-        const pgRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.055, 0.22, 8), matHair);
-        pgRoot.position.y = 0.11; pgG.add(pgRoot);
-        const pgMid  = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.020, 0.24, 7), matHair);
-        pgMid.position.y  = 0.34; pgG.add(pgMid);
+        const pgRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.052, 0.24, 8), matHair);
+        pgRoot.position.y = 0.12; pgG.add(pgRoot);
+        const pgMid  = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.020, 0.26, 7), matHair);
+        pgMid.position.y  = 0.37; pgG.add(pgMid);
       });
 
     } else if (hairStyle === 'spaceBuns') {
       [-0.22, 0.22].forEach(x => {
-        const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 9), matHair);
-        stalk.position.set(x, 0.30, 0.04); head.add(stalk);
+        // Connecting cylinder from head surface to bun base
+        const connector = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.12, 9), matHair);
+        connector.position.set(x, 0.24, 0.04); head.add(connector);
         const bun = new THREE.Mesh(new THREE.SphereGeometry(0.118, 10, 8), matHair);
-        bun.position.set(x, 0.41, 0.04); bun.scale.set(1, 0.88, 1.0); head.add(bun);
+        bun.position.set(x, 0.37, 0.04); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
     } else if (hairStyle === 'longStraight') {
@@ -1644,13 +1669,16 @@ window.Player = (function () {
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
     // Build a standalone mesh for the customize screen preview (not added to game scene)
-    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor) {
+    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity) {
       const prev = window.G && window.G.playerCustom;
       if (window.G) window.G.playerCustom = {
         suitColor, eyeColor, suitTheme: suitTheme || null,
         hairStyle: hairStyle || 'ponytail',
         hairColor: hairColor !== undefined ? hairColor : 0x0a0604,
         skinColor: skinColor !== undefined ? skinColor : 0xd4a07a,
+        shoeColor: shoeColor !== undefined ? shoeColor : 0x111111,
+        shoeTheme: shoeTheme || null,
+        sparkleIntensity: sparkleIntensity || 0,
       };
       const g = buildMesh({ add() {} });
       if (window.G) window.G.playerCustom = prev;
