@@ -45,9 +45,10 @@ window.Security = (function () {
   let ALARM_DURATION = 60;     // seconds before game over
 
   const _SEC_DIFF = {
-    easy:   { CAM_SPEED: 0.3,  DETECT_TIME: 2.5, ALARM_DURATION: 90 },
-    normal: { CAM_SPEED: 0.45, DETECT_TIME: 1.5, ALARM_DURATION: 60 },
-    hard:   { CAM_SPEED: 0.72, DETECT_TIME: 0.8, ALARM_DURATION: 40 },
+    easy:    { CAM_SPEED: 0.15, DETECT_TIME: 5.0, ALARM_DURATION: 999 },
+    normal:  { CAM_SPEED: 0.45, DETECT_TIME: 1.5, ALARM_DURATION: 360 },
+    hard:    { CAM_SPEED: 0.72, DETECT_TIME: 0.8, ALARM_DURATION: 180 },
+    noguard: { CAM_SPEED: 0.3,  DETECT_TIME: 999, ALARM_DURATION: 999 },
   };
 
   function setDifficulty(d) {
@@ -300,7 +301,13 @@ window.Security = (function () {
 
   function triggerAlarmLevel(level) {
     if (window.Guards) Guards.triggerAlarmLevel(level);
-    if (level >= 3)    startAlarmCountdown();
+    // countdown NOT started here — only laser trips start the escape timer
+  }
+
+  // Called only when a laser is tripped — starts the countdown
+  function triggerLaserAlarm() {
+    if (window.Guards) Guards.triggerAlarmLevel(3);
+    startAlarmCountdown();
   }
 
   // ── Init ───────────────────────────────────────────────
@@ -331,7 +338,7 @@ window.Security = (function () {
         laser.reactivateTimer      = LASER_REACTIVATE_TIME;
         laser.mesh.visible         = false;
         laser._glowMesh.visible    = false;
-        triggerAlarmLevel(3);
+        triggerLaserAlarm();
         UI.showAlert('LASER TRIGGERED!', 3500);
         UI.SFX.alarm();
       }
@@ -354,7 +361,7 @@ window.Security = (function () {
   // ── Reset ──────────────────────────────────────────────
   function resetAlarm() {
     alarmActive    = false;
-    alarmCountdown = 60;
+    alarmCountdown = ALARM_DURATION;
     cameraHacked   = false;
     hackTimer      = 0;
     UI.showAlarm(false);

@@ -316,9 +316,9 @@
   // ── Stealth rating ─────────────────────────────────────
   function calcRating(seconds, alerted, closeCalls) {
     const d = window.G.difficulty;
-    const sTime = d === 'hard' ? 260 : d === 'easy' ? 160 : 200;
-    const aTime = d === 'hard' ? 480 : d === 'easy' ? 300 : 360;
-    const bTime = d === 'hard' ? 720 : d === 'easy' ? 480 : 600;
+    const sTime = d === 'hard' ? 260 : d === 'easy' ? 600 : 200;
+    const aTime = d === 'hard' ? 480 : d === 'easy' ? 900 : 360;
+    const bTime = d === 'hard' ? 720 : d === 'easy' ? 1500 : 600;
     if (alerted === 0 && closeCalls === 0 && seconds < sTime) return 'S';
     if (alerted === 0 && seconds < aTime)                     return 'A';
     if (alerted <= 1  && seconds < bTime)                     return 'B';
@@ -1342,7 +1342,7 @@
       objectives: {
         enter:    'Break into the Louvre',
         yellow:   'Find the Yellow Keycard (lobby desk)',
-        gallery:  'Enter the Grande Galerie',
+        gallery:  'Crawl west vent into the Grande Galerie',
         painting: 'Steal the Mona Lisa (west wall)',
         blue:     'Find the Blue Keycard (east gallery)',
         vault:    'Enter the Crown Vault',
@@ -1351,7 +1351,7 @@
       },
       navTargets: {
         yellow:  { x:  0,    z: 16.5  },
-        gallery: { x:  0,    z: 39.75 },
+        gallery: { x: -14,   z: 60    },
         painting:{ x: -24.9, z: 92    },
         blue:    { x:  14,   z: 70    },
         vault:   { x:  0,    z: 99.75 },
@@ -1366,17 +1366,17 @@
         yellow:   'Locate Yellow Keycard (north lobby)',
         gallery:  'Sneak into the Grande Galerie',
         painting: 'Grab the Mona Lisa (far west wall)',
-        blue:     'Locate Blue Keycard (Salon Antiquités)',
-        vault:    'Break into the Crown Vault',
+        blue:     'Use the east vent to reach the vault corridor',
+        vault:    'Drop into the Crown Vault',
         crown:    'Take the Crown',
-        escape:   'Escape via service exit or front gate',
+        escape:   'Escape via service exit',
       },
       navTargets: {
         yellow:  { x:  8,    z: 22    },
         gallery: { x:  0,    z: 39.75 },
         painting:{ x: -24.9, z: 92    },
-        blue:    { x:  37.5, z: 77    },
-        vault:   { x:  0,    z: 99.75 },
+        blue:    { x:  14,   z: 96    },
+        vault:   { x:  14,   z: 118   },
         crown:   { x:  0,    z: 140   },
         escape:  { x: -20,   z: 15    },
       },
@@ -1386,7 +1386,7 @@
       objectives: {
         enter:    'Infiltrate after hours',
         yellow:   'Recover Yellow Keycard (west lobby)',
-        gallery:  'Move through the Grande Galerie',
+        gallery:  'Crawl the west vent into the gallery',
         painting: 'Swipe the Mona Lisa',
         blue:     'Find the Blue Keycard',
         vault:    'Access the Crown Vault',
@@ -1395,7 +1395,7 @@
       },
       navTargets: {
         yellow:  { x: -8,   z: 12    },
-        gallery: { x:  0,   z: 39.75 },
+        gallery: { x: -14,  z: 60    },
         painting:{ x: -24.9,z: 92    },
         blue:    { x:  14,  z: 70    },
         vault:   { x:  0,   z: 99.75 },
@@ -1407,11 +1407,11 @@
       name: 'West Vent Infiltration',
       objectives: {
         enter:    'Slip through the front entrance',
-        yellow:   'Reach the west vent grate (x=-14, lobby)',
+        yellow:   'Reach the west vent grate (lobby)',
         gallery:  'Crawl through vent into the Grande Galerie',
         painting: 'Steal the Mona Lisa (west wall)',
-        blue:     'Find the Blue Keycard (east gallery)',
-        vault:    'Break into the Crown Vault',
+        blue:     'Use the east vent to bypass the vault corridor',
+        vault:    'Drop into the Crown Vault',
         crown:    'Take the Crown Jewel',
         escape:   'Escape out the front',
       },
@@ -1419,8 +1419,8 @@
         yellow:  { x: -14,  z: 34    },
         gallery: { x: -14,  z: 60    },
         painting:{ x: -24.9,z: 92    },
-        blue:    { x:  14,  z: 70    },
-        vault:   { x:  0,   z: 99.75 },
+        blue:    { x:  14,  z: 96    },
+        vault:   { x:  14,  z: 118   },
         crown:   { x:  0,   z: 140   },
         escape:  { x:  0,   z: 163   },
       },
@@ -1450,14 +1450,14 @@
     {
       name: 'Ghost Protocol',
       objectives: {
-        enter:    'Access via the lobby trapdoor tunnel',
+        enter:    'Access via the lobby',
         yellow:   'Crawl the west vent into the gallery',
         gallery:  'Surface inside the Grande Galerie',
         painting: 'Take the Mona Lisa',
         blue:     'Slip through the east vent to the vault',
         vault:    'Surface inside the Crown Vault',
         crown:    'Secure the Crown Jewel',
-        escape:   'Drop into the tunnel and exit the Louvre',
+        escape:   'Exit through the lobby tunnel',
       },
       navTargets: {
         yellow:  { x: -14,  z: 34    },
@@ -1472,9 +1472,14 @@
   ];
 
   let NAV_TARGETS = MISSION_VARIANTS[0].navTargets;
+  let _lastVariantIdx = -1;
 
   function pickMissionVariant() {
-    const v = MISSION_VARIANTS[Math.floor(Math.random() * MISSION_VARIANTS.length)];
+    let idx;
+    do { idx = Math.floor(Math.random() * MISSION_VARIANTS.length); }
+    while (idx === _lastVariantIdx && MISSION_VARIANTS.length > 1);
+    _lastVariantIdx = idx;
+    const v = MISSION_VARIANTS[idx];
     NAV_TARGETS = v.navTargets;
     // Update objective text in HUD
     Object.entries(v.objectives).forEach(([id, text]) => {
