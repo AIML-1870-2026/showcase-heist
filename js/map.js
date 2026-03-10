@@ -2944,10 +2944,8 @@ window.GameMap = (function () {
     wall(scene,  5, 107.5, WALL_T, 15, M.corridorWall);
 
     // Corridor 2 paintings on north/south walls
-    wallPaintingNS(scene, 0, 3.5, 100.35, M.cezanne, true);
-    paintingSpotlight(scene, 0, 3.5, 100.35, 'south');
-    wallPaintingNS(scene, 0, 3.5, 114.65, M.monetPoppies, false);
-    paintingSpotlight(scene, 0, 3.5, 114.65, 'north');
+    // (No paintings on south/north walls — both ends are open doorways)
+
     // Velvet carpet runner through corridor 2
     rug(scene, 0, 107.5, 3.5, 14, 0x0a1a4a, 0xc8a040);
 
