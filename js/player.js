@@ -665,86 +665,83 @@ window.Player = (function () {
     bridge.position.set(0, 1.86, -0.311);
     group.add(bridge);
 
-    // ── Hair — parented directly to head (Roblox-style attachment) ───
-    // All positions are in head-local space: (0,0,0) = head centre.
-    // Head radius = 0.29. Cap shell radius = 0.308 (just outside).
-    // thetaLength = PI*0.52 (~94°) covers crown + upper sides only,
-    // leaving the face and lower head fully visible like Roblox accessories.
+    // ── Hair — flat scalp cap on crown + pivot-group chains ──────────
+    // Head-local: (0,0,0)=head centre, radius=0.29. +Z=back, -Z=face.
+    // Scalp box sits ON the crown (y≈+0.26) and is wider than the head
+    // so it visibly overhangs — the same way Roblox hair accessories attach.
+    // Chain pieces use a pivot Group so every segment is guaranteed to be
+    // connected: place pieces at increasing local-Y along the pivot's axis.
     const matHair = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.92, metalness: 0.0 });
     const matBand = new THREE.MeshStandardMaterial({ color: 0x330033, roughness: 0.8, metalness: 0.1 });
 
-    const _cap = (thetaLen = Math.PI * 0.52) => {
-      const cap = new THREE.Mesh(
-        new THREE.SphereGeometry(0.308, 10, 8, 0, Math.PI * 2, 0, thetaLen),
-        matHair
-      );
-      // Centred on head — position (0,0,0) in local space = head centre
-      head.add(cap);
-    };
+    // Scalp box — crown of head. Wider than head sphere → overhangs cleanly.
+    const scalp = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.10, 0.52), matHair);
+    scalp.position.set(0, 0.26, 0.02);
+    head.add(scalp);
 
     if (hairStyle === 'ponytail') {
-      _cap();
-      const root = new THREE.Mesh(new THREE.CylinderGeometry(0.090, 0.082, 0.22, 8), matHair);
-      root.position.set(0, 0.06, 0.25); root.rotation.x = 0.45; head.add(root);
-      const mid = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.058, 0.30, 7), matHair);
-      mid.position.set(0, -0.07, 0.43); mid.rotation.x = 0.72; head.add(mid);
-      const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.016, 0.26, 6), matHair);
-      tip.position.set(0, -0.26, 0.60); tip.rotation.x = 0.84; head.add(tip);
-      const band = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.017, 6, 12), matBand);
-      band.position.set(0, 0.00, 0.30); band.rotation.x = Math.PI / 2 + 0.45; head.add(band);
+      // Pivot at back-bottom of scalp. rotation.x=2.2 → local +Y goes down+backward.
+      // All chain pieces placed at successive local-Y values form a seamless chain.
+      const ptG = new THREE.Group();
+      ptG.position.set(0, 0.21, 0.26);
+      ptG.rotation.x = 2.2;
+      head.add(ptG);
+      const ptRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.066, 0.20, 8), matHair);
+      ptRoot.position.y = 0.10; ptG.add(ptRoot);
+      const ptMid = new THREE.Mesh(new THREE.CylinderGeometry(0.060, 0.046, 0.24, 7), matHair);
+      ptMid.position.y = 0.32; ptG.add(ptMid);
+      const ptTip = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.012, 0.22, 6), matHair);
+      ptTip.position.y = 0.53; ptG.add(ptTip);
+      const ptBand = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.015, 6, 12), matBand);
+      ptBand.position.y = 0.20; ptBand.rotation.x = Math.PI / 2; ptG.add(ptBand);
 
     } else if (hairStyle === 'pigtails') {
-      _cap();
-      [-0.28, 0.28].forEach(x => {
-        const root = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.062, 0.20, 7), matHair);
-        root.position.set(x * 0.85, 0.04, 0.22);
-        root.rotation.x = 0.38; root.rotation.z = x > 0 ? -0.50 : 0.50; head.add(root);
-        const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.022, 0.28, 6), matHair);
-        tail.position.set(x * 1.10, -0.16, 0.38);
-        tail.rotation.x = 0.64; tail.rotation.z = x > 0 ? -0.44 : 0.44; head.add(tail);
-        const band = new THREE.Mesh(new THREE.TorusGeometry(0.054, 0.015, 6, 10), matBand);
-        band.position.set(x * 0.85, 0.04, 0.27); band.rotation.x = Math.PI / 2 + 0.38; head.add(band);
+      [-1, 1].forEach(side => {
+        const pgG = new THREE.Group();
+        pgG.position.set(side * 0.24, 0.21, 0.20);
+        pgG.rotation.x = 1.8;
+        pgG.rotation.z = side * -0.5;
+        head.add(pgG);
+        const pgRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.052, 0.18, 7), matHair);
+        pgRoot.position.y = 0.09; pgG.add(pgRoot);
+        const pgTail = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.018, 0.24, 6), matHair);
+        pgTail.position.y = 0.30; pgG.add(pgTail);
+        const pgBand = new THREE.Mesh(new THREE.TorusGeometry(0.050, 0.014, 6, 10), matBand);
+        pgBand.position.y = 0.18; pgBand.rotation.x = Math.PI / 2; pgG.add(pgBand);
       });
 
     } else if (hairStyle === 'spaceBuns') {
-      _cap(Math.PI * 0.52);
       [-0.22, 0.22].forEach(x => {
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.060, 0.064, 0.09, 7), matHair);
-        stem.position.set(x, 0.28, -0.01); head.add(stem);
-        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.112, 9, 7), matHair);
-        bun.position.set(x, 0.37, -0.01); bun.scale.set(1, 0.90, 1.05); head.add(bun);
+        const bun = new THREE.Mesh(new THREE.SphereGeometry(0.105, 9, 7), matHair);
+        bun.position.set(x, 0.40, 0.02); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
     } else if (hairStyle === 'longStraight') {
-      _cap(Math.PI * 0.52);
-      const back = new THREE.Mesh(new THREE.CylinderGeometry(0.295, 0.238, 0.80, 10), matHair);
-      back.position.set(0, -0.44, 0.16); back.rotation.x = 0.10; head.add(back);
-      [-0.24, 0.24].forEach(x => {
-        const side = new THREE.Mesh(new THREE.CylinderGeometry(0.118, 0.088, 0.70, 8), matHair);
-        side.position.set(x, -0.38, -0.01);
-        side.rotation.z = x > 0 ? -0.13 : 0.13; head.add(side);
+      // Back panel top edge buried in scalp so join is invisible.
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.74, 0.05), matHair);
+      back.position.set(0, -0.11, 0.30); head.add(back);
+      [-0.27, 0.27].forEach(x => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.68, 0.22), matHair);
+        side.position.set(x, -0.09, 0.06);
+        side.rotation.z = x > 0 ? -0.08 : 0.08; head.add(side);
       });
-      [-0.10, 0, 0.10].forEach(x => {
-        const wisp = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.024, 0.26, 5), matHair);
-        wisp.position.set(x, -0.22, -0.20);
-        wisp.rotation.x = -0.28; head.add(wisp);
-      });
+      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.07), matHair);
+      fringe.position.set(0, 0.12, -0.24); head.add(fringe);
 
     } else if (hairStyle === 'downCurly') {
-      _cap(Math.PI * 0.52);
-      const back = new THREE.Mesh(new THREE.CylinderGeometry(0.282, 0.228, 0.70, 10), matHair);
-      back.position.set(0, -0.40, 0.16); back.rotation.x = 0.08; head.add(back);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.70, 0.06), matHair);
+      back.position.set(0, -0.09, 0.30); head.add(back);
       [-0.17, 0, 0.17].forEach((x, i) => {
-        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.038, 6, 9, Math.PI * 1.5), matHair);
-        curl.position.set(x, -0.64, 0.30 + i * 0.02);
-        curl.rotation.x = Math.PI / 2 + 0.30; head.add(curl);
+        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.032, 6, 9, Math.PI * 1.5), matHair);
+        curl.position.set(x, -0.42, 0.33 + i * 0.01);
+        curl.rotation.x = Math.PI / 2 + 0.28; head.add(curl);
       });
-      [-0.24, 0.24].forEach(x => {
-        const side = new THREE.Mesh(new THREE.CylinderGeometry(0.108, 0.084, 0.62, 7), matHair);
-        side.position.set(x, -0.34, 0.04);
-        side.rotation.z = x > 0 ? -0.16 : 0.16; head.add(side);
-        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.030, 6, 8, Math.PI * 1.35), matHair);
-        curl.position.set(x * 1.12, -0.55, 0.10);
+      [-0.27, 0.27].forEach(x => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.62, 0.22), matHair);
+        side.position.set(x, -0.07, 0.06);
+        side.rotation.z = x > 0 ? -0.10 : 0.10; head.add(side);
+        const curl = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.026, 6, 8, Math.PI * 1.35), matHair);
+        curl.position.set(x * 1.05, -0.38, 0.12);
         curl.rotation.x = Math.PI / 2 + 0.22; head.add(curl);
       });
     }
