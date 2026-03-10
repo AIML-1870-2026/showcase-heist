@@ -665,25 +665,26 @@ window.Player = (function () {
     bridge.position.set(0, 1.86, -0.311);
     group.add(bridge);
 
-    // ── Hair — Roblox-style cap: deep box envelops the upper hemisphere ──
+    // ── Hair — thin crown strip + style pieces rooted at the sphere surface ──
     // Head-local: (0,0,0)=head centre, radius=0.29. +Z=back, -Z=face.
-    // Cap spans y=[-0.01 .. +0.29] — equator to crown — so it wraps tight
-    // around the sphere with no visible gap from any viewing angle.
+    // At y=0.25 the sphere cross-section is only ~0.147 radius, so a narrow
+    // box there looks like a natural hair part, not a block hat.
     const matHair = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.92, metalness: 0.0 });
     const matBand = new THREE.MeshStandardMaterial({ color: 0x1a0014, roughness: 0.8, metalness: 0.1 });
 
-    // Scalp cap — 0.30 tall, centred at y=0.14 → spans [-0.01, +0.29].
-    // Wider than the sphere at every height in that range: no gap at sides.
-    const scalp = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.30, 0.62), matHair);
-    scalp.position.set(0, 0.14, 0);
+    // Scalp strip — 0.10 tall, sits only at the very crown (y 0.20–0.30).
+    // Narrow enough not to look like a block hat.
+    const scalp = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.10, 0.44), matHair);
+    scalp.position.set(0, 0.25, 0);
     head.add(scalp);
 
     if (hairStyle === 'ponytail') {
-      // Pivot on the back face of the cap (z=+0.31), mid-height (y=0.14).
-      // rotation.x=2.1 → local +Y points mostly backward and slightly down.
+      // Pivot on the back face of the crown strip (z=+0.22, y=0.22).
+      // rotation.x=2.6 → local +Y points mostly DOWN and somewhat back (+Z),
+      // so the tail hangs naturally rather than sticking out horizontally.
       const ptG = new THREE.Group();
-      ptG.position.set(0, 0.14, 0.31);
-      ptG.rotation.x = 2.1;
+      ptG.position.set(0, 0.22, 0.22);
+      ptG.rotation.x = 2.6;
       head.add(ptG);
       const ptRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.066, 0.20, 8), matHair);
       ptRoot.position.y = 0.10; ptG.add(ptRoot);
@@ -695,12 +696,12 @@ window.Player = (function () {
       ptBand.position.y = 0.20; ptBand.rotation.x = Math.PI / 2; ptG.add(ptBand);
 
     } else if (hairStyle === 'pigtails') {
-      // Pivots on the side faces of the cap (x=±0.32), back-centre (z=0.16).
+      // Pivots on the side faces of the crown strip (x=±0.23, z=0.10).
       [-1, 1].forEach(side => {
         const pgG = new THREE.Group();
-        pgG.position.set(side * 0.32, 0.10, 0.16);
-        pgG.rotation.x = 1.7;
-        pgG.rotation.z = side * -0.5;
+        pgG.position.set(side * 0.23, 0.22, 0.10);
+        pgG.rotation.x = 1.9;
+        pgG.rotation.z = side * -0.55;
         head.add(pgG);
         const pgRoot = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.052, 0.18, 7), matHair);
         pgRoot.position.y = 0.09; pgG.add(pgRoot);
@@ -711,19 +712,19 @@ window.Player = (function () {
       });
 
     } else if (hairStyle === 'spaceBuns') {
-      // Buns sit on the upper corners of the cap.
-      [-0.26, 0.26].forEach(x => {
+      // Buns sit on the top face of the crown strip.
+      [-0.21, 0.21].forEach(x => {
         const bun = new THREE.Mesh(new THREE.SphereGeometry(0.105, 9, 7), matHair);
-        bun.position.set(x, 0.22, 0.00); bun.scale.set(1, 0.88, 1.0); head.add(bun);
+        bun.position.set(x, 0.30, 0.00); bun.scale.set(1, 0.88, 1.0); head.add(bun);
       });
 
     } else if (hairStyle === 'longStraight') {
-      // Back panel top buried inside cap so join is seamless.
+      // Side panels reach up to overlap the crown strip (top at y≈0.23).
       const back = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.74, 0.05), matHair);
       back.position.set(0, -0.17, 0.32); head.add(back);
       [-0.27, 0.27].forEach(x => {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.68, 0.22), matHair);
-        side.position.set(x, -0.15, 0.07);
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.72, 0.22), matHair);
+        side.position.set(x, -0.13, 0.07);
         side.rotation.z = x > 0 ? -0.08 : 0.08; head.add(side);
       });
       const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.07), matHair);
@@ -738,8 +739,8 @@ window.Player = (function () {
         curl.rotation.x = Math.PI / 2 + 0.28; head.add(curl);
       });
       [-0.27, 0.27].forEach(x => {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.62, 0.22), matHair);
-        side.position.set(x, -0.13, 0.07);
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.68, 0.22), matHair);
+        side.position.set(x, -0.11, 0.07);
         side.rotation.z = x > 0 ? -0.10 : 0.10; head.add(side);
         const curl = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.026, 6, 8, Math.PI * 1.35), matHair);
         curl.position.set(x * 1.05, -0.44, 0.13);
