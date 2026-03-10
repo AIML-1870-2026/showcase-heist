@@ -757,6 +757,13 @@ window.Player = (function () {
 
     const moving = mx !== 0 || mz !== 0;
 
+    // Noise level — rises when moving (louder when sprinting), decays when still/crouching
+    const _noiseTgt = moving
+      ? (state === 'sprinting' ? 1.0 : state === 'sliding' ? 0.7 : state === 'crouching' ? 0.05 : 0.45)
+      : 0;
+    _noiseLevel += (_noiseTgt - _noiseLevel) * Math.min(1, dt * 3.5);
+    if (window.G) window.G._noiseLevel = _noiseLevel;
+
     if (moving) {
       const len = Math.sqrt(mx * mx + mz * mz);
       mx /= len; mz /= len;
@@ -1132,6 +1139,29 @@ window.Player = (function () {
         found = true; break;
       }
     }
+    // Escape route prompts
+    if (!found && G.inventory.painting && G.inventory.crown) {
+      // Service exit (west lobby wall, X=-20, Z=15)
+      const seDx = pos.x - (-20), seDz = pos.z - 15;
+      if (seDx * seDx + seDz * seDz < 3.5 * 3.5) {
+        UI.showPrompt('[Walk in] Service Exit — escape now!');
+        found = true;
+      }
+      // Front gate (Z > 155)
+      if (!found && pos.z > 155) {
+        UI.showPrompt('[Walk through] Front Gate — escape now!');
+        found = true;
+      }
+      // Helipad (rooftop, rappel perk only)
+      if (!found && G.loadout && G.loadout.rappel && pos.y > 5) {
+        const hDx = pos.x - 0, hDz = pos.z - (-8);
+        if (hDx * hDx + hDz * hDz < 4 * 4) {
+          UI.showPrompt('[Walk to] Helipad — helicopter extract!');
+          found = true;
+        }
+      }
+    }
+
     if (!found) UI.hidePrompt();
   }
 

@@ -1166,11 +1166,15 @@
     const obj = UI.getCurrentObjective();
     const target = obj && NAV_TARGETS[obj];
     if (!target) { _navArrow.visible = false; return; }
-    _navArrow.visible = true;
-    const bob = Math.sin(_navArrowT * 2.5) * 0.08;
-    _navArrow.position.set(playerPos.x, 2.8 + bob, playerPos.z);
     const dx = target.x - playerPos.x;
     const dz = target.z - playerPos.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < 2) { _navArrow.visible = false; return; }
+    _navArrow.visible = true;
+    const bob = Math.sin(_navArrowT * 2.5) * 0.07;
+    // Offset 1.5 units toward the target so the arrow floats in front of the player
+    const nx = dx / dist, nz = dz / dist;
+    _navArrow.position.set(playerPos.x + nx * 1.5, 1.7 + bob, playerPos.z + nz * 1.5);
     _navArrow.rotation.y = Math.atan2(dx, dz);
   }
 

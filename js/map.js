@@ -2330,11 +2330,7 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 95, M.vangoghIrises, false);
     paintingSpotlight(scene,  24.9, 3.5, 95, 'east');
     placard(scene,  24.9, 2.6, 95, 'Irises', 'Vincent van Gogh, 1889', false);
-    // Extra gallery south wall paintings
-    wallPaintingNS(scene, -7, 3.5, 55.10, M.monetPoppies, true);
-    paintingSpotlight(scene, -7, 3.5, 55.10, 'south');
-    wallPaintingNS(scene,  7, 3.5, 55.10, M.vangoghStarry, true);
-    paintingSpotlight(scene,  7, 3.5, 55.10, 'south');
+    // (Extra gallery south wall paintings removed — too close to entrance)
     // Extra gallery north wall
     wallPaintingNS(scene, -8, 3.5, 99.65, M.renoir, false);
     paintingSpotlight(scene, -8, 3.5, 99.65, 'north');

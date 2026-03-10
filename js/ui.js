@@ -103,6 +103,15 @@ window.UI = (function () {
     if (el) el.textContent = n;
   }
 
+  // ── Noise meter ────────────────────────────────────────
+  function updateNoise(val) {
+    const fill = $('noise-fill');
+    if (!fill) return;
+    const pct = Math.max(0, Math.min(1, val)) * 100;
+    fill.style.width = pct + '%';
+    fill.style.background = val > 0.7 ? '#ff4422' : val > 0.4 ? '#ffaa22' : '#44bbff';
+  }
+
   // ── Stamina bar ────────────────────────────────────────
   function updateStamina(val) {
     const fill = $('stamina-fill');
@@ -263,7 +272,9 @@ window.UI = (function () {
     const ctx = _mmOffscreen.getContext('2d');
     ctx.fillStyle = '#080608';
     ctx.fillRect(0, 0, 160, 120);
-    MM_ROOMS.forEach(r => {
+
+    const ROOM_LABELS = ['LOBBY', 'GALLERY', 'CROWN VAULT'];
+    MM_ROOMS.forEach((r, i) => {
       ctx.fillStyle   = r.color;
       ctx.fillRect(r.rx, r.ry, r.rw, r.rh);
       // Colored border per room
@@ -283,6 +294,24 @@ window.UI = (function () {
       ctx.textBaseline = 'middle';
       ctx.fillText(r.label, r.lx, r.ly);
     });
+
+    // Exit markers
+    ctx.font = '6px monospace';
+    ctx.textBaseline = 'middle';
+    // Front gate (Z≈163) → worldToMini(0, 163)
+    const fgX = 80, fgY = Math.round(5 + (163 / 165) * 108);
+    ctx.fillStyle = '#22ff88';
+    ctx.fillRect(fgX - 4, fgY - 3, 8, 6);
+    ctx.fillStyle = 'rgba(180,255,200,0.8)';
+    ctx.textAlign = 'left';
+    ctx.fillText('EXIT', fgX + 5, fgY);
+    // Service exit (X=-20, Z=15) → worldToMini(-20,15)
+    const seX = Math.round(80 + (-20) * 1.8), seY = Math.round(5 + (15 / 165) * 108);
+    ctx.fillStyle = '#ffaa22';
+    ctx.fillRect(seX - 3, seY - 3, 6, 6);
+    ctx.fillStyle = 'rgba(255,200,100,0.8)';
+    ctx.textAlign = 'right';
+    ctx.fillText('SVC', seX - 4, seY);
   }());
 
   function worldToMini(wx, wz) {
