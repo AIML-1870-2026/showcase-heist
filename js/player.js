@@ -780,43 +780,50 @@ window.Player = (function () {
       });
 
     } else if (hairStyle === 'longDown') {
-      // Multiple individual strands flowing down from scalp
-      // Strand positions: spread across the back/sides of the head
+      // Multiple individual strands flowing long down the back and sides
       const strandDefs = [
         // [xOff, yStart, zStart, xLean, zLean, length, topR, botR]
-        // Center back strands
-        [ 0.00,  0.08,  0.22,  0.00,  0.10, 0.72, 0.045, 0.018],
-        [ 0.04,  0.06,  0.23,  0.03,  0.09, 0.66, 0.040, 0.015],
-        [-0.04,  0.06,  0.23, -0.03,  0.09, 0.66, 0.040, 0.015],
-        // Side strands - right
-        [ 0.18,  0.00,  0.14,  0.12,  0.06, 0.58, 0.038, 0.013],
-        [ 0.24, -0.04,  0.06,  0.16,  0.03, 0.52, 0.035, 0.012],
-        [ 0.26, -0.08, -0.04,  0.18, -0.02, 0.48, 0.032, 0.011],
-        // Side strands - left
-        [-0.18,  0.00,  0.14, -0.12,  0.06, 0.58, 0.038, 0.013],
-        [-0.24, -0.04,  0.06, -0.16,  0.03, 0.52, 0.035, 0.012],
-        [-0.26, -0.08, -0.04, -0.18, -0.02, 0.48, 0.032, 0.011],
+        // Center back strands — longest, reach to mid-back
+        [ 0.00,  0.08,  0.22,  0.00,  0.08, 1.60, 0.048, 0.012],
+        [ 0.04,  0.07,  0.23,  0.03,  0.07, 1.52, 0.042, 0.010],
+        [-0.04,  0.07,  0.23, -0.03,  0.07, 1.52, 0.042, 0.010],
+        [ 0.00,  0.05,  0.24,  0.00,  0.06, 1.45, 0.038, 0.010],
         // Inner back fill strands
-        [ 0.09,  0.10,  0.20,  0.06,  0.11, 0.70, 0.036, 0.014],
-        [-0.09,  0.10,  0.20, -0.06,  0.11, 0.70, 0.036, 0.014],
-        [ 0.14,  0.05,  0.18,  0.09,  0.08, 0.62, 0.034, 0.013],
-        [-0.14,  0.05,  0.18, -0.09,  0.08, 0.62, 0.034, 0.013],
+        [ 0.09,  0.10,  0.20,  0.06,  0.08, 1.48, 0.038, 0.010],
+        [-0.09,  0.10,  0.20, -0.06,  0.08, 1.48, 0.038, 0.010],
+        [ 0.14,  0.06,  0.18,  0.09,  0.07, 1.38, 0.036, 0.010],
+        [-0.14,  0.06,  0.18, -0.09,  0.07, 1.38, 0.036, 0.010],
+        // Side strands - right
+        [ 0.18,  0.01,  0.14,  0.10,  0.05, 1.28, 0.038, 0.010],
+        [ 0.22, -0.02,  0.09,  0.13,  0.03, 1.18, 0.035, 0.009],
+        [ 0.25, -0.06,  0.02,  0.15,  0.01, 1.10, 0.032, 0.009],
+        [ 0.26, -0.10, -0.06,  0.16, -0.02, 1.00, 0.029, 0.008],
+        // Side strands - left
+        [-0.18,  0.01,  0.14, -0.10,  0.05, 1.28, 0.038, 0.010],
+        [-0.22, -0.02,  0.09, -0.13,  0.03, 1.18, 0.035, 0.009],
+        [-0.25, -0.06,  0.02, -0.15,  0.01, 1.10, 0.032, 0.009],
+        [-0.26, -0.10, -0.06, -0.16, -0.02, 1.00, 0.029, 0.008],
+        // Front-side framing strands (hang beside the face)
+        [ 0.22, -0.05, -0.12,  0.10, -0.04, 0.90, 0.028, 0.008],
+        [-0.22, -0.05, -0.12, -0.10, -0.04, 0.90, 0.028, 0.008],
+        [ 0.20, -0.02, -0.18,  0.08, -0.06, 0.80, 0.024, 0.007],
+        [-0.20, -0.02, -0.18, -0.08, -0.06, 0.80, 0.024, 0.007],
       ];
       strandDefs.forEach(([xOff, yStart, zStart, xLean, zLean, len, topR, botR]) => {
-        // Each strand is a tapered cylinder group positioned relative to head center
         const strandG = new THREE.Group();
         strandG.position.set(xOff, yStart, zStart);
-        // Lean angle: atan2 of (lean distance / length)
         strandG.rotation.x = Math.atan2(zLean, len) + 0.18;
         strandG.rotation.z = Math.atan2(xLean, len) * -1;
-        // Upper segment
-        const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(topR, topR * 0.85, len * 0.45, 5), matHair);
-        seg1.position.y = -len * 0.225;
+        // Three segments: upper, mid, tapered tip
+        const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(topR, topR * 0.88, len * 0.35, 5), matHair);
+        seg1.position.y = -len * 0.175;
         strandG.add(seg1);
-        // Lower tapered segment
-        const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(topR * 0.85, botR, len * 0.55, 5), matHair);
-        seg2.position.y = -len * 0.45 - len * 0.275;
+        const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(topR * 0.88, topR * 0.60, len * 0.38, 5), matHair);
+        seg2.position.y = -len * 0.35 - len * 0.19;
         strandG.add(seg2);
+        const seg3 = new THREE.Mesh(new THREE.CylinderGeometry(topR * 0.60, botR, len * 0.27, 5), matHair);
+        seg3.position.y = -len * 0.35 - len * 0.38 - len * 0.135;
+        strandG.add(seg3);
         head.add(strandG);
       });
     }

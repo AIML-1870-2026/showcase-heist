@@ -680,10 +680,12 @@ window.GameMap = (function () {
       tex.repeat.set(w / _ceilTex._tileSize, d / _ceilTex._tileSize);
       mat.map = tex;
     }
-    box(scene, w, FLOOR_T, d, cx, WALL_H + FLOOR_T / 2, cz, mat);
+    const ceilSlab = box(scene, w, FLOOR_T, d, cx, WALL_H + FLOOR_T / 2, cz, mat);
+    ceilSlab.userData.aerialhide = true;
     // Recessed ceiling panel strip (thin dark inset frame)
     const panelMat = new THREE.MeshStandardMaterial({ color: 0x1a1028, roughness: 0.95, metalness: 0.0 });
-    box(scene, w - 0.6, 0.05, d - 0.6, cx, WALL_H - 0.02, cz, panelMat);
+    const ceilPanel = box(scene, w - 0.6, 0.05, d - 0.6, cx, WALL_H - 0.02, cz, panelMat);
+    ceilPanel.userData.aerialhide = true;
   }
 
   // Full room shell: floor + ceiling + 4 walls with opening gap

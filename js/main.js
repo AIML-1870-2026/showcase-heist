@@ -283,7 +283,11 @@
     const cp = getCheckpoint();
     if (!cp || cp.version !== 1) return;
 
+    // Suppress rooftop spawn during checkpoint resume — position is restored below
+    const savedRappel = window.G.loadout.rappel;
+    window.G.loadout.rappel = false;
     startGame(cp.mode || 'solo');
+    window.G.loadout.rappel = savedRappel;
 
     const G = window.G;
     G.difficulty    = cp.difficulty;
@@ -577,6 +581,12 @@
     _aerialActive = on;
     const btn = document.getElementById('btn-aerial');
     if (btn) btn.classList.toggle('active', on);
+    // Hide/show ceiling slabs so aerial view shows the floor plan
+    if (scene) {
+      scene.traverse(obj => {
+        if (obj.isMesh && obj.userData.aerialhide) obj.visible = !on;
+      });
+    }
     if (!on) {
       // Snap camera back (player.js will lerp it naturally next frame)
       _aerialCamSave.copy(camera.position);
