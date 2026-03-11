@@ -1120,17 +1120,22 @@
     // Customization screen helpers
     let _pendingMode = 'solo';
 
-    // Hair color: slider 0-100 → hex color (black → auburn → red → blonde → white)
+    // Hair color: slider 0-100 → hex color (black → all browns → white → ginger)
     function _hairSliderToHex(val) {
       const stops = [
-        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },  // black
-        { v: 18,  r: 0x3d, g: 0x1a, b: 0x08 },  // dark brown
-        { v: 34,  r: 0x7a, g: 0x22, b: 0x0c },  // auburn/chestnut
-        { v: 48,  r: 0xbb, g: 0x28, b: 0x08 },  // deep red
-        { v: 58,  r: 0xd4, g: 0x40, b: 0x10 },  // bright copper red
-        { v: 68,  r: 0xd4, g: 0x80, b: 0x30 },  // strawberry blonde
-        { v: 82,  r: 0xcb, g: 0x9b, b: 0x40 },  // golden blonde
-        { v: 100, r: 0xe0, g: 0xd0, b: 0xc0 },  // platinum/white
+        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },  // jet black
+        { v: 8,   r: 0x1a, g: 0x0a, b: 0x05 },  // espresso / near black
+        { v: 18,  r: 0x3d, g: 0x1a, b: 0x08 },  // dark chocolate brown
+        { v: 28,  r: 0x5a, g: 0x22, b: 0x10 },  // dark brown
+        { v: 38,  r: 0x7a, g: 0x38, b: 0x18 },  // medium dark brown
+        { v: 48,  r: 0x8b, g: 0x45, b: 0x13 },  // chestnut / saddle brown
+        { v: 57,  r: 0xa0, g: 0x5c, b: 0x28 },  // warm medium brown
+        { v: 65,  r: 0xb8, g: 0x78, b: 0x3c },  // light warm brown
+        { v: 73,  r: 0xc8, g: 0x98, b: 0x50 },  // caramel / honey brown
+        { v: 81,  r: 0xd4, g: 0xb4, b: 0x70 },  // sandy / tawny brown
+        { v: 88,  r: 0xe0, g: 0xcc, b: 0xa8 },  // very light brown / ash
+        { v: 93,  r: 0xf0, g: 0xec, b: 0xe6 },  // white
+        { v: 100, r: 0xc0, g: 0x48, b: 0x18 },  // ginger / copper
       ];
       for (let i = 0; i < stops.length - 1; i++) {
         const a = stops[i], b = stops[i + 1];
