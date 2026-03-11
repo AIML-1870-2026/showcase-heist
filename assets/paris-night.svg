@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#020408"/>
+      <stop offset="50%"  stop-color="#060e1c"/>
+      <stop offset="100%" stop-color="#0c1628"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#060b14"/>
+      <stop offset="100%" stop-color="#020306"/>
+    </linearGradient>
+    <radialGradient id="moonAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#c0d8f8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#c0d8f8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="towerGlow" cx="50%" cy="70%" r="60%">
+      <stop offset="0%"   stop-color="#e8c060" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#e8c060" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="starGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="1.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="lightDot" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1200" height="600" fill="url(#sky)"/>
+
+  <!-- Moon halo -->
+  <circle cx="158" cy="92" r="72" fill="url(#moonAura)"/>
+  <!-- Moon body -->
+  <circle cx="158" cy="92" r="30" fill="#dce8fc" opacity="0.95"/>
+  <!-- Crescent shadow -->
+  <circle cx="173" cy="88" r="25" fill="#060e1c"/>
+
+  <!-- Stars -->
+  <g fill="#ffffff">
+    <circle cx="55"   cy="32"  r="1.0" opacity="0.80"/>
+    <circle cx="112"  cy="50"  r="0.8" opacity="0.60"/>
+    <circle cx="218"  cy="26"  r="1.2" opacity="0.90"/>
+    <circle cx="284"  cy="16"  r="0.8" opacity="0.70"/>
+    <circle cx="346"  cy="40"  r="1.0" opacity="0.80"/>
+    <circle cx="414"  cy="22"  r="0.9" opacity="0.65"/>
+    <circle cx="472"  cy="54"  r="1.1" opacity="0.80"/>
+    <circle cx="538"  cy="14"  r="1.3" opacity="0.90" filter="url(#starGlow)"/>
+    <circle cx="603"  cy="42"  r="0.8" opacity="0.70"/>
+    <circle cx="662"  cy="28"  r="1.0" opacity="0.80"/>
+    <circle cx="728"  cy="16"  r="1.2" opacity="0.90" filter="url(#starGlow)"/>
+    <circle cx="796"  cy="48"  r="0.9" opacity="0.65"/>
+    <circle cx="856"  cy="26"  r="1.0" opacity="0.80"/>
+    <circle cx="916"  cy="40"  r="0.8" opacity="0.70"/>
+    <circle cx="972"  cy="15"  r="1.1" opacity="0.90"/>
+    <circle cx="1038" cy="36"  r="1.0" opacity="0.80"/>
+    <circle cx="1102" cy="20"  r="0.9" opacity="0.65"/>
+    <circle cx="1160" cy="48"  r="1.1" opacity="0.80"/>
+    <!-- Row 2 -->
+    <circle cx="86"   cy="66"  r="0.7" opacity="0.50"/>
+    <circle cx="193"  cy="73"  r="0.9" opacity="0.65"/>
+    <circle cx="318"  cy="62"  r="0.8" opacity="0.60"/>
+    <circle cx="448"  cy="76"  r="0.7" opacity="0.50"/>
+    <circle cx="563"  cy="60"  r="0.9" opacity="0.65"/>
+    <circle cx="688"  cy="70"  r="0.8" opacity="0.60"/>
+    <circle cx="808"  cy="63"  r="0.7" opacity="0.50"/>
+    <circle cx="932"  cy="68"  r="0.9" opacity="0.65"/>
+    <circle cx="1058" cy="60"  r="0.8" opacity="0.60"/>
+    <circle cx="1148" cy="73"  r="0.7" opacity="0.50"/>
+    <!-- Bright accent -->
+    <circle cx="256"  cy="36"  r="1.5" opacity="0.85" filter="url(#starGlow)"/>
+    <circle cx="698"  cy="20"  r="1.5" opacity="0.85" filter="url(#starGlow)"/>
+    <circle cx="1085" cy="34"  r="1.5" opacity="0.85" filter="url(#starGlow)"/>
+  </g>
+
+  <!-- Mid-ground: distant Paris rooftops (between buildings) -->
+  <g fill="#07090f">
+    <rect x="600" y="448" width="240" height="34"/>
+    <rect x="618" y="436" width="26" height="14"/>
+    <rect x="660" y="440" width="20" height="10"/>
+    <rect x="696" y="430" width="22" height="20"/>
+    <rect x="738" y="443" width="18" height="8"/>
+    <rect x="766" y="434" width="28" height="16"/>
+    <rect x="812" y="446" width="20" height="10"/>
+  </g>
+
+  <!-- ══ LOUVRE PALACE SILHOUETTE (left, center ~x=310) ══ -->
+  <g fill="#0a0c1a" id="louvre">
+    <!-- Main long wing body (ground to uniform height) -->
+    <rect x="12"  y="414" width="584" height="68"/>
+
+    <!-- Left terminal pavilion -->
+    <rect x="12"  y="382" width="64"  height="32"/>
+    <!-- Left terminal roof (mansard) -->
+    <polygon points="12,382 76,382 69,358 19,358"/>
+
+    <!-- Left intermediate pavilion -->
+    <rect x="174" y="392" width="62"  height="22"/>
+    <polygon points="174,392 236,392 230,372 180,372"/>
+
+    <!-- Central pavilion (tallest) -->
+    <rect x="268" y="356" width="112" height="58"/>
+    <!-- Central pediment -->
+    <polygon points="268,356 380,356 362,332 286,332"/>
+    <!-- Central top finial -->
+    <polygon points="304,332 344,332 324,316"/>
+
+    <!-- Right intermediate pavilion -->
+    <rect x="390" y="392" width="62"  height="22"/>
+    <polygon points="390,392 452,392 446,372 396,372"/>
+
+    <!-- Right terminal pavilion -->
+    <rect x="532" y="382" width="64"  height="32"/>
+    <polygon points="532,382 596,382 577,358 539,358"/>
+
+    <!-- ── Glass Pyramid ── -->
+    <!-- Left face -->
+    <polygon points="324,434 246,482 324,482" fill="#0d1222"/>
+    <!-- Right face -->
+    <polygon points="324,434 324,482 402,482" fill="#101526"/>
+    <!-- Pyramid glass frame lines -->
+    <g stroke="#1a2438" stroke-width="1.2" fill="none">
+      <line x1="324" y1="434" x2="285" y2="482"/>
+      <line x1="324" y1="434" x2="324" y2="482"/>
+      <line x1="324" y1="434" x2="363" y2="482"/>
+      <line x1="277" y1="462" x2="371" y2="462" opacity="0.6"/>
+      <line x1="260" y1="474" x2="388" y2="474" opacity="0.4"/>
+    </g>
+    <!-- Pyramid apex glint (moonlight reflection) -->
+    <polygon points="324,436 319,444 329,444" fill="#1e3050" opacity="0.7"/>
+  </g>
+
+  <!-- ══ EIFFEL TOWER SILHOUETTE (right, center x=960) ══ -->
+
+  <!-- Tower warm glow pool (famous nightly gold lights) -->
+  <ellipse cx="960" cy="462" rx="185" ry="52" fill="url(#towerGlow)"/>
+
+  <g fill="#0a0c1a" id="eiffel">
+    <!-- Outer left leg (wide at base, tapers to first floor) -->
+    <polygon points="865,482 893,482 924,330 914,328"/>
+    <!-- Outer right leg (mirror) -->
+    <polygon points="1006,328 996,330 1027,482 1055,482"/>
+    <!-- Base fill between legs -->
+    <rect x="893" y="428" width="134" height="54"/>
+    <!-- First floor horizontal platform -->
+    <rect x="906" y="318" width="108" height="15"/>
+    <!-- Mid section (trapezoidal body) -->
+    <polygon points="916,318 1004,318 988,224 932,224"/>
+    <!-- Second floor platform -->
+    <rect x="932" y="215" width="56" height="12"/>
+    <!-- Upper tapered section -->
+    <polygon points="936,215 984,215 964,118 956,118"/>
+    <!-- Top cap -->
+    <rect x="952" y="110" width="16" height="10"/>
+    <!-- Antenna -->
+    <rect x="957" y="68" width="6" height="44"/>
+    <circle cx="960" cy="66" r="4"/>
+  </g>
+
+  <!-- Eiffel Tower lights (gold dots for the famous light display) -->
+  <g fill="#f0d870" filter="url(#lightDot)" opacity="0.80">
+    <!-- First floor lights -->
+    <circle cx="920" cy="323" r="1.4"/>
+    <circle cx="940" cy="323" r="1.4"/>
+    <circle cx="960" cy="323" r="1.4"/>
+    <circle cx="980" cy="323" r="1.4"/>
+    <circle cx="1000" cy="323" r="1.4"/>
+    <!-- Second floor lights -->
+    <circle cx="944" cy="222" r="1.4"/>
+    <circle cx="960" cy="222" r="1.4"/>
+    <circle cx="976" cy="222" r="1.4"/>
+    <!-- Leg scatter lights -->
+    <circle cx="896"  cy="400" r="1.0"/>
+    <circle cx="910"  cy="370" r="1.0"/>
+    <circle cx="920"  cy="350" r="1.0"/>
+    <circle cx="1000" cy="350" r="1.0"/>
+    <circle cx="1010" cy="370" r="1.0"/>
+    <circle cx="1024" cy="400" r="1.0"/>
+    <!-- Antenna beacon -->
+    <circle cx="960" cy="68" r="2.2" opacity="0.95"/>
+  </g>
+
+  <!-- Ground / Seine river -->
+  <rect x="0" y="482" width="1200" height="118" fill="url(#ground)"/>
+  <!-- Seine (darker water strip) -->
+  <rect x="0" y="492" width="1200" height="30" fill="#03050c" opacity="0.85"/>
+
+  <!-- Reflections in Seine -->
+  <!-- Tower reflection -->
+  <g opacity="0.12" fill="#f0d870">
+    <ellipse cx="960" cy="500" rx="4"  ry="6"/>
+    <ellipse cx="960" cy="512" rx="7"  ry="4"/>
+    <ellipse cx="960" cy="522" rx="10" ry="3"/>
+  </g>
+  <!-- Moon reflection -->
+  <ellipse cx="158" cy="508" rx="18" ry="5" fill="#c8dff8" opacity="0.07"/>
+</svg>

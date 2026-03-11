@@ -475,8 +475,18 @@ html, body {
 }
 
 .win-title {
-  color: var(--gold);
-  text-shadow: 0 0 20px rgba(201, 168, 76, 0.6);
+  color: #e8f2ff;
+  text-shadow: 0 0 22px rgba(100, 160, 255, 0.7), 0 0 6px rgba(180, 210, 255, 0.5);
+}
+
+/* Paris night win screen */
+#win-screen {
+  background: url('../assets/paris-night.svg') center/cover no-repeat, #040810;
+}
+
+#win-screen .screen-content {
+  border-color: rgba(80, 130, 220, 0.35);
+  background: rgba(4, 8, 18, 0.82);
 }
 
 .screen-content p {
