@@ -298,6 +298,67 @@ window.GameMap = (function () {
     return tex;
   }
 
+  // ── Egyptian rug — deep red with gold border and geometric pattern ───────────
+  function makeEgyptianRugTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    // Deep red base
+    ctx.fillStyle = '#7a1a10';
+    ctx.fillRect(0, 0, S, S);
+    // Subtle field noise
+    const img = ctx.getImageData(0, 0, S, S);
+    const d = img.data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const n = Math.sin(x * 0.11 + y * 0.07) * 8 + Math.cos(x * 0.05 - y * 0.09) * 6;
+        const i4 = (y * S + x) * 4;
+        d[i4]   = Math.max(0, Math.min(255, d[i4]   + n));
+        d[i4+1] = Math.max(0, Math.min(255, d[i4+1] + n * 0.4));
+        d[i4+2] = Math.max(0, Math.min(255, d[i4+2] + n * 0.2));
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    // Gold outer border
+    ctx.strokeStyle = '#d4a020'; ctx.lineWidth = 18;
+    ctx.strokeRect(9, 9, S - 18, S - 18);
+    // Inner border line
+    ctx.strokeStyle = '#b88010'; ctx.lineWidth = 5;
+    ctx.strokeRect(28, 28, S - 56, S - 56);
+    // Central diamond grid pattern
+    ctx.strokeStyle = 'rgba(212,160,32,0.55)'; ctx.lineWidth = 2.5;
+    for (let i = 64; i < S; i += 96) {
+      ctx.beginPath(); ctx.moveTo(i, 36); ctx.lineTo(i, S - 36); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(36, i); ctx.lineTo(S - 36, i); ctx.stroke();
+    }
+    // Diagonal cross-hatch for texture depth
+    ctx.strokeStyle = 'rgba(180,100,20,0.28)'; ctx.lineWidth = 1.2;
+    for (let i = -S; i < S * 2; i += 52) {
+      ctx.beginPath(); ctx.moveTo(i, 36); ctx.lineTo(i + S, S - 36); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i, S - 36); ctx.lineTo(i + S, 36); ctx.stroke();
+    }
+    // Central lotus medallion
+    ctx.fillStyle = 'rgba(212,160,32,0.60)';
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, 58, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d4a020'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, 58, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#7a1a10';
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, 38, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(212,160,32,0.80)';
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, 18, 0, Math.PI * 2); ctx.fill();
+    // Corner lotus marks
+    [[80,80],[S-80,80],[80,S-80],[S-80,S-80]].forEach(([cx,cy]) => {
+      ctx.fillStyle = 'rgba(212,160,32,0.55)';
+      ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#d4a020'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI * 2); ctx.stroke();
+    });
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    return tex;
+  }
+
   // ── Crown Vault ceiling mural — dark gold arabesque pattern ─────────────────
   function makeVaultMuralTex() {
     const S = 512;
@@ -3849,6 +3910,151 @@ window.GameMap = (function () {
           new THREE.MeshBasicMaterial({ color: 0x22ddcc, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
         scFloorRing.rotation.x = -Math.PI / 2; scFloorRing.position.set(ECX, 0.02, ECZ + 11); scene.add(scFloorRing);
         scarabGrp.userData.floorRing = scFloorRing;
+      }
+
+      // ── Mummy statues — flanking west entrance ────────────
+      {
+        const mummyWrapMat = new THREE.MeshStandardMaterial({ color: 0xb09870, roughness: 0.92, metalness: 0.0 });
+        const mummyBandMat = new THREE.MeshStandardMaterial({ color: 0x6a4c24, roughness: 0.90, metalness: 0.0 });
+        const mummyGoldM   = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.16, metalness: 0.92, emissive: 0x5a3c00, emissiveIntensity: 0.24 });
+        function mummyStatue(mx, mz) {
+          // Pedestal
+          box(scene, 1.15, 0.30, 1.15, mx, 0.15, mz, darkStoneMat);
+          // Feet block
+          box(scene, 0.54, 0.28, 0.54, mx, 0.44, mz, mummyWrapMat);
+          // Lower body
+          box(scene, 0.60, 0.90, 0.56, mx, 0.99, mz, mummyWrapMat);
+          // Upper torso
+          box(scene, 0.66, 0.96, 0.58, mx, 1.89, mz, mummyWrapMat);
+          // Head
+          box(scene, 0.56, 0.60, 0.50, mx, 2.82, mz, mummyWrapMat);
+          // Gold burial mask face plate
+          box(scene, 0.50, 0.52, 0.09, mx, 2.80, mz - 0.28, mummyGoldM);
+          // Nemes headdress sides (gold cloth hanging)
+          box(scene, 0.11, 0.58, 0.32, mx - 0.35, 2.76, mz, mummyGoldM);
+          box(scene, 0.11, 0.58, 0.32, mx + 0.35, 2.76, mz, mummyGoldM);
+          // Nemes top slab
+          box(scene, 0.62, 0.14, 0.56, mx, 3.12, mz, mummyGoldM);
+          // Gold broad collar
+          const mCol = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.044, 6, 14), mummyGoldM);
+          mCol.rotation.x = Math.PI / 2; mCol.position.set(mx, 2.46, mz); scene.add(mCol);
+          // Crossed arms
+          box(scene, 0.58, 0.14, 0.17, mx - 0.14, 1.96, mz - 0.17, mummyWrapMat);
+          box(scene, 0.58, 0.14, 0.17, mx + 0.14, 1.96, mz - 0.17, mummyWrapMat);
+          // Horizontal wrap bands
+          [0.44, 0.98, 1.55, 2.08, 2.56].forEach(by =>
+            box(scene, 0.72, 0.055, 0.64, mx, by, mz, mummyBandMat)
+          );
+          // Gold ankh amulet on chest
+          box(scene, 0.058, 0.20, 0.058, mx, 1.98, mz - 0.32, mummyGoldM);
+          const ankTop = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.018, 5, 8), mummyGoldM);
+          ankTop.rotation.x = Math.PI / 2; ankTop.position.set(mx, 2.09, mz - 0.32); scene.add(ankTop);
+          addWallAABB(mx, mz, 1.35, 1.35);
+        }
+        mummyStatue(28, ECZ - 5.5);   // south of entrance
+        mummyStatue(28, ECZ + 5.5);   // north of entrance
+      }
+
+      // ── Sphinx statues — NW and NE corners, facing inward ─
+      {
+        const sphinxStoneMat = new THREE.MeshStandardMaterial({ color: 0x9a7c40, roughness: 0.87, metalness: 0.04 });
+        const sphinxGoldM    = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.18, metalness: 0.90, emissive: 0x5a3c00, emissiveIntensity: 0.20 });
+        // Sphinx facing south (head toward −Z from center). Base centered at (sx, sz).
+        function sphinxStatue(sx, sz) {
+          // Base platform
+          box(scene, 2.00, 0.20, 4.20, sx, 0.10, sz, darkStoneMat);
+          // Rear haunches (lion rump)
+          box(scene, 1.60, 1.30, 1.50, sx, 0.85, sz + 1.00, sphinxStoneMat);
+          // Main lion body
+          box(scene, 1.52, 0.96, 2.40, sx, 0.68, sz - 0.10, sphinxStoneMat);
+          // Front paw left
+          box(scene, 0.44, 0.34, 1.40, sx - 0.48, 0.17, sz - 1.30, sphinxStoneMat);
+          // Front paw right
+          box(scene, 0.44, 0.34, 1.40, sx + 0.48, 0.17, sz - 1.30, sphinxStoneMat);
+          // Chest / shoulder mass
+          box(scene, 1.54, 1.00, 1.00, sx, 1.20, sz - 0.80, sphinxStoneMat);
+          // Neck
+          box(scene, 0.84, 0.80, 0.72, sx, 1.82, sz - 0.98, sphinxStoneMat);
+          // Head
+          box(scene, 0.88, 0.90, 0.80, sx, 2.56, sz - 1.00, sphinxStoneMat);
+          // Nemes headdress (gold-banded cloth)
+          box(scene, 1.14, 0.84, 1.00, sx, 2.80, sz - 0.94, sphinxGoldM);
+          // Nemes side lappets hanging down
+          box(scene, 0.14, 0.62, 0.34, sx - 0.60, 2.46, sz - 0.96, sphinxGoldM);
+          box(scene, 0.14, 0.62, 0.34, sx + 0.60, 2.46, sz - 0.96, sphinxGoldM);
+          // Face front plate
+          box(scene, 0.72, 0.74, 0.12, sx, 2.54, sz - 1.46, sphinxStoneMat);
+          // Brow ridge (gold)
+          box(scene, 0.64, 0.11, 0.11, sx, 2.80, sz - 1.50, sphinxGoldM);
+          // False beard (gold)
+          box(scene, 0.18, 0.38, 0.14, sx, 2.26, sz - 1.46, sphinxGoldM);
+          // Broad collar / gorget
+          const sCol = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.060, 6, 14), sphinxGoldM);
+          sCol.rotation.x = Math.PI / 2; sCol.position.set(sx, 2.22, sz - 1.00); scene.add(sCol);
+          addWallAABB(sx, sz - 0.50, 2.2, 4.4);
+        }
+        sphinxStatue(29.5, ECZ + 13.5);   // NW sphinx
+        sphinxStatue(52.5, ECZ + 13.5);   // NE sphinx
+      }
+
+      // ── Egyptian rug — center aisle between entrance and altar ─
+      {
+        const rugTex = makeEgyptianRugTex();
+        const rugMat = new THREE.MeshStandardMaterial({
+          map: rugTex, roughness: 0.78, metalness: 0.0,
+        });
+        const rugGeo = new THREE.PlaneGeometry(10, 6);
+        const rug = new THREE.Mesh(rugGeo, rugMat);
+        rug.rotation.x = -Math.PI / 2;
+        rug.position.set(ECX, 0.015, ECZ - 7);
+        scene.add(rug);
+        // Gold fringe strips along short ends
+        const fringeMat = new THREE.MeshStandardMaterial({ color: 0xc89018, roughness: 0.30, metalness: 0.55 });
+        box(scene, 10.4, 0.04, 0.14, ECX, 0.020, ECZ - 10.07, fringeMat);
+        box(scene, 10.4, 0.04, 0.14, ECX, 0.020, ECZ -  3.93, fringeMat);
+      }
+
+      // ── Papyrus scroll display — east wall, south section ─
+      {
+        const scrollStoneMat = new THREE.MeshStandardMaterial({ color: 0x3c2a10, roughness: 0.88, metalness: 0.0 });
+        const papyrusMat = new THREE.MeshStandardMaterial({ color: 0xd4b870, roughness: 0.82, metalness: 0.0, emissive: 0x5a3c00, emissiveIntensity: 0.06 });
+        const scrollInkMat = new THREE.MeshStandardMaterial({ color: 0x5a3800, roughness: 0.90, metalness: 0.0 });
+        const scrollGoldM  = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.20, metalness: 0.90 });
+        const dSX = ECX + ECW / 2 - 0.60;  // against east wall
+        const dSZ = ECZ - 5;
+        // Stone display shelf
+        box(scene, 0.20, 0.28, 2.80, dSX, 0.14, dSZ, darkStoneMat);         // wall bracket
+        box(scene, 0.18, 0.08, 3.00, dSX - 0.16, 0.28, dSZ, scrollStoneMat); // shelf ledge
+        box(scene, 0.18, 1.30, 3.00, dSX - 0.20, 1.10, dSZ, scrollStoneMat); // back panel
+        // Top rail with gold trim
+        box(scene, 0.24, 0.08, 3.04, dSX - 0.18, 1.80, dSZ, scrollGoldM);
+        // 3 open papyrus scrolls on the shelf (lying flat, rotated)
+        const openPositions = [dSZ - 0.80, dSZ, dSZ + 0.80];
+        openPositions.forEach(oz => {
+          const scroll = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 1.00), papyrusMat);
+          scroll.rotation.y = Math.PI / 2;
+          scroll.position.set(dSX - 0.28, 0.36, oz);
+          scene.add(scroll);
+          // Rolled end caps (cylinders at top and bottom)
+          const rollerGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.60, 7);
+          const rollTop = new THREE.Mesh(rollerGeo, scrollGoldM);
+          rollTop.rotation.z = Math.PI / 2; rollTop.position.set(dSX - 0.28, 0.36, oz - 0.52); scene.add(rollTop);
+          const rollBot = new THREE.Mesh(rollerGeo, scrollGoldM);
+          rollBot.rotation.z = Math.PI / 2; rollBot.position.set(dSX - 0.28, 0.36, oz + 0.52); scene.add(rollBot);
+          // Faint ink lines on papyrus (simulated text)
+          [0.20, 0.04, -0.12, -0.28].forEach(iy => {
+            box(scene, 0.005, 0.012, 0.38, dSX - 0.28, 0.36 + iy, oz, scrollInkMat);
+          });
+        });
+        // 2 rolled scroll tubes on upper shelf
+        [dSZ - 0.55, dSZ + 0.55].forEach(rz => {
+          const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.52, 8), papyrusMat);
+          tube.rotation.z = Math.PI / 2; tube.position.set(dSX - 0.28, 1.90, rz); scene.add(tube);
+          const capL = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.056, 0.030, 8), scrollGoldM);
+          capL.rotation.z = Math.PI / 2; capL.position.set(dSX - 0.28, 1.90, rz - 0.28); scene.add(capL);
+          const capR = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.056, 0.030, 8), scrollGoldM);
+          capR.rotation.z = Math.PI / 2; capR.position.set(dSX - 0.28, 1.90, rz + 0.28); scene.add(capR);
+        });
       }
 
       // ── Guard patrol ─────────────────────────────────────
