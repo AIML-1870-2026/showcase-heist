@@ -2216,6 +2216,10 @@ window.GameMap = (function () {
     wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
     paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
+    // Dr. Harnoor Dhaliwal — Scott Scholars, UNO — across from the Mona Lisa
+    wallPainting(scene, 24.9, 3.8, 92, M.harnoor, false);
+    paintingSpotlight(scene, 24.9, 3.8, 92, 'east');
+    placard(scene, 24.9, 2.6, 92, 'Dr. Harnoor Dhaliwal', 'Scott Scholars, UNO', false);
     stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
     placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', true);
     // Glowing floor ring — guides player to the stealable painting
@@ -3069,13 +3073,42 @@ window.GameMap = (function () {
     box(scene, 2.2, 0.26, 2.2, 0, 0.13, 140, _baseMat);   // lowest tier
     box(scene, 1.8, 0.22, 1.8, 0, 0.37, 140, _moldMat);   // second tier
     box(scene, 1.4, 0.50, 1.4, 0, 0.75, 140, M.pedestal); // top column, top=1.00
-    const crownMesh = box(scene, 0.8, 0.6, 0.8, 0, 1.5, 140, M.crown);
-    crownMesh.userData.float = true;
-    stealables.push({ mesh: crownMesh, item: 'crown', x: 0, z: 140, taken: false, needsSafe: true, safeCracked: false, value: 250000000 });
+    // Crown — shaped like a real crown (band + spires + jewels)
+    const crownGroup = new THREE.Group();
+    crownGroup.position.set(0, 1.5, 140);
+    // Base band
+    crownGroup.add(Object.assign(
+      new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.30, 0.22, 20), M.crown),
+      { position: new THREE.Vector3(0, -0.04, 0) }
+    ));
+    const JEWEL_COLORS = [0xff2222, 0x2255ff, 0x22cc22, 0xaa22ff, 0xff8800];
+    // 5 tall main spires
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      const px = Math.sin(angle) * 0.24, pz = Math.cos(angle) * 0.24;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.42, 4), M.crown);
+      spike.position.set(px, 0.28, pz); spike.rotation.y = Math.PI / 4;
+      crownGroup.add(spike);
+      const jMat = new THREE.MeshStandardMaterial({ color: JEWEL_COLORS[i], roughness: 0.08, metalness: 0.2, emissive: JEWEL_COLORS[i], emissiveIntensity: 0.55 });
+      const jewel = new THREE.Mesh(new THREE.SphereGeometry(0.048, 8, 6), jMat);
+      jewel.position.set(px, 0.08, pz);
+      crownGroup.add(jewel);
+    }
+    // 5 shorter arched points between main spires
+    for (let i = 0; i < 5; i++) {
+      const angle = ((i + 0.5) / 5) * Math.PI * 2;
+      const px = Math.sin(angle) * 0.24, pz = Math.cos(angle) * 0.24;
+      const arch = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.24, 4), M.crown);
+      arch.position.set(px, 0.18, pz); arch.rotation.y = Math.PI / 4;
+      crownGroup.add(arch);
+    }
+    scene.add(crownGroup);
+    crownGroup.userData.float = true;
+    stealables.push({ mesh: crownGroup, item: 'crown', x: 0, z: 140, taken: false, needsSafe: true, safeCracked: false, value: 250000000 });
     { const cRing = new THREE.Mesh(new THREE.RingGeometry(0.80, 1.28, 36),
         new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false }));
       cRing.rotation.x = -Math.PI / 2; cRing.position.set(0, 0.02, 140); scene.add(cRing);
-      crownMesh.userData.floorRing = cRing; }
+      crownGroup.userData.floorRing = cRing; }
 
     // Velvet rope barrier around the Crown pedestal
     stanchion(scene, -3.8, 136.5);

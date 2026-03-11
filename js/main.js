@@ -1083,13 +1083,6 @@
       }
     });
 
-    if (mode === 'coop') {
-      Companion.enable();
-      Companion.reset();
-    } else {
-      Companion.disable();
-    }
-
     UI.initObjectives();
     pickMissionVariant();
     UI.showHUD();
@@ -1481,7 +1474,6 @@
     }
 
     $('btn-solo').onclick = () => showCustomize('solo');
-    $('btn-coop').onclick = () => showCustomize('coop');
     // How to Play manual
     const _howBtn   = document.getElementById('btn-howtoplay');
     const _howPanel = document.getElementById('howtoplay-overlay');
@@ -1556,13 +1548,6 @@
     $('btn-play-again').onclick = () => startGame(window.G.mode);
     $('btn-win-menu').onclick   = () => { window.G.phase = 'start'; UI.showScreen('start'); document.exitPointerLock(); };
 
-    // Companion command buttons
-    document.querySelectorAll('.companion-cmd').forEach(btn => {
-      btn.onclick = () => {
-        Companion.issueCommand(btn.dataset.cmd);
-        UI.closeCompanionMenu();
-      };
-    });
   }
 
   // ── Resize ─────────────────────────────────────────────
@@ -1581,7 +1566,7 @@
       objectives: {
         enter:    'Break into the Louvre',
         yellow:   'Find the Yellow Keycard (lobby desk)',
-        gallery:  'Crawl west vent into the Grande Galerie',
+        gallery:  'Reach the Grande Galerie',
         painting: 'Steal the Mona Lisa (west wall)',
         blue:     'Find the Blue Keycard (east gallery)',
         vault:    'Enter the Crown Vault',
@@ -1605,7 +1590,7 @@
         yellow:   'Locate Yellow Keycard (north lobby)',
         gallery:  'Sneak into the Grande Galerie',
         painting: 'Grab the Mona Lisa (far west wall)',
-        blue:     'Use the east vent to reach the vault corridor',
+        blue:     'Find the Blue Keycard (east gallery)',
         vault:    'Drop into the Crown Vault',
         crown:    'Take the Crown',
         escape:   'Escape via service exit',
@@ -1625,7 +1610,7 @@
       objectives: {
         enter:    'Infiltrate after hours',
         yellow:   'Recover Yellow Keycard (west lobby)',
-        gallery:  'Crawl the west vent into the gallery',
+        gallery:  'Sneak into the Grande Galerie',
         painting: 'Swipe the Mona Lisa',
         blue:     'Find the Blue Keycard',
         vault:    'Access the Crown Vault',
@@ -1646,10 +1631,10 @@
       name: 'West Vent Infiltration',
       objectives: {
         enter:    'Slip through the front entrance',
-        yellow:   'Reach the west vent grate (lobby)',
-        gallery:  'Crawl through vent into the Grande Galerie',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
         painting: 'Steal the Mona Lisa (west wall)',
-        blue:     'Use the east vent to bypass the vault corridor',
+        blue:     'Find the Blue Keycard',
         vault:    'Drop into the Crown Vault',
         crown:    'Take the Crown Jewel',
         escape:   'Escape out the front',
@@ -1671,7 +1656,7 @@
         yellow:   'Find Yellow Keycard (north lobby)',
         gallery:  'Enter the Grande Galerie',
         painting: 'Steal the Mona Lisa',
-        blue:     'Use the east vent to bypass the vault corridor',
+        blue:     'Find the Blue Keycard (east gallery)',
         vault:    'Drop into the Crown Vault',
         crown:    'Grab the Crown',
         escape:   'Escape via the front gate',
@@ -1690,10 +1675,10 @@
       name: 'Ghost Protocol',
       objectives: {
         enter:    'Access via the lobby',
-        yellow:   'Crawl the west vent into the gallery',
-        gallery:  'Surface inside the Grande Galerie',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
         painting: 'Take the Mona Lisa',
-        blue:     'Slip through the east vent to the vault',
+        blue:     'Find the Blue Keycard',
         vault:    'Surface inside the Crown Vault',
         crown:    'Secure the Crown Jewel',
         escape:   'Exit through the lobby tunnel',
@@ -1779,7 +1764,6 @@
     Player.updatePrompt();
     Guards.update(dt, playerPos, playerState === 'crouching');
     Security.update(dt, playerPos, playerState);
-    Companion.update(dt);
 
     // World
     updateRoom(playerPos.z);
@@ -1829,13 +1813,10 @@
       }
       _prevCaught = true;
       Player.setCaught();
-      if (G.mode !== 'coop') {
-        G.phase = 'gameover';
-        Music.stop();
-        UI.stopAmbient();
-        UI.showGameOver('Caught!', 'A guard caught you.');
-      }
-      // In co-op, companion.js handles rescue timer & game over
+      G.phase = 'gameover';
+      Music.stop();
+      UI.stopAmbient();
+      UI.showGameOver('Caught!', 'A guard caught you.');
     } else {
       _prevCaught = false;
     }
@@ -1856,7 +1837,6 @@
     setupLighting();
     buildMap();
     Player.init(scene, camera);
-    Companion.init(scene);
     Touch.init();
     UI.showScreen('start');
     const _initCp = getCheckpoint();

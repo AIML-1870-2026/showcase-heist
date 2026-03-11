@@ -629,6 +629,8 @@ window.Guards = (function () {
     }
 
     canSeePlayer(playerPos, isCrouching) {
+      // Player on rooftop/skylight is above guards and cannot be seen
+      if (playerPos.y > 4.5) return false;
       const range = isCrouching ? VISION_RANGE * 0.5 : VISION_RANGE;
       const dx = playerPos.x - this.pos.x;
       const dz = playerPos.z - this.pos.z;
@@ -766,11 +768,11 @@ window.Guards = (function () {
             this.moveTo(playerPos, dt);
           }
 
-          // Catch check
+          // Catch check — skip if player is on rooftop/skylight
           const dx   = playerPos.x - this.pos.x;
           const dz   = playerPos.z - this.pos.z;
           const dist = Math.sqrt(dx * dx + dz * dz);
-          if (dist < CATCH_DIST && G) {
+          if (dist < CATCH_DIST && G && playerPos.y <= 4.5) {
             G.playerCaught = true;
           }
 

@@ -32,13 +32,12 @@
       </div>
       <div class="menu-buttons">
         <button id="btn-solo" class="btn btn-primary">Solo</button>
-        <button id="btn-coop" class="btn btn-secondary">Co-op (AI Partner)</button>
         <button id="btn-continue" class="btn btn-ghost hidden">Continue</button>
         <button id="btn-howtoplay" class="btn btn-ghost">How to Play</button>
       </div>
       <div class="controls-hint">
         <p>WASD — Move &nbsp;|&nbsp; Mouse — Camera &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; R — Run (uses energy, loud!) &nbsp;|&nbsp; Shift — Crouch &nbsp;|&nbsp; Ctrl — Slide</p>
-        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; V — Aerial View &nbsp;|&nbsp; Tab — AI Commands &nbsp;|&nbsp; Esc — Pause</p>
+        <p>E — Interact &nbsp;|&nbsp; Q — Distract &nbsp;|&nbsp; F — Smoke Bomb &nbsp;|&nbsp; G — Takedown &nbsp;|&nbsp; V — Aerial View &nbsp;|&nbsp; Esc — Pause</p>
       </div>
     </div>
   </div>
@@ -65,7 +64,6 @@
         <tr><td style="color:#fff;">F</td><td>Deploy smoke bomb — blinds guards briefly</td></tr>
         <tr><td style="color:#fff;">G</td><td>Non-lethal takedown — must be sneaking behind a guard</td></tr>
         <tr><td style="color:#fff;">V (hold)</td><td>Aerial overview of the museum</td></tr>
-        <tr><td style="color:#fff;">Tab</td><td>AI Partner commands (Co-op mode)</td></tr>
         <tr><td style="color:#fff;">Esc</td><td>Pause menu</td></tr>
       </table>
 
@@ -468,21 +466,6 @@
       <p id="alarm-label">ALARM TRIGGERED — ESCAPE NOW</p>
       <div id="alarm-timer">00:60</div>
     </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════ -->
-  <!--  AI COMPANION COMMAND MENU (Tab key)                   -->
-  <!-- ══════════════════════════════════════════════════════ -->
-  <div id="companion-menu" class="hidden">
-    <h3>Partner Commands</h3>
-    <ul>
-      <li><button class="companion-cmd" data-cmd="distract">Distract Guard</button></li>
-      <li><button class="companion-cmd" data-cmd="hack">Hack Terminal</button></li>
-      <li><button class="companion-cmd" data-cmd="loot">Carry Loot</button></li>
-      <li><button class="companion-cmd" data-cmd="wait">Wait Here</button></li>
-      <li><button class="companion-cmd" data-cmd="follow">Follow Me</button></li>
-    </ul>
-    <p class="close-hint">Tab / Esc to close</p>
   </div>
 
   <!-- ══════════════════════════════════════════════════════ -->
