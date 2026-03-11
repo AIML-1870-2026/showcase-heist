@@ -3062,10 +3062,9 @@ window.GameMap = (function () {
       wheel.position.set(0, 0, 0.22);
       vdGroup.add(wheel);
       // Wheel hub
-      vdGroup.add(Object.assign(
-        new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.18, 10), goldHdl),
-        { position: new THREE.Vector3(0, 0, 0.28) }
-      ));
+      const wheelHub = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.18, 10), goldHdl);
+      wheelHub.position.set(0, 0, 0.28);
+      vdGroup.add(wheelHub);
       vdGroup.children[vdGroup.children.length - 1].rotation.x = Math.PI / 2;
       // Wheel spokes (4)
       for (let i = 0; i < 4; i++) {
