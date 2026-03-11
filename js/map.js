@@ -3047,10 +3047,9 @@ window.GameMap = (function () {
     const crownGroup = new THREE.Group();
     crownGroup.position.set(0, 1.5, 140);
     // Base band
-    crownGroup.add(Object.assign(
-      new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.30, 0.22, 20), M.crown),
-      { position: new THREE.Vector3(0, -0.04, 0) }
-    ));
+    const crownBand = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.30, 0.22, 20), M.crown);
+    crownBand.position.set(0, -0.04, 0);
+    crownGroup.add(crownBand);
     const JEWEL_COLORS = [0xff2222, 0x2255ff, 0x22cc22, 0xaa22ff, 0xff8800];
     // 5 tall main spires
     for (let i = 0; i < 5; i++) {
