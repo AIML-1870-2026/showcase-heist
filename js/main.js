@@ -488,14 +488,16 @@
 
     // Floating crown
     const crownMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0x665500, emissiveIntensity: 0.5, roughness: 0.2, metalness: 0.9 });
+    const crownGroup = new THREE.Group();
+    crownGroup.position.set(1.0, 2.3, 0.4);
+    celScene.add(crownGroup);
     const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.10, 8), crownMat);
-    crownBase.position.set(1.0, 2.3, 0.4);
-    celScene.add(crownBase);
+    crownGroup.add(crownBase);
     [0, 1, 2, 3, 4].forEach(i => {
       const spike = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 5), crownMat);
       const ang = (i / 5) * Math.PI * 2;
-      spike.position.set(crownBase.position.x + Math.cos(ang) * 0.13, crownBase.position.y + 0.14, crownBase.position.z + Math.sin(ang) * 0.13);
-      celScene.add(spike);
+      spike.position.set(Math.cos(ang) * 0.13, 0.14, Math.sin(ang) * 0.13);
+      crownGroup.add(spike);
     });
 
     // Confetti particles — burst launch from bottom with gravity
@@ -533,7 +535,7 @@
       charMesh.rotation.y = Math.PI + Math.sin(celT * 1.5) * 0.35;
       paintMesh.position.y = 2.0 + Math.sin(celT * 2.0) * 0.12;
       paintMesh.rotation.z = Math.sin(celT * 1.3) * 0.12;
-      crownBase.position.y = 2.3 + Math.cos(celT * 2.2) * 0.12;
+      crownGroup.position.y = 2.3 + Math.cos(celT * 2.2) * 0.12;
 
       confetti.forEach(c => {
         c.userData.vy -= 3.5 * dt2;  // gravity
