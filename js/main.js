@@ -749,7 +749,7 @@
       sparkPos[i * 3 + 2] += sparkVel[i * 3 + 2] * dt;
       anyAlive = true;
     }
-    sparkGeo.attributes.position.needsUpdate = true;
+    if (anyAlive) sparkGeo.attributes.position.needsUpdate = true;
     sparkMesh.material.opacity = Math.max(0, 1 - (sparksActive ? 0 : 1));
     if (!anyAlive) { sparksActive = false; sparkMesh.visible = false; }
   }

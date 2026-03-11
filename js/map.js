@@ -746,6 +746,16 @@ window.GameMap = (function () {
     return mesh;
   }
 
+  // Decorative box — no shadow casting (used for tiny detail pieces)
+  function boxD(scene, w, h, d, x, y, z, mat) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow    = false;
+    mesh.receiveShadow = false;
+    scene.add(mesh);
+    return mesh;
+  }
+
   function addWallAABB(cx, cz, w, d) {
     walls.push({
       minX: cx - w / 2,
@@ -3716,14 +3726,14 @@ window.GameMap = (function () {
         const armD = Math.abs(dz) * reach * 0.9 + 0.04;
         box(scene, armW, 0.042, armD, px + dx * reach * 0.45, py + 0.042, pz + dz * reach * 0.45, ironM);
         const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.052, 0.52, 6), ironM);
-        stick.position.set(tipX, py - 0.14, tipZ); scene.add(stick);
+        stick.castShadow = false; stick.position.set(tipX, py - 0.14, tipZ); scene.add(stick);
         const flame = new THREE.Mesh(new THREE.SphereGeometry(0.098, 7, 6), torchGlowMat);
-        flame.scale.set(1.0, 1.35, 1.0); flame.position.set(tipX, py + 0.12, tipZ); scene.add(flame);
+        flame.castShadow = false; flame.scale.set(1.0, 1.35, 1.0); flame.position.set(tipX, py + 0.12, tipZ); scene.add(flame);
         const halo = new THREE.Mesh(new THREE.SphereGeometry(0.145, 6, 5), new THREE.MeshStandardMaterial({
           color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.60,
           transparent: true, opacity: 0.28, roughness: 0.1,
         }));
-        halo.position.set(tipX, py + 0.16, tipZ); scene.add(halo);
+        halo.castShadow = false; halo.position.set(tipX, py + 0.16, tipZ); scene.add(halo);
       }
 
       // West wall torches (pointing east)
@@ -3749,7 +3759,7 @@ window.GameMap = (function () {
         box(scene, 0.88, WALL_H - 0.40, 0.88, cx, (WALL_H - 0.40) / 2 + 0.20, cz, sandStoneMat);
         box(scene, 1.18, 0.20, 1.18, cx, 0.10, cz, darkStoneMat);          // base plinth
         box(scene, 1.18, 0.20, 1.18, cx, WALL_H - 0.10, cz, darkStoneMat); // capital slab
-        box(scene, 0.90, 0.14, 0.90, cx, (WALL_H - 0.40) / 2 + 0.20, cz, hieroBandMat); // glyph band
+        boxD(scene, 0.90, 0.14, 0.90, cx, (WALL_H - 0.40) / 2 + 0.20, cz, hieroBandMat); // glyph band
         addWallAABB(cx, cz, 1.2, 1.2);
       }
       egyptColumn(ECX - 7, ECZ - 6);
@@ -3765,14 +3775,14 @@ window.GameMap = (function () {
         box(scene, 0.90, 0.28, 2.16, sx, 0.46, sz, lidMat);  // lid
         // Gold death-mask at head end (−Z)
         const mask = new THREE.Mesh(new THREE.SphereGeometry(0.195, 9, 7), goldEgyptMat);
-        mask.scale.set(0.78, 0.88, 0.55);
+        mask.castShadow = false; mask.scale.set(0.78, 0.88, 0.55);
         mask.position.set(sx, 0.66, sz - 0.88); scene.add(mask);
         // Gold banding strips
-        [-0.55, 0, 0.55].forEach(bz => box(scene, 0.92, 0.038, 0.055, sx, 0.50, sz + bz, goldEgyptMat));
+        [-0.55, 0, 0.55].forEach(bz => boxD(scene, 0.92, 0.038, 0.055, sx, 0.50, sz + bz, goldEgyptMat));
         // Turquoise inlay gems
         [[-0.28, 0.18], [0.28, 0.18], [0, -0.30]].forEach(([bx, bz]) => {
           const gem = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.036, 0.048), turqMat);
-          gem.position.set(sx + bx, 0.62, sz + bz); scene.add(gem);
+          gem.castShadow = false; gem.position.set(sx + bx, 0.62, sz + bz); scene.add(gem);
         });
         addWallAABB(sx, sz, 1.05, 2.4);
       }
@@ -3790,11 +3800,11 @@ window.GameMap = (function () {
       const jarGoldMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.18, metalness: 0.92 });
       [-0.72, -0.24, 0.24, 0.72].forEach(jx => {
         const jBody = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.058, 0.28, 8), jarBodyMat);
-        jBody.position.set(ECX + jx, 0.92, ECZ); scene.add(jBody);
+        jBody.castShadow = false; jBody.position.set(ECX + jx, 0.92, ECZ); scene.add(jBody);
         const jLid = new THREE.Mesh(new THREE.SphereGeometry(0.070, 7, 5), jarGoldMat);
-        jLid.position.set(ECX + jx, 1.085, ECZ); scene.add(jLid);
+        jLid.castShadow = false; jLid.position.set(ECX + jx, 1.085, ECZ); scene.add(jLid);
         const jBand = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 5, 10), jarGoldMat);
-        jBand.rotation.x = Math.PI / 2; jBand.position.set(ECX + jx, 0.93, ECZ); scene.add(jBand);
+        jBand.castShadow = false; jBand.rotation.x = Math.PI / 2; jBand.position.set(ECX + jx, 0.93, ECZ); scene.add(jBand);
       });
 
       // ── Anubis statue — jackal-headed guardian ───────────
@@ -3808,15 +3818,15 @@ window.GameMap = (function () {
         const aHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.27, 0.40), anubMat);
         aHead.position.set(ECX + 11, 1.78, ECZ); scene.add(aHead);
         const aSnout = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.10, 0.28), anubMat);
-        aSnout.position.set(ECX + 11, 1.71, ECZ - 0.30); scene.add(aSnout);
+        aSnout.castShadow = false; aSnout.position.set(ECX + 11, 1.71, ECZ - 0.30); scene.add(aSnout);
         const aEarL = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 4), anubMat);
-        aEarL.position.set(ECX + 11 - 0.09, 1.97, ECZ); scene.add(aEarL);
+        aEarL.castShadow = false; aEarL.position.set(ECX + 11 - 0.09, 1.97, ECZ); scene.add(aEarL);
         const aEarR = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 4), anubMat);
-        aEarR.position.set(ECX + 11 + 0.09, 1.97, ECZ); scene.add(aEarR);
+        aEarR.castShadow = false; aEarR.position.set(ECX + 11 + 0.09, 1.97, ECZ); scene.add(aEarR);
         const aCollar = new THREE.Mesh(new THREE.TorusGeometry(0.175, 0.028, 6, 14), goldEgyptMat);
-        aCollar.rotation.x = Math.PI / 2; aCollar.position.set(ECX + 11, 1.53, ECZ); scene.add(aCollar);
+        aCollar.castShadow = false; aCollar.rotation.x = Math.PI / 2; aCollar.position.set(ECX + 11, 1.53, ECZ); scene.add(aCollar);
         const aStaff = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.88, 6), goldEgyptMat);
-        aStaff.position.set(ECX + 11 - 0.20, 1.33, ECZ - 0.16); aStaff.rotation.z = 0.22; scene.add(aStaff);
+        aStaff.castShadow = false; aStaff.position.set(ECX + 11 - 0.20, 1.33, ECZ - 0.16); aStaff.rotation.z = 0.22; scene.add(aStaff);
         addWallAABB(ECX + 11, ECZ, 1.35, 1.35);
       }
 
@@ -3840,7 +3850,7 @@ window.GameMap = (function () {
         });
         [[ECX - 0.8, ECZ - 1.6], [ECX + 0.8, ECZ - 1.6], [ECX, ECZ + 1.6]].forEach(([sx, sz]) => {
           const sb = new THREE.Mesh(new THREE.SphereGeometry(0.058, 7, 5), scarabM);
-          sb.scale.set(0.85, 0.55, 1.20); sb.position.set(sx, 0.82, sz); scene.add(sb);
+          sb.castShadow = false; sb.scale.set(0.85, 0.55, 1.20); sb.position.set(sx, 0.82, sz); scene.add(sb);
         });
       }
 
@@ -3929,26 +3939,26 @@ window.GameMap = (function () {
           // Head
           box(scene, 0.56, 0.60, 0.50, mx, 2.82, mz, mummyWrapMat);
           // Gold burial mask face plate
-          box(scene, 0.50, 0.52, 0.09, mx, 2.80, mz - 0.28, mummyGoldM);
+          boxD(scene, 0.50, 0.52, 0.09, mx, 2.80, mz - 0.28, mummyGoldM);
           // Nemes headdress sides (gold cloth hanging)
-          box(scene, 0.11, 0.58, 0.32, mx - 0.35, 2.76, mz, mummyGoldM);
-          box(scene, 0.11, 0.58, 0.32, mx + 0.35, 2.76, mz, mummyGoldM);
+          boxD(scene, 0.11, 0.58, 0.32, mx - 0.35, 2.76, mz, mummyGoldM);
+          boxD(scene, 0.11, 0.58, 0.32, mx + 0.35, 2.76, mz, mummyGoldM);
           // Nemes top slab
-          box(scene, 0.62, 0.14, 0.56, mx, 3.12, mz, mummyGoldM);
+          boxD(scene, 0.62, 0.14, 0.56, mx, 3.12, mz, mummyGoldM);
           // Gold broad collar
           const mCol = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.044, 6, 14), mummyGoldM);
-          mCol.rotation.x = Math.PI / 2; mCol.position.set(mx, 2.46, mz); scene.add(mCol);
+          mCol.castShadow = false; mCol.rotation.x = Math.PI / 2; mCol.position.set(mx, 2.46, mz); scene.add(mCol);
           // Crossed arms
-          box(scene, 0.58, 0.14, 0.17, mx - 0.14, 1.96, mz - 0.17, mummyWrapMat);
-          box(scene, 0.58, 0.14, 0.17, mx + 0.14, 1.96, mz - 0.17, mummyWrapMat);
+          boxD(scene, 0.58, 0.14, 0.17, mx - 0.14, 1.96, mz - 0.17, mummyWrapMat);
+          boxD(scene, 0.58, 0.14, 0.17, mx + 0.14, 1.96, mz - 0.17, mummyWrapMat);
           // Horizontal wrap bands
           [0.44, 0.98, 1.55, 2.08, 2.56].forEach(by =>
-            box(scene, 0.72, 0.055, 0.64, mx, by, mz, mummyBandMat)
+            boxD(scene, 0.72, 0.055, 0.64, mx, by, mz, mummyBandMat)
           );
           // Gold ankh amulet on chest
-          box(scene, 0.058, 0.20, 0.058, mx, 1.98, mz - 0.32, mummyGoldM);
+          boxD(scene, 0.058, 0.20, 0.058, mx, 1.98, mz - 0.32, mummyGoldM);
           const ankTop = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.018, 5, 8), mummyGoldM);
-          ankTop.rotation.x = Math.PI / 2; ankTop.position.set(mx, 2.09, mz - 0.32); scene.add(ankTop);
+          ankTop.castShadow = false; ankTop.rotation.x = Math.PI / 2; ankTop.position.set(mx, 2.09, mz - 0.32); scene.add(ankTop);
           addWallAABB(mx, mz, 1.35, 1.35);
         }
         mummyStatue(28, ECZ - 5.5);   // south of entrance
@@ -3980,17 +3990,17 @@ window.GameMap = (function () {
           // Nemes headdress (gold-banded cloth)
           box(scene, 1.14, 0.84, 1.00, sx, 2.80, sz - 0.94, sphinxGoldM);
           // Nemes side lappets hanging down
-          box(scene, 0.14, 0.62, 0.34, sx - 0.60, 2.46, sz - 0.96, sphinxGoldM);
-          box(scene, 0.14, 0.62, 0.34, sx + 0.60, 2.46, sz - 0.96, sphinxGoldM);
+          boxD(scene, 0.14, 0.62, 0.34, sx - 0.60, 2.46, sz - 0.96, sphinxGoldM);
+          boxD(scene, 0.14, 0.62, 0.34, sx + 0.60, 2.46, sz - 0.96, sphinxGoldM);
           // Face front plate
           box(scene, 0.72, 0.74, 0.12, sx, 2.54, sz - 1.46, sphinxStoneMat);
           // Brow ridge (gold)
-          box(scene, 0.64, 0.11, 0.11, sx, 2.80, sz - 1.50, sphinxGoldM);
+          boxD(scene, 0.64, 0.11, 0.11, sx, 2.80, sz - 1.50, sphinxGoldM);
           // False beard (gold)
-          box(scene, 0.18, 0.38, 0.14, sx, 2.26, sz - 1.46, sphinxGoldM);
+          boxD(scene, 0.18, 0.38, 0.14, sx, 2.26, sz - 1.46, sphinxGoldM);
           // Broad collar / gorget
           const sCol = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.060, 6, 14), sphinxGoldM);
-          sCol.rotation.x = Math.PI / 2; sCol.position.set(sx, 2.22, sz - 1.00); scene.add(sCol);
+          sCol.castShadow = false; sCol.rotation.x = Math.PI / 2; sCol.position.set(sx, 2.22, sz - 1.00); scene.add(sCol);
           addWallAABB(sx, sz - 0.50, 2.2, 4.4);
         }
         sphinxStatue(29.5, ECZ + 13.5);   // NW sphinx
@@ -4010,8 +4020,8 @@ window.GameMap = (function () {
         scene.add(rug);
         // Gold fringe strips along short ends
         const fringeMat = new THREE.MeshStandardMaterial({ color: 0xc89018, roughness: 0.30, metalness: 0.55 });
-        box(scene, 10.4, 0.04, 0.14, ECX, 0.020, ECZ - 10.07, fringeMat);
-        box(scene, 10.4, 0.04, 0.14, ECX, 0.020, ECZ -  3.93, fringeMat);
+        boxD(scene, 10.4, 0.04, 0.14, ECX, 0.020, ECZ - 10.07, fringeMat);
+        boxD(scene, 10.4, 0.04, 0.14, ECX, 0.020, ECZ -  3.93, fringeMat);
       }
 
       // ── Papyrus scroll display — east wall, south section ─
@@ -4023,37 +4033,37 @@ window.GameMap = (function () {
         const dSX = ECX + ECW / 2 - 0.60;  // against east wall
         const dSZ = ECZ - 5;
         // Stone display shelf
-        box(scene, 0.20, 0.28, 2.80, dSX, 0.14, dSZ, darkStoneMat);         // wall bracket
-        box(scene, 0.18, 0.08, 3.00, dSX - 0.16, 0.28, dSZ, scrollStoneMat); // shelf ledge
-        box(scene, 0.18, 1.30, 3.00, dSX - 0.20, 1.10, dSZ, scrollStoneMat); // back panel
+        box(scene, 0.20, 0.28, 2.80, dSX, 0.14, dSZ, darkStoneMat);          // wall bracket
+        boxD(scene, 0.18, 0.08, 3.00, dSX - 0.16, 0.28, dSZ, scrollStoneMat); // shelf ledge
+        box(scene, 0.18, 1.30, 3.00, dSX - 0.20, 1.10, dSZ, scrollStoneMat);  // back panel
         // Top rail with gold trim
-        box(scene, 0.24, 0.08, 3.04, dSX - 0.18, 1.80, dSZ, scrollGoldM);
+        boxD(scene, 0.24, 0.08, 3.04, dSX - 0.18, 1.80, dSZ, scrollGoldM);
         // 3 open papyrus scrolls on the shelf (lying flat, rotated)
         const openPositions = [dSZ - 0.80, dSZ, dSZ + 0.80];
         openPositions.forEach(oz => {
           const scroll = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 1.00), papyrusMat);
-          scroll.rotation.y = Math.PI / 2;
+          scroll.castShadow = false; scroll.rotation.y = Math.PI / 2;
           scroll.position.set(dSX - 0.28, 0.36, oz);
           scene.add(scroll);
           // Rolled end caps (cylinders at top and bottom)
           const rollerGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.60, 7);
           const rollTop = new THREE.Mesh(rollerGeo, scrollGoldM);
-          rollTop.rotation.z = Math.PI / 2; rollTop.position.set(dSX - 0.28, 0.36, oz - 0.52); scene.add(rollTop);
+          rollTop.castShadow = false; rollTop.rotation.z = Math.PI / 2; rollTop.position.set(dSX - 0.28, 0.36, oz - 0.52); scene.add(rollTop);
           const rollBot = new THREE.Mesh(rollerGeo, scrollGoldM);
-          rollBot.rotation.z = Math.PI / 2; rollBot.position.set(dSX - 0.28, 0.36, oz + 0.52); scene.add(rollBot);
+          rollBot.castShadow = false; rollBot.rotation.z = Math.PI / 2; rollBot.position.set(dSX - 0.28, 0.36, oz + 0.52); scene.add(rollBot);
           // Faint ink lines on papyrus (simulated text)
           [0.20, 0.04, -0.12, -0.28].forEach(iy => {
-            box(scene, 0.005, 0.012, 0.38, dSX - 0.28, 0.36 + iy, oz, scrollInkMat);
+            boxD(scene, 0.005, 0.012, 0.38, dSX - 0.28, 0.36 + iy, oz, scrollInkMat);
           });
         });
         // 2 rolled scroll tubes on upper shelf
         [dSZ - 0.55, dSZ + 0.55].forEach(rz => {
           const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.52, 8), papyrusMat);
-          tube.rotation.z = Math.PI / 2; tube.position.set(dSX - 0.28, 1.90, rz); scene.add(tube);
+          tube.castShadow = false; tube.rotation.z = Math.PI / 2; tube.position.set(dSX - 0.28, 1.90, rz); scene.add(tube);
           const capL = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.056, 0.030, 8), scrollGoldM);
-          capL.rotation.z = Math.PI / 2; capL.position.set(dSX - 0.28, 1.90, rz - 0.28); scene.add(capL);
+          capL.castShadow = false; capL.rotation.z = Math.PI / 2; capL.position.set(dSX - 0.28, 1.90, rz - 0.28); scene.add(capL);
           const capR = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.056, 0.030, 8), scrollGoldM);
-          capR.rotation.z = Math.PI / 2; capR.position.set(dSX - 0.28, 1.90, rz + 0.28); scene.add(capR);
+          capR.castShadow = false; capR.rotation.z = Math.PI / 2; capR.position.set(dSX - 0.28, 1.90, rz + 0.28); scene.add(capR);
         });
       }
 
