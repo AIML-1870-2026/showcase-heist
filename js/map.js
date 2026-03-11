@@ -570,19 +570,9 @@ window.GameMap = (function () {
       map: loadPaintingTex('assets/paintings/waterlilies.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
-    // Dr. Harnoor Dhaliwal, PhD — Executive Director, Scott Scholars, UNO
-    harnoor: new THREE.MeshStandardMaterial({
-      map: loadPaintingTex('assets/paintings/harnoor.jpg'),
-      roughness: 0.88, metalness: 0.0,
-    }),
     // Jon Smail — Assistant Director, Scott Scholars, UNO
     jon: new THREE.MeshStandardMaterial({
       map: loadPaintingTex('assets/paintings/jon.jpg'),
-      roughness: 0.88, metalness: 0.0,
-    }),
-    // Kaitlyn Baysa — Design Studio Program Coordinator, Scott Scholars, UNO
-    kaitlyn: new THREE.MeshStandardMaterial({
-      map: loadPaintingTex('assets/paintings/kaitlyn.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
     // Procedural Impressionist paintings
@@ -2359,13 +2349,8 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
     paintingSpotlight(scene,  24.9, 3.5, 60, 'east');
     placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
-    // Scott Scholars portraits — south gallery entrance wall, visible as players enter
-    wallPaintingNS(scene,  21, 3.5, 55.10, M.harnoor, true);
-    paintingSpotlight(scene,  21, 3.5, 55.10, 'south');
     wallPaintingNS(scene,   8, 3.5, 55.10, M.jon, true);
     paintingSpotlight(scene,   8, 3.5, 55.10, 'south');
-    wallPaintingNS(scene, -21, 3.5, 55.10, M.kaitlyn, true);
-    paintingSpotlight(scene, -21, 3.5, 55.10, 'south');
 
     // Hack terminal
     terminal(scene, 20, 78);

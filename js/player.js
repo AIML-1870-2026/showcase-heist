@@ -1440,6 +1440,13 @@ window.Player = (function () {
     _staminaExhausted = false;
     _scActive         = false;
     _cancelSafeCrack();
+    // Reset camera position to behind the starting location so it doesn't
+    // carry over from the previous game session (avoids black screen on restart)
+    camPos.set(pos.x, pos.y + CAM_H_OFFSET + pitch * 3, pos.z);
+    if (camera) {
+      camera.position.copy(camPos);
+      camera.lookAt(pos.x, pos.y + 1.4, pos.z);
+    }
     // Rebuild mesh so suit/eye colours from customisation screen take effect
     if (playerMesh) scene.remove(playerMesh);
     playerMesh = buildMesh(scene);
