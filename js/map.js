@@ -741,11 +741,11 @@ window.GameMap = (function () {
     addWallAABB(x, z, 1.2, 1.2);
   }
 
-  // Painting on a wall (frame + canvas)
+  // Painting on a wall (frame + canvas) — returns the canvas mesh so callers can hide it on steal
   function wallPainting(scene, x, y, z, mat, isWestWall) {
     const offset = isWestWall ? 0.15 : -0.15;
     box(scene, Math.abs(offset) + 0.02, 1.6, 2.4, x, y, z, M.frame);
-    box(scene, 0.08, 1.4, 2.1, x + offset, y, z, mat);
+    return box(scene, 0.08, 1.4, 2.1, x + offset, y, z, mat);
   }
 
   function terminal(scene, x, z) {
@@ -2198,10 +2198,10 @@ window.GameMap = (function () {
     laserData.push({ type: 'low', x1: -20, x2:  20, y: 0.5, z: 74 });
 
     // La Joconde (Mona Lisa) — main stealable painting on west wall of gallery
-    wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
+    const monaWallMesh = wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
     paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
-    stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
+    stealables.push({ mesh: paintMesh, wallMesh: monaWallMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
     placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', true);
     // Glowing floor ring — guides player to the stealable painting
     const paintRingMat = new THREE.MeshBasicMaterial({
@@ -2715,10 +2715,10 @@ window.GameMap = (function () {
     wallPainting(scene, -49.9, 3.5, 82, M.paintings[3], true);
     paintingSpotlight(scene, -49.9, 3.5, 82, 'west');
     // Les Nymphéas — Monet bonus stealable, centred between the two decorative paintings
-    wallPainting(scene, -49.9, 3.5, 77, M.monet, true);
+    const monetWallMesh = wallPainting(scene, -49.9, 3.5, 77, M.monet, true);
     paintingSpotlight(scene, -49.9, 3.5, 77, 'west');
     const monetMesh = box(scene, 0.05, 1.4, 2.1, -49.75, 3.5, 77, M.monet);
-    stealables.push({ mesh: monetMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas', value: 40000000 });
+    stealables.push({ mesh: monetMesh, wallMesh: monetWallMesh, item: 'monet', x: -49.9, z: 77, taken: false, bonus: true, label: 'Les Nymphéas', value: 40000000 });
     { const mRing = new THREE.Mesh(new THREE.RingGeometry(0.65, 1.05, 32),
         new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       mRing.rotation.x = -Math.PI / 2; mRing.position.set(-49.5, 0.02, 77); scene.add(mRing);
@@ -3154,6 +3154,32 @@ window.GameMap = (function () {
         torchLight.position.set(tx, 4.1, 159.5);
         scene.add(torchLight);
       });
+    }
+
+    // Crown Vault — neon/bioluminescent accent strip lights
+    {
+      const cyanMat = new THREE.MeshStandardMaterial({ color: 0x00ffee, emissive: 0x00ffee, emissiveIntensity: 3.0, roughness: 0.3, metalness: 0.1 });
+      const purpleMat = new THREE.MeshStandardMaterial({ color: 0xbb00ff, emissive: 0xbb00ff, emissiveIntensity: 3.0, roughness: 0.3, metalness: 0.1 });
+      // West wall — cyan strips at low height
+      [120, 133, 146].forEach(bz => {
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1.8), cyanMat);
+        strip.position.set(-24.7, 0.5, bz); scene.add(strip);
+        const pl = new THREE.PointLight(0x00ffee, 0.55, 12);
+        pl.position.set(-23.5, 0.8, bz); scene.add(pl);
+      });
+      // East wall — purple strips at low height
+      [120, 133, 146].forEach(bz => {
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1.8), purpleMat);
+        strip.position.set(24.7, 0.5, bz); scene.add(strip);
+        const pl = new THREE.PointLight(0xbb00ff, 0.55, 12);
+        pl.position.set(23.5, 0.8, bz); scene.add(pl);
+      });
+      // Crown pedestal — green-gold uplight
+      const crownGlowMat = new THREE.MeshStandardMaterial({ color: 0x44ff88, emissive: 0x44ff88, emissiveIntensity: 2.5, roughness: 0.3 });
+      const crownRing = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.04, 6, 32), crownGlowMat);
+      crownRing.rotation.x = Math.PI / 2; crownRing.position.set(0, 0.06, 140); scene.add(crownRing);
+      const crownGlow = new THREE.PointLight(0x44ff88, 1.0, 10);
+      crownGlow.position.set(0, 1.5, 140); scene.add(crownGlow);
     }
 
     // Crown Vault — tapestry banners hanging on east/west walls

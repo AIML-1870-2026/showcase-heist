@@ -87,6 +87,29 @@ window.Guards = (function () {
     searching:  ['Come out!', "I know you're here.", 'Show yourself!', "Can't hide forever.", "Where'd they go?"],
   };
 
+  // ── Alert icon sprite (! / ?) ──────────────────────────
+  function makeIconMaterial(symbol, color) {
+    const W = 128, H = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const c = canvas.getContext('2d');
+    // Radial glow background
+    const grad = c.createRadialGradient(W / 2, H / 2, 4, W / 2, H / 2, W / 2 - 4);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = grad; c.fillRect(0, 0, W, H);
+    // Symbol
+    c.fillStyle = '#ffffff';
+    c.strokeStyle = '#000000';
+    c.lineWidth = 5;
+    c.font = 'bold 84px "Courier New", monospace';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.strokeText(symbol, W / 2, H / 2 + 4);
+    c.fillText(symbol, W / 2, H / 2 + 4);
+    const tex = new THREE.CanvasTexture(canvas);
+    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  }
+
   function makeBubbleMaterial(text, state) {
     const W = 256, H = 72;
     const canvas = document.createElement('canvas');
@@ -585,6 +608,16 @@ window.Guards = (function () {
       this.bubble.scale.set(2.4, 0.75, 1);
       this.bubble.visible = false;
       scene.add(this.bubble);
+
+      // Alert icon sprite (! or ?)
+      const iconInitMat = new THREE.SpriteMaterial({ transparent: true, depthTest: false, opacity: 0 });
+      this._iconSprite = new THREE.Sprite(iconInitMat);
+      this._iconSprite.scale.set(1.1, 1.1, 1);
+      this._iconSprite.visible = false;
+      scene.add(this._iconSprite);
+      this._iconActive   = false;
+      this._iconT        = 0;
+      this._iconSpriteMat = null;
     }
 
     speed() {
@@ -853,6 +886,7 @@ window.Guards = (function () {
       this.mesh.rotation.y = this.smoothYaw + Math.PI;
       this.updateCone(playerPos);
       this.tickBubble(dt);
+      this.tickIcon(dt);
       this.tickFlashlight();
 
       // Detection bar: visible when suspicious and detectT > 0
@@ -869,6 +903,44 @@ window.Guards = (function () {
     }
 
     tickFlashlight() {}
+
+    _showIcon(symbol, color) {
+      if (this._iconSpriteMat) { this._iconSpriteMat.map.dispose(); this._iconSpriteMat.dispose(); }
+      this._iconSpriteMat = makeIconMaterial(symbol, color);
+      this._iconSprite.material = this._iconSpriteMat;
+      this._iconSprite.material.opacity = 0;
+      this._iconSprite.visible = true;
+      this._iconT      = 0;
+      this._iconActive = true;
+    }
+
+    tickIcon(dt) {
+      if (!this._iconActive) return;
+      this._iconT += dt;
+      const t = this._iconT;
+      let opacity;
+      let scale;
+      if (t < 0.12) {
+        // Pop in: scale from 1.8 down to 1.1, fade in
+        const p = t / 0.12;
+        opacity = p;
+        scale   = 1.8 - p * 0.7;
+      } else if (t < 0.55) {
+        opacity = 1.0;
+        scale   = 1.1;
+      } else if (t < 0.85) {
+        const p = (t - 0.55) / 0.30;
+        opacity = 1.0 - p;
+        scale   = 1.1;
+      } else {
+        this._iconSprite.visible = false;
+        this._iconActive = false;
+        return;
+      }
+      this._iconSprite.material.opacity = opacity;
+      this._iconSprite.scale.setScalar(scale);
+      this._iconSprite.position.set(this.pos.x, 3.9, this.pos.z);
+    }
 
     _showBubble(text) {
       if (text === this._bubblePhrase) return;
@@ -887,6 +959,10 @@ window.Guards = (function () {
         const pool = BUBBLE_PHRASES[this.state] || BUBBLE_PHRASES.patrol;
         this._showBubble(pool[Math.floor(Math.random() * pool.length)]);
         this._bubbleIdleT = 0;
+        // Show icon on state change
+        if (this.state === 'alerted')    this._showIcon('!', 'rgba(255,30,0,0.85)');
+        else if (this.state === 'suspicious') this._showIcon('?', 'rgba(255,160,0,0.85)');
+        else if (this.state === 'searching')  this._showIcon('?', 'rgba(255,120,0,0.7)');
       }
       this._prevState = this.state;
 
@@ -922,10 +998,12 @@ window.Guards = (function () {
       // Visually slump: tilt sideways and sink slightly
       this.mesh.rotation.z  = Math.PI / 2;
       this.mesh.position.y  = 0.5;
-      this.coneMesh.visible = false;
-      this.beamMesh.visible = false;
-      this.bubble.visible   = false;
-      this.detectBar.visible = false;
+      this.coneMesh.visible    = false;
+      this.beamMesh.visible    = false;
+      this.bubble.visible      = false;
+      this._iconSprite.visible = false;
+      this._iconActive         = false;
+      this.detectBar.visible   = false;
     }
 
     _wakeUp() {

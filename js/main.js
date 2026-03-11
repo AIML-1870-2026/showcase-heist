@@ -498,18 +498,25 @@
       celScene.add(spike);
     });
 
-    // Confetti particles
-    const confettiColors = [0xff69b4, 0xffdd00, 0x44ddff, 0x88ff44, 0xffa500, 0xcc44ff];
+    // Confetti particles — burst launch from bottom with gravity
+    const confettiColors = [0xff69b4, 0xffdd00, 0x44ddff, 0x88ff44, 0xffa500, 0xcc44ff, 0xff4444, 0xffffff];
     const confetti = [];
-    for (let i = 0; i < 60; i++) {
+    const CONFETTI_COUNT = 140;
+    for (let i = 0; i < CONFETTI_COUNT; i++) {
+      const isBig = i < 20;
+      const w = isBig ? (0.10 + Math.random() * 0.06) : (0.04 + Math.random() * 0.05);
+      const h = isBig ? (0.10 + Math.random() * 0.06) : (0.02 + Math.random() * 0.04);
       const m = new THREE.Mesh(
-        new THREE.BoxGeometry(0.06, 0.06, 0.01),
+        new THREE.BoxGeometry(w, h, 0.005),
         new THREE.MeshBasicMaterial({ color: confettiColors[i % confettiColors.length] })
       );
-      m.position.set((Math.random() - 0.5) * 5, Math.random() * 4, (Math.random() - 0.5) * 2);
-      m.userData.vy = -(0.4 + Math.random() * 1.2);
-      m.userData.vx = (Math.random() - 0.5) * 0.8;
-      m.userData.spin = (Math.random() - 0.5) * 4;
+      // Burst from near-bottom centre, with upward velocity
+      m.position.set((Math.random() - 0.5) * 2.5, -0.5 + Math.random() * 1.0, (Math.random() - 0.5) * 1.5);
+      m.userData.vy   = 1.8 + Math.random() * 3.5;   // initial upward burst
+      m.userData.vx   = (Math.random() - 0.5) * 2.2;
+      m.userData.vz   = (Math.random() - 0.5) * 1.0;
+      m.userData.spin = (Math.random() - 0.5) * 8;
+      m.userData.spinY = (Math.random() - 0.5) * 5;
       celScene.add(m);
       confetti.push(m);
     }
@@ -529,10 +536,17 @@
       crownBase.position.y = 2.3 + Math.cos(celT * 2.2) * 0.12;
 
       confetti.forEach(c => {
+        c.userData.vy -= 3.5 * dt2;  // gravity
         c.position.y  += c.userData.vy  * dt2;
         c.position.x  += c.userData.vx  * dt2;
-        c.rotation.z  += c.userData.spin * dt2;
-        if (c.position.y < -1) c.position.y = 4;
+        c.position.z  += c.userData.vz  * dt2;
+        c.rotation.z  += c.userData.spin  * dt2;
+        c.rotation.y  += c.userData.spinY * dt2;
+        if (c.position.y < -1.5) {
+          // Respawn at bottom with new burst
+          c.position.set((Math.random() - 0.5) * 3, -1, (Math.random() - 0.5) * 1.5);
+          c.userData.vy = 1.2 + Math.random() * 2.5;
+        }
       });
 
       celRdr.render(celScene, celCam);
