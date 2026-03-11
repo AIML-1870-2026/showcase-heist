@@ -33,7 +33,7 @@ window.UI = (function () {
 
   const OBJ_ORDER = [
     'enter', 'yellow', 'gallery', 'painting',
-    'blue', 'vault', 'crown', 'escape',
+    'blue', 'crown', 'escape',
   ];
 
   // ── Screen management ──────────────────────────────────

@@ -2489,9 +2489,6 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 70, M.paintings[3], false);
     paintingSpotlight(scene,  24.9, 3.5, 70, 'east');
     placard(scene,  24.9, 2.6, 70, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
-    wallPainting(scene,  24.9, 3.5, 90, M.paintings[4], false);
-    paintingSpotlight(scene,  24.9, 3.5, 90, 'east');
-    placard(scene,  24.9, 2.6, 90, 'Wedding at Cana', 'Paolo Veronese, 1563', false);
 
     // Paintings on gallery north-wall stubs (flanking blue door), facing south
     wallPaintingNS(scene, -15, 3.5, 99.90, M.paintings[3], false);

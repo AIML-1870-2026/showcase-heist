@@ -248,7 +248,6 @@
       r === 'Gallery' || r === 'Crown Vault',                      // gallery
       G.inventory.painting,                                        // painting
       G.inventory.blue,                                            // blue keycard
-      r === 'Crown Vault',                                         // vault
       G.inventory.crown,                                           // crown
       false,                                                       // escape (never at checkpoint)
     ];
@@ -1572,7 +1571,6 @@
         gallery:  'Reach the Grande Galerie',
         painting: 'Steal the Mona Lisa (west wall)',
         blue:     'Find the Blue Keycard (east gallery)',
-        vault:    'Enter the Crown Vault',
         crown:    'Steal the Crown Jewel',
         escape:   'Escape the Louvre',
       },
@@ -1581,7 +1579,6 @@
         gallery: { x: -14,   z: 60    },
         painting:{ x: -24.9, z: 92    },
         blue:    { x:  14,   z: 70    },
-        vault:   { x:  0,    z: 99.75 },
         crown:   { x:  0,    z: 140   },
         escape:  { x:  0,    z: 163   },
       },
@@ -1594,7 +1591,6 @@
         gallery:  'Sneak into the Grande Galerie',
         painting: 'Grab the Mona Lisa (far west wall)',
         blue:     'Find the Blue Keycard (east gallery)',
-        vault:    'Drop into the Crown Vault',
         crown:    'Take the Crown',
         escape:   'Escape via service exit',
       },
@@ -1603,7 +1599,6 @@
         gallery: { x:  0,    z: 39.75 },
         painting:{ x: -24.9, z: 92    },
         blue:    { x:  14,   z: 96    },
-        vault:   { x:  14,   z: 118   },
         crown:   { x:  0,    z: 140   },
         escape:  { x: -20,   z: 15    },
       },
@@ -1616,7 +1611,6 @@
         gallery:  'Sneak into the Grande Galerie',
         painting: 'Swipe the Mona Lisa',
         blue:     'Find the Blue Keycard',
-        vault:    'Access the Crown Vault',
         crown:    'Secure the Crown',
         escape:   'Vanish into the night',
       },
@@ -1625,7 +1619,6 @@
         gallery: { x: -14,  z: 60    },
         painting:{ x: -24.9,z: 92    },
         blue:    { x:  14,  z: 70    },
-        vault:   { x:  0,   z: 99.75 },
         crown:   { x:  0,   z: 140   },
         escape:  { x:  0,   z: 163   },
       },
@@ -1638,7 +1631,6 @@
         gallery:  'Enter the Grande Galerie',
         painting: 'Steal the Mona Lisa (west wall)',
         blue:     'Find the Blue Keycard',
-        vault:    'Drop into the Crown Vault',
         crown:    'Take the Crown Jewel',
         escape:   'Escape out the front',
       },
@@ -1647,7 +1639,6 @@
         gallery: { x: -14,  z: 60    },
         painting:{ x: -24.9,z: 92    },
         blue:    { x:  14,  z: 96    },
-        vault:   { x:  14,  z: 118   },
         crown:   { x:  0,   z: 140   },
         escape:  { x:  0,   z: 163   },
       },
@@ -1660,7 +1651,6 @@
         gallery:  'Enter the Grande Galerie',
         painting: 'Steal the Mona Lisa',
         blue:     'Find the Blue Keycard (east gallery)',
-        vault:    'Drop into the Crown Vault',
         crown:    'Grab the Crown',
         escape:   'Escape via the front gate',
       },
@@ -1669,7 +1659,6 @@
         gallery: { x:  0,   z: 39.75 },
         painting:{ x: -24.9,z: 92    },
         blue:    { x:  14,  z: 96    },
-        vault:   { x:  14,  z: 118   },
         crown:   { x:  0,   z: 140   },
         escape:  { x:  0,   z: 163   },
       },
@@ -1682,7 +1671,6 @@
         gallery:  'Enter the Grande Galerie',
         painting: 'Take the Mona Lisa',
         blue:     'Find the Blue Keycard',
-        vault:    'Surface inside the Crown Vault',
         crown:    'Secure the Crown Jewel',
         escape:   'Exit through the lobby tunnel',
       },
@@ -1691,7 +1679,6 @@
         gallery: { x: -14,  z: 60    },
         painting:{ x: -24.9,z: 92    },
         blue:    { x:  14,  z: 96    },
-        vault:   { x:  14,  z: 118   },
         crown:   { x:  0,   z: 140   },
         escape:  { x:  0,   z: 28    },
       },
