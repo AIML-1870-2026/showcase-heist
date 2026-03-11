@@ -237,6 +237,67 @@ window.GameMap = (function () {
     return tex;
   }
 
+  // ── Egyptian Catacomb floor — sandy limestone with stone-block grid ──────────
+  function makeEgyptianFloorTex() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, S, S);
+    grad.addColorStop(0.0, '#7a6040');
+    grad.addColorStop(0.4, '#6a5030');
+    grad.addColorStop(0.8, '#7c6244');
+    grad.addColorStop(1.0, '#6a5232');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, S, S);
+    // Per-pixel wear/noise
+    const img = ctx.getImageData(0, 0, S, S);
+    const d = img.data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const n = Math.sin(x * 0.07 + y * 0.13) * Math.cos(x * 0.09 - y * 0.06) * 14
+                + Math.sin(x * 0.03 + y * 0.04) * 8;
+        const i4 = (y * S + x) * 4;
+        d[i4]   = Math.max(0, Math.min(255, d[i4]   + n));
+        d[i4+1] = Math.max(0, Math.min(255, d[i4+1] + n * 0.85));
+        d[i4+2] = Math.max(0, Math.min(255, d[i4+2] + n * 0.55));
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    // Stone block grid
+    ctx.strokeStyle = 'rgba(35,20,8,0.52)';
+    ctx.lineWidth = 3.5;
+    for (let i = 0; i <= S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    // Inner highlight lines (mortar shadow)
+    ctx.strokeStyle = 'rgba(25,14,5,0.22)';
+    ctx.lineWidth = 1;
+    for (let i = 8; i < S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    // Faint hieroglyph-like marks in random blocks
+    ctx.strokeStyle = 'rgba(160,120,40,0.28)';
+    ctx.lineWidth = 1.5;
+    for (let bx = 0; bx < 4; bx++) {
+      for (let by = 0; by < 4; by++) {
+        if ((bx + by) % 3 === 0) {
+          const ox = bx * 128 + 24, oy = by * 128 + 24;
+          ctx.beginPath();
+          ctx.moveTo(ox, oy + 20); ctx.lineTo(ox + 40, oy + 20);
+          ctx.moveTo(ox + 20, oy); ctx.lineTo(ox + 20, oy + 40);
+          ctx.stroke();
+        }
+      }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex._tileSize = 4;
+    return tex;
+  }
+
   // ── Crown Vault ceiling mural — dark gold arabesque pattern ─────────────────
   function makeVaultMuralTex() {
     const S = 512;
@@ -3020,7 +3081,7 @@ window.GameMap = (function () {
     //  CROWN VAULT  cx=0  cz=137.5  50×45
     // ════════════════════════════════
     // Skip south and north walls — add stubs manually so corridor/exit connect properly
-    roomWalls(scene, 0, 137.5, 50, 45, { south: true, north: true }, M.vaultWall, null, M.vaultCeil);
+    roomWalls(scene, 0, 137.5, 50, 45, { south: true, north: true, east: true }, M.vaultWall, null, M.vaultCeil);
 
     // Crown Vault floor overlay — dark obsidian with gold veining (over standard marble)
     {
@@ -3043,6 +3104,25 @@ window.GameMap = (function () {
     // Vault north wall stubs — 10-unit gap for exit passage
     wall(scene, -(25 - VS / 2), 160, VS, WALL_T, M.vaultWall);   // west stub
     wall(scene,  (25 - VS / 2), 160, VS, WALL_T, M.vaultWall);   // east stub
+
+    // Vault east wall stubs — 3-unit gap at Z=137.5 → Egyptian Catacomb entrance
+    // Vault east wall at X=25, Z spans 115→160; gap Z 136→139 (3 units, centred at 137.5)
+    wall(scene, 25, 125.5, WALL_T, 21, M.vaultWall);  // south stub  Z 115→136
+    wall(scene, 25, 149.5, WALL_T, 21, M.vaultWall);  // north stub  Z 139→160
+
+    // Door into Egyptian Catacomb (east/west wall, no key required)
+    door(scene, 25, 137.5, null, Math.PI / 2);
+
+    // Golden glow archway at Egyptian Catacomb entrance
+    {
+      const egyptArchMat = new THREE.MeshStandardMaterial({
+        color: 0xd4a030, emissive: 0xd4a030, emissiveIntensity: 1.0,
+        roughness: 0.20, transparent: true, opacity: 0.88,
+      });
+      box(scene, 0.14, 0.14, 3.80, 25, WALL_H + 0.16, 137.5, egyptArchMat);          // top bar
+      box(scene, 0.14, WALL_H + 0.32, 0.14, 25, WALL_H / 2, 135.6, egyptArchMat);   // south strip
+      box(scene, 0.14, WALL_H + 0.32, 0.14, 25, WALL_H / 2, 139.4, egyptArchMat);   // north strip
+    }
 
     // ── Crown Vault Door — massive hydraulic steel door blocking entrance ────────
     {
@@ -3531,6 +3611,263 @@ window.GameMap = (function () {
     cameraData.push({ x:  14, y: WALL_H - 0.3, z: 125, sweepAngle: Math.PI / 2.5, facingZ:  1 });
     cameraData.push({ x: -14, y: WALL_H - 0.3, z: 157, sweepAngle: Math.PI / 2.5, facingZ: -1 });
     cameraData.push({ x:  14, y: WALL_H - 0.3, z: 157, sweepAngle: Math.PI / 2.5, facingZ: -1 });
+
+    // ════════════════════════════════════════════════════════
+    //  CHAMBRE ÉGYPTIENNE  X 25→57  Z 121→154
+    //  Ancient catacomb off Crown Vault east wall
+    //  cx=41  cz=137.5  32×33
+    // ════════════════════════════════════════════════════════
+    {
+      const ECX = 41, ECZ = 137.5, ECW = 32, ECD = 33;
+
+      // ── Materials ───────────────────────────────────────
+      const sandStoneMat = new THREE.MeshStandardMaterial({ color: 0x5a4020, roughness: 0.92, metalness: 0.0 });
+      const darkStoneMat = new THREE.MeshStandardMaterial({ color: 0x2c1c08, roughness: 0.95, metalness: 0.0 });
+      const goldEgyptMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.16, metalness: 0.92, emissive: 0x5a3c00, emissiveIntensity: 0.18 });
+      const turqMat      = new THREE.MeshStandardMaterial({ color: 0x1a9888, roughness: 0.22, metalness: 0.08, emissive: 0x084438, emissiveIntensity: 0.22 });
+      const torchGlowMat = new THREE.MeshStandardMaterial({
+        color: 0xff8800, emissive: 0xff5500, emissiveIntensity: 2.4,
+        transparent: true, opacity: 0.88, roughness: 0.08,
+      });
+
+      // ── Floor with sandy limestone texture ──────────────
+      const egyptFloorTex = makeEgyptianFloorTex();
+      egyptFloorTex.repeat.set(ECW / 4, ECD / 4);
+      const egyptFloorMat = new THREE.MeshStandardMaterial({
+        map: egyptFloorTex, color: 0x6a5030, roughness: 0.88, metalness: 0.0,
+      });
+
+      // ── Room shell ──────────────────────────────────────
+      floor(scene,   ECX, ECZ, ECW, ECD, egyptFloorMat);
+      ceiling(scene, ECX, ECZ, ECW, ECD, darkStoneMat);
+      wall(scene, ECX,          ECZ - ECD / 2, ECW,  WALL_T, sandStoneMat);  // south Z=121
+      wall(scene, ECX,          ECZ + ECD / 2, ECW,  WALL_T, sandStoneMat);  // north Z=154
+      wall(scene, ECX + ECW / 2, ECZ,          WALL_T, ECD,  sandStoneMat);  // east  X=57
+      // West wall (X=25) covered by vault east-wall stubs
+
+      // ── Wall torch helper ────────────────────────────────
+      // px,py,pz = wall attachment point;  dx,dz = outward direction (one is 0)
+      function egyptTorch(px, py, pz, dx, dz) {
+        const ironM = new THREE.MeshStandardMaterial({ color: 0x1a0e04, roughness: 0.50, metalness: 0.65 });
+        const reach = 0.44;
+        const tipX = px + dx * reach, tipZ = pz + dz * reach;
+        const armW = Math.abs(dx) * reach * 0.9 + 0.04;
+        const armD = Math.abs(dz) * reach * 0.9 + 0.04;
+        box(scene, armW, 0.042, armD, px + dx * reach * 0.45, py + 0.042, pz + dz * reach * 0.45, ironM);
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.052, 0.52, 6), ironM);
+        stick.position.set(tipX, py - 0.14, tipZ); scene.add(stick);
+        const flame = new THREE.Mesh(new THREE.SphereGeometry(0.098, 7, 6), torchGlowMat);
+        flame.scale.set(1.0, 1.35, 1.0); flame.position.set(tipX, py + 0.12, tipZ); scene.add(flame);
+        const halo = new THREE.Mesh(new THREE.SphereGeometry(0.145, 6, 5), new THREE.MeshStandardMaterial({
+          color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.60,
+          transparent: true, opacity: 0.28, roughness: 0.1,
+        }));
+        halo.position.set(tipX, py + 0.16, tipZ); scene.add(halo);
+      }
+
+      // West wall torches (pointing east)
+      egyptTorch(25.2, 3.2, ECZ - 9,  1, 0);
+      egyptTorch(25.2, 3.2, ECZ,       1, 0);
+      egyptTorch(25.2, 3.2, ECZ + 9,  1, 0);
+      // East wall torches (pointing west)
+      egyptTorch(56.8, 3.2, ECZ - 9, -1, 0);
+      egyptTorch(56.8, 3.2, ECZ,     -1, 0);
+      egyptTorch(56.8, 3.2, ECZ + 9, -1, 0);
+      // South wall torches (pointing north)
+      egyptTorch(ECX - 8, 3.2, 121.2, 0, 1);
+      egyptTorch(ECX + 8, 3.2, 121.2, 0, 1);
+      // North wall torches (pointing south)
+      egyptTorch(ECX - 8, 3.2, 153.8, 0, -1);
+      egyptTorch(ECX + 8, 3.2, 153.8, 0, -1);
+
+      // ── Square Egyptian columns ──────────────────────────
+      function egyptColumn(cx, cz) {
+        const hieroBandMat = new THREE.MeshStandardMaterial({
+          color: 0x8a6820, emissive: 0xd4a020, emissiveIntensity: 0.20, roughness: 0.80,
+        });
+        box(scene, 0.88, WALL_H - 0.40, 0.88, cx, (WALL_H - 0.40) / 2 + 0.20, cz, sandStoneMat);
+        box(scene, 1.18, 0.20, 1.18, cx, 0.10, cz, darkStoneMat);          // base plinth
+        box(scene, 1.18, 0.20, 1.18, cx, WALL_H - 0.10, cz, darkStoneMat); // capital slab
+        box(scene, 0.90, 0.14, 0.90, cx, (WALL_H - 0.40) / 2 + 0.20, cz, hieroBandMat); // glyph band
+        addWallAABB(cx, cz, 1.2, 1.2);
+      }
+      egyptColumn(ECX - 7, ECZ - 6);
+      egyptColumn(ECX + 7, ECZ - 6);
+      egyptColumn(ECX - 7, ECZ + 6);
+      egyptColumn(ECX + 7, ECZ + 6);
+
+      // ── Three sarcophagi along south wall ───────────────
+      function sarcophagus(sx, sz) {
+        const tubMat = new THREE.MeshStandardMaterial({ color: 0x4a3518, roughness: 0.84, metalness: 0.05 });
+        const lidMat = new THREE.MeshStandardMaterial({ color: 0x5c4528, roughness: 0.76, metalness: 0.06 });
+        box(scene, 0.94, 0.32, 2.20, sx, 0.16, sz, tubMat);  // tub
+        box(scene, 0.90, 0.28, 2.16, sx, 0.46, sz, lidMat);  // lid
+        // Gold death-mask at head end (−Z)
+        const mask = new THREE.Mesh(new THREE.SphereGeometry(0.195, 9, 7), goldEgyptMat);
+        mask.scale.set(0.78, 0.88, 0.55);
+        mask.position.set(sx, 0.66, sz - 0.88); scene.add(mask);
+        // Gold banding strips
+        [-0.55, 0, 0.55].forEach(bz => box(scene, 0.92, 0.038, 0.055, sx, 0.50, sz + bz, goldEgyptMat));
+        // Turquoise inlay gems
+        [[-0.28, 0.18], [0.28, 0.18], [0, -0.30]].forEach(([bx, bz]) => {
+          const gem = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.036, 0.048), turqMat);
+          gem.position.set(sx + bx, 0.62, sz + bz); scene.add(gem);
+        });
+        addWallAABB(sx, sz, 1.05, 2.4);
+      }
+      sarcophagus(ECX - 10, ECZ - 12);
+      sarcophagus(ECX,      ECZ - 12);
+      sarcophagus(ECX + 10, ECZ - 12);
+
+      // ── Central stone altar with canopic jars ───────────
+      box(scene, 2.20, 0.18, 3.60, ECX, 0.09, ECZ, darkStoneMat);  // base slab
+      box(scene, 2.00, 0.50, 3.40, ECX, 0.43, ECZ, sandStoneMat);  // body
+      box(scene, 2.30, 0.12, 3.70, ECX, 0.74, ECZ, darkStoneMat);  // top slab
+      addWallAABB(ECX, ECZ, 2.5, 4.0);
+      // 4 canopic jars on altar
+      const jarBodyMat = new THREE.MeshStandardMaterial({ color: 0x7a6040, roughness: 0.82, metalness: 0.0 });
+      const jarGoldMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.18, metalness: 0.92 });
+      [-0.72, -0.24, 0.24, 0.72].forEach(jx => {
+        const jBody = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.058, 0.28, 8), jarBodyMat);
+        jBody.position.set(ECX + jx, 0.92, ECZ); scene.add(jBody);
+        const jLid = new THREE.Mesh(new THREE.SphereGeometry(0.070, 7, 5), jarGoldMat);
+        jLid.position.set(ECX + jx, 1.085, ECZ); scene.add(jLid);
+        const jBand = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 5, 10), jarGoldMat);
+        jBand.rotation.x = Math.PI / 2; jBand.position.set(ECX + jx, 0.93, ECZ); scene.add(jBand);
+      });
+
+      // ── Anubis statue — jackal-headed guardian ───────────
+      {
+        const anubMat = new THREE.MeshStandardMaterial({
+          color: 0x1a1208, roughness: 0.68, metalness: 0.20, emissive: 0x080600, emissiveIntensity: 0.08,
+        });
+        box(scene, 1.15, 0.90, 1.15, ECX + 11, 0.45, ECZ, darkStoneMat);  // pedestal
+        const aBody = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.225, 0.78, 8), anubMat);
+        aBody.position.set(ECX + 11, 1.29, ECZ); scene.add(aBody);
+        const aHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.27, 0.40), anubMat);
+        aHead.position.set(ECX + 11, 1.78, ECZ); scene.add(aHead);
+        const aSnout = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.10, 0.28), anubMat);
+        aSnout.position.set(ECX + 11, 1.71, ECZ - 0.30); scene.add(aSnout);
+        const aEarL = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 4), anubMat);
+        aEarL.position.set(ECX + 11 - 0.09, 1.97, ECZ); scene.add(aEarL);
+        const aEarR = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 4), anubMat);
+        aEarR.position.set(ECX + 11 + 0.09, 1.97, ECZ); scene.add(aEarR);
+        const aCollar = new THREE.Mesh(new THREE.TorusGeometry(0.175, 0.028, 6, 14), goldEgyptMat);
+        aCollar.rotation.x = Math.PI / 2; aCollar.position.set(ECX + 11, 1.53, ECZ); scene.add(aCollar);
+        const aStaff = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.88, 6), goldEgyptMat);
+        aStaff.position.set(ECX + 11 - 0.20, 1.33, ECZ - 0.16); aStaff.rotation.z = 0.22; scene.add(aStaff);
+        addWallAABB(ECX + 11, ECZ, 1.35, 1.35);
+      }
+
+      // ── Hieroglyph wall panels (emissive carvings) ───────
+      {
+        const hieroPanelMat = new THREE.MeshStandardMaterial({
+          color: 0x907848, emissive: 0xc09020, emissiveIntensity: 0.14, roughness: 0.88,
+        });
+        // East wall
+        [-8, 0, 8].forEach(dz => box(scene, 0.08, 2.60, 1.85, ECX + ECW / 2 - 0.04, 2.50, ECZ + dz, hieroPanelMat));
+        // North wall
+        [-8, 0, 8].forEach(dx => box(scene, 1.85, 2.60, 0.08, ECX + dx, 2.50, ECZ + ECD / 2 - 0.04, hieroPanelMat));
+        // South wall — placed high, above sarcophagi
+        [-8, 0, 8].forEach(dx => box(scene, 1.85, 1.80, 0.08, ECX + dx, 4.00, ECZ - ECD / 2 + 0.04, hieroPanelMat));
+      }
+
+      // ── Scarab beetles on altar base ─────────────────────
+      {
+        const scarabM = new THREE.MeshStandardMaterial({
+          color: 0x1a5a8a, roughness: 0.22, metalness: 0.12, emissive: 0x082040, emissiveIntensity: 0.25,
+        });
+        [[ECX - 0.8, ECZ - 1.6], [ECX + 0.8, ECZ - 1.6], [ECX, ECZ + 1.6]].forEach(([sx, sz]) => {
+          const sb = new THREE.Mesh(new THREE.SphereGeometry(0.058, 7, 5), scarabM);
+          sb.scale.set(0.85, 0.55, 1.20); sb.position.set(sx, 0.82, sz); scene.add(sb);
+        });
+      }
+
+      // ── Stealables ───────────────────────────────────────
+
+      // 1. Eye of Ra Amulet — gold disk with ruby eye  (NW pedestal)
+      {
+        const amuMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.12, metalness: 0.95, emissive: 0x5a3800, emissiveIntensity: 0.22 });
+        const rubyM2 = new THREE.MeshStandardMaterial({ color: 0xff3300, roughness: 0.04, metalness: 0.02, emissive: 0xcc1100, emissiveIntensity: 0.55, transparent: true, opacity: 0.90 });
+        const eyeGrp = new THREE.Group();
+        const eDisk  = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.016, 14), amuMat);
+        eDisk.rotation.x = Math.PI / 2; eyeGrp.add(eDisk);
+        const eEye  = new THREE.Mesh(new THREE.SphereGeometry(0.032, 7, 5), rubyM2); eyeGrp.add(eEye);
+        const eRing = new THREE.Mesh(new THREE.TorusGeometry(0.088, 0.014, 6, 14), amuMat);
+        eRing.rotation.x = Math.PI / 2; eyeGrp.add(eRing);
+        box(scene, 0.22, 0.65, 0.22, ECX - 10, 0.325, ECZ + 11, darkStoneMat);
+        eyeGrp.position.set(ECX - 10, 1.02, ECZ + 11);
+        eyeGrp.userData.float = true; scene.add(eyeGrp);
+        stealables.push({ mesh: eyeGrp, item: 'eyeofra', x: ECX - 10, z: ECZ + 11, taken: false, bonus: true, label: 'Eye of Ra Amulet', value: 5500000 });
+        const eFloorRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0xffaa22, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+        eFloorRing.rotation.x = -Math.PI / 2; eFloorRing.position.set(ECX - 10, 0.02, ECZ + 11); scene.add(eFloorRing);
+        eyeGrp.userData.floorRing = eFloorRing;
+      }
+
+      // 2. Pharaoh's Scepter — gold crook-staff  (NE pedestal)
+      {
+        const sceptMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.14, metalness: 0.92, emissive: 0x5a3800, emissiveIntensity: 0.20 });
+        const bluBand  = new THREE.MeshStandardMaterial({ color: 0x1840c0, roughness: 0.12, metalness: 0.08, emissive: 0x050a44, emissiveIntensity: 0.28 });
+        const sceptGrp = new THREE.Group();
+        const sShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.64, 8), sceptMat); sceptGrp.add(sShaft);
+        const sHook  = new THREE.Mesh(new THREE.TorusGeometry(0.078, 0.022, 6, 10, Math.PI * 1.10), sceptMat);
+        sHook.position.set(0.055, 0.35, 0); sHook.rotation.z = -0.48; sceptGrp.add(sHook);
+        [-0.24, -0.04, 0.16].forEach((sy, i) => {
+          const band = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.040, 8), i % 2 === 0 ? bluBand : sceptMat);
+          band.position.y = sy; sceptGrp.add(band);
+        });
+        box(scene, 0.22, 0.65, 0.22, ECX + 10, 0.325, ECZ + 11, darkStoneMat);
+        sceptGrp.position.set(ECX + 10, 1.15, ECZ + 11);
+        sceptGrp.rotation.z = -0.28; sceptGrp.userData.float = true; scene.add(sceptGrp);
+        stealables.push({ mesh: sceptGrp, item: 'scepter', x: ECX + 10, z: ECZ + 11, taken: false, bonus: true, label: "Pharaoh's Scepter", value: 18000000 });
+        const sFloorRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+        sFloorRing.rotation.x = -Math.PI / 2; sFloorRing.position.set(ECX + 10, 0.02, ECZ + 11); scene.add(sFloorRing);
+        sceptGrp.userData.floorRing = sFloorRing;
+      }
+
+      // 3. Scarab Pectoral — jewelled winged collar  (north-center pedestal)
+      {
+        const collarGold = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.15, metalness: 0.92 });
+        const lapMat2    = new THREE.MeshStandardMaterial({ color: 0x1a9888, roughness: 0.08, metalness: 0.04, emissive: 0x084840, emissiveIntensity: 0.32, transparent: true, opacity: 0.92 });
+        const wingMat2   = new THREE.MeshStandardMaterial({ color: 0x2244cc, roughness: 0.10, metalness: 0.05, emissive: 0x050a66, emissiveIntensity: 0.28 });
+        const scarabGrp  = new THREE.Group();
+        const scCollar = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.024, 6, 14, Math.PI), collarGold);
+        scCollar.rotation.z = Math.PI; scarabGrp.add(scCollar);
+        const scBody = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), lapMat2);
+        scBody.scale.set(1.05, 0.66, 1.35); scarabGrp.add(scBody);
+        [-1, 1].forEach(side => {
+          const wing = new THREE.Mesh(new THREE.SphereGeometry(0.068, 7, 5), wingMat2);
+          wing.scale.set(2.1, 0.28, 0.88); wing.position.set(side * 0.115, 0, 0); scarabGrp.add(wing);
+        });
+        box(scene, 0.22, 0.65, 0.22, ECX, 0.325, ECZ + 11, darkStoneMat);
+        scarabGrp.position.set(ECX, 1.02, ECZ + 11);
+        scarabGrp.rotation.x = Math.PI / 2; scarabGrp.userData.float = true; scene.add(scarabGrp);
+        stealables.push({ mesh: scarabGrp, item: 'scarab', x: ECX, z: ECZ + 11, taken: false, bonus: true, label: 'Scarab Pectoral', value: 7500000 });
+        const scFloorRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0x22ddcc, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+        scFloorRing.rotation.x = -Math.PI / 2; scFloorRing.position.set(ECX, 0.02, ECZ + 11); scene.add(scFloorRing);
+        scarabGrp.userData.floorRing = scFloorRing;
+      }
+
+      // ── Guard patrol ─────────────────────────────────────
+      guardData.push({
+        spawnX: ECX, spawnZ: ECZ,
+        waypoints: _route(
+          [new THREE.Vector3(ECX - 8, 0, ECZ - 12), new THREE.Vector3(ECX + 8, 0, ECZ - 12),
+           new THREE.Vector3(ECX + 8, 0, ECZ + 12), new THREE.Vector3(ECX - 8, 0, ECZ + 12)],
+          [new THREE.Vector3(ECX, 0, ECZ - 12), new THREE.Vector3(ECX + 10, 0, ECZ),
+           new THREE.Vector3(ECX, 0, ECZ + 12), new THREE.Vector3(ECX - 10, 0, ECZ)]
+        ),
+      });
+
+      // ── Security camera ───────────────────────────────────
+      cameraData.push({ x: ECX, y: WALL_H - 0.3, z: ECZ + ECD / 2 - 0.5, sweepAngle: Math.PI / 2.5, facingZ: -1 });
+
+      // ── Room label ────────────────────────────────────────
+      roomLabel(scene, ECX - ECW / 2 + 2, ECZ, 'Chambre Égyptienne', Math.PI / 2);
+    }
 
     // ════════════════════════════════
     //  EXIT ZONE  Z 160→165

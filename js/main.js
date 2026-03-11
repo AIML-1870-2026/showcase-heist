@@ -182,6 +182,21 @@
     scene.add(vaultAccent);
     flickerLights.push(vaultAccent);
 
+    // Egyptian Catacomb — warm torch-orange, deliberately dim and flickery
+    [ [33, 3.2, 128], [49, 3.2, 128], [33, 3.2, 147], [49, 3.2, 147] ].forEach(([x, y, z]) => {
+      const pt = new THREE.PointLight(0xff6600, 0.70, 13);
+      pt.position.set(x, y, z);
+      pt._baseIntensity = pt.intensity;
+      scene.add(pt);
+      flickerLights.push(pt);
+    });
+    // Altar glow — deep amber centre light
+    const egyptAltarLight = new THREE.PointLight(0xff8833, 0.38, 15);
+    egyptAltarLight.position.set(41, 2.8, 137.5);
+    egyptAltarLight._baseIntensity = egyptAltarLight.intensity;
+    scene.add(egyptAltarLight);
+    flickerLights.push(egyptAltarLight);
+
     // Gallery painting spotlights — warm amber gallery lighting
     [
       // [sx, sz,  tx, ty, tz]  — light pos → painting target
