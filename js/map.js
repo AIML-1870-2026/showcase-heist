@@ -4068,6 +4068,162 @@ window.GameMap = (function () {
         });
       }
 
+      // ── Large stepped pyramid — north wall centerpiece ────
+      {
+        const pyramidStoneMat = new THREE.MeshStandardMaterial({ color: 0x7a6030, roughness: 0.88, metalness: 0.02 });
+        const pyramidDarkMat  = new THREE.MeshStandardMaterial({ color: 0x3c2a10, roughness: 0.92, metalness: 0.0 });
+        const pyramidGoldMat  = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.14, metalness: 0.94, emissive: 0x5a3c00, emissiveIntensity: 0.30 });
+        const hieroPyrMat     = new THREE.MeshStandardMaterial({ color: 0x9a7840, emissive: 0xd4a020, emissiveIntensity: 0.16, roughness: 0.82 });
+        // 4-step pyramid centered at (ECX, 152) against north wall
+        const PX = ECX, PZ = 151.5;
+        // Step 1 — base
+        box(scene, 12.0, 1.60, 5.0, PX, 0.80, PZ, pyramidStoneMat);
+        // Hieroglyph band on step 1 front face
+        boxD(scene, 11.6, 0.36, 0.10, PX, 0.90, PZ - 2.54, hieroPyrMat);
+        // Step 2
+        box(scene, 8.5,  1.60, 3.5, PX, 2.40, PZ, pyramidStoneMat);
+        boxD(scene, 8.1,  0.30, 0.10, PX, 2.50, PZ - 1.79, hieroPyrMat);
+        // Step 3
+        box(scene, 5.5,  1.60, 2.2, PX, 4.00, PZ, pyramidStoneMat);
+        boxD(scene, 5.1,  0.26, 0.10, PX, 4.10, PZ - 1.14, hieroPyrMat);
+        // Step 4
+        box(scene, 3.0,  1.60, 1.2, PX, 5.60, PZ, pyramidStoneMat);
+        // Capstone — polished gold
+        box(scene, 1.4,  1.00, 0.55, PX, 7.30, PZ, pyramidGoldMat);
+        // Shadow groove lines between steps (darker inset strips)
+        [1.59, 3.19, 4.79].forEach(by => {
+          boxD(scene, 12.4, 0.08, 0.08, PX, by, PZ - 2.56, pyramidDarkMat);
+        });
+        // Gold corner accent caps on each step
+        [[6.1, PZ - 2.5], [-6.1, PZ - 2.5], [4.35, PZ - 1.75], [-4.35, PZ - 1.75],
+         [2.85, PZ - 1.10], [-2.85, PZ - 1.10]].forEach(([ox, oz]) => {
+          boxD(scene, 0.22, 0.22, 0.22, PX + ox, 1.60, oz, pyramidGoldMat);
+        });
+        addWallAABB(PX, PZ, 12.5, 5.2);
+        // Flanking obelisks
+        [-5.5, 5.5].forEach(ox => {
+          const obX = PX + ox, obZ = PZ - 3.8;
+          box(scene, 0.60, 0.30, 0.60, obX, 0.15, obZ, pyramidDarkMat);   // base
+          box(scene, 0.48, 3.50, 0.48, obX, 1.95, obZ, pyramidStoneMat);  // shaft
+          boxD(scene, 0.50, 0.36, 0.50, obX, 0.44, obZ, hieroPyrMat);     // glyph band
+          // Pyramid tip (small gold cap)
+          const obeliskTip = new THREE.Mesh(new THREE.CylinderGeometry(0, 0.24, 0.42, 4), pyramidGoldMat);
+          obeliskTip.position.set(obX, 3.92, obZ); scene.add(obeliskTip);
+          addWallAABB(obX, obZ, 0.70, 0.70);
+        });
+      }
+
+      // ── Horus falcon statue — east wall, north section ───
+      {
+        const horusMat  = new THREE.MeshStandardMaterial({ color: 0x1a0e04, roughness: 0.66, metalness: 0.22, emissive: 0x080400, emissiveIntensity: 0.08 });
+        const horusGold = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.16, metalness: 0.92, emissive: 0x5a3c00, emissiveIntensity: 0.22 });
+        const horusEyeM = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xcc4400, emissiveIntensity: 0.68, roughness: 0.04 });
+        box(scene, 1.0, 0.80, 1.0, ECX + 13, 0.40, ECZ + 6, darkStoneMat);  // pedestal
+        // Body (standing upright)
+        box(scene, 0.54, 1.10, 0.52, ECX + 13, 1.35, ECZ + 6, horusMat);
+        // Wings folded against sides
+        [-1, 1].forEach(s => {
+          box(scene, 0.28, 0.90, 0.50, ECX + 13 + s * 0.41, 1.30, ECZ + 6, horusMat);
+          // Wing gold trim
+          boxD(scene, 0.06, 0.88, 0.48, ECX + 13 + s * 0.55, 1.30, ECZ + 6, horusGold);
+        });
+        // Falcon head
+        const hHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), horusMat);
+        hHead.scale.set(0.90, 1.08, 1.02); hHead.position.set(ECX + 13, 2.08, ECZ + 6); scene.add(hHead);
+        // Beak
+        const hBeak = new THREE.Mesh(new THREE.ConeGeometry(0.036, 0.14, 5), horusMat);
+        hBeak.rotation.x = Math.PI / 2 + 0.60; hBeak.position.set(ECX + 13, 1.98, ECZ + 6 - 0.20); scene.add(hBeak);
+        // Eyes of Horus
+        [-0.07, 0.07].forEach(ex => {
+          const he = new THREE.Mesh(new THREE.SphereGeometry(0.034, 6, 5), horusEyeM);
+          he.position.set(ECX + 13 + ex, 2.10, ECZ + 6 - 0.16); scene.add(he);
+        });
+        // Double crown (gold pschent)
+        const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.22, 8), horusGold);
+        crownBase.position.set(ECX + 13, 2.34, ECZ + 6); scene.add(crownBase);
+        const crownTop  = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.14, 0.38, 8), horusGold);
+        crownTop.position.set(ECX + 13, 2.65, ECZ + 6); scene.add(crownTop);
+        // Gold broad collar
+        const hCollar = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.038, 6, 14), horusGold);
+        hCollar.rotation.x = Math.PI / 2; hCollar.position.set(ECX + 13, 1.86, ECZ + 6); scene.add(hCollar);
+        // Gold ankh held in hands
+        box(scene, 0.044, 0.28, 0.044, ECX + 13 + 0.32, 1.22, ECZ + 6 - 0.18, horusGold);
+        const ankLoop = new THREE.Mesh(new THREE.TorusGeometry(0.060, 0.020, 5, 8), horusGold);
+        ankLoop.rotation.x = Math.PI / 2; ankLoop.position.set(ECX + 13 + 0.32, 1.42, ECZ + 6 - 0.18); scene.add(ankLoop);
+        addWallAABB(ECX + 13, ECZ + 6, 1.30, 1.30);
+      }
+
+      // ── Two additional sarcophagi — east wall alcoves ─────
+      {
+        const tubMat2 = new THREE.MeshStandardMaterial({ color: 0x4a3518, roughness: 0.84, metalness: 0.05 });
+        const lidMat2 = new THREE.MeshStandardMaterial({ color: 0x5c4528, roughness: 0.76, metalness: 0.06 });
+        [[ECX + 13, ECZ - 8], [ECX + 13, ECZ + 0]].forEach(([sx, sz]) => {
+          box(scene, 0.94, 0.32, 2.20, sx, 0.16, sz, tubMat2);
+          box(scene, 0.90, 0.28, 2.16, sx, 0.46, sz, lidMat2);
+          const mask = new THREE.Mesh(new THREE.SphereGeometry(0.195, 9, 7), goldEgyptMat);
+          mask.scale.set(0.78, 0.88, 0.55); mask.position.set(sx, 0.66, sz - 0.88); scene.add(mask);
+          [-0.55, 0, 0.55].forEach(bz => boxD(scene, 0.92, 0.038, 0.055, sx, 0.50, sz + bz, goldEgyptMat));
+          addWallAABB(sx, sz, 1.05, 2.4);
+        });
+      }
+
+      // ── Golden treasure chest near altar ─────────────────
+      {
+        const chestWoodM = new THREE.MeshStandardMaterial({ color: 0x3c2410, roughness: 0.82, metalness: 0.04 });
+        const chestGoldM = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.16, metalness: 0.92, emissive: 0x5a3c00, emissiveIntensity: 0.20 });
+        const chestGemM  = new THREE.MeshStandardMaterial({ color: 0xcc1100, roughness: 0.04, metalness: 0.04, emissive: 0xaa0800, emissiveIntensity: 0.55, transparent: true, opacity: 0.90 });
+        const cX = ECX - 13, cZ = ECZ - 2;
+        // Chest body
+        box(scene, 1.10, 0.55, 0.72, cX, 0.275, cZ, chestWoodM);
+        // Chest lid (slightly raised)
+        box(scene, 1.12, 0.25, 0.74, cX, 0.675, cZ, chestWoodM);
+        const lidArch = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 1.08, 8, 1, false, 0, Math.PI), chestWoodM);
+        lidArch.rotation.z = Math.PI / 2; lidArch.position.set(cX, 0.80, cZ); scene.add(lidArch);
+        // Gold corner reinforcements
+        [[-0.54, -0.35], [-0.54, 0.35], [0.54, -0.35], [0.54, 0.35]].forEach(([ox, oz]) => {
+          box(scene, 0.06, 0.58, 0.06, cX + ox, 0.29, cZ + oz, chestGoldM);
+        });
+        // Gold banding strips
+        [-0.20, 0.20].forEach(oz => {
+          boxD(scene, 1.14, 0.06, 0.06, cX, 0.40, cZ + oz, chestGoldM);
+        });
+        // Front lock plate
+        box(scene, 0.12, 0.14, 0.04, cX, 0.38, cZ - 0.37, chestGoldM);
+        // Keyhole gem
+        const gem = new THREE.Mesh(new THREE.SphereGeometry(0.038, 7, 5), chestGemM);
+        gem.position.set(cX, 0.38, cZ - 0.40); scene.add(gem);
+        // Scattered gold coins spilling from chest
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.040, 0.012, 10), chestGoldM);
+          coin.rotation.x = Math.PI / 2 + (Math.random() * 0.6 - 0.3);
+          coin.position.set(cX + Math.cos(a) * (0.34 + i * 0.04), 0.02, cZ + Math.sin(a) * (0.28 + i * 0.03)); scene.add(coin);
+        }
+        addWallAABB(cX, cZ, 1.22, 0.84);
+        // Warm glow from inside the open chest
+        const chestPt = new THREE.PointLight(0xffa030, 0.80, 4.0);
+        chestPt.position.set(cX, 1.1, cZ); scene.add(chestPt);
+      }
+
+      // ── Stone tablet display — south wall, east section ───
+      {
+        const tabletMat  = new THREE.MeshStandardMaterial({ color: 0x4a3818, roughness: 0.90, metalness: 0.0 });
+        const tabletGlyM = new THREE.MeshStandardMaterial({ color: 0xd4a020, emissive: 0xb07000, emissiveIntensity: 0.28, roughness: 0.60 });
+        const tX = ECX + 10, tZ = ECZ - 13;
+        // Stone stand        box(scene, 0.30, 0.50, 0.30, tX, 0.25, tZ, darkStoneMat);
+        // Tablet leaning on stand
+        const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.70, 1.20, 0.06), tabletMat);
+        tablet.rotation.z = 0.08; tablet.position.set(tX, 1.10, tZ - 0.04); scene.add(tablet);
+        // Rounded top of tablet
+        const tabTop = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.06, 12, 1, false, 0, Math.PI), tabletMat);
+        tabTop.rotation.z = Math.PI / 2; tabTop.position.set(tX, 1.75, tZ - 0.04); scene.add(tabTop);
+        // Gold glyph lines on tablet
+        [0.40, 0.20, 0.0, -0.20, -0.40].forEach(dy => {
+          boxD(scene, 0.52, 0.038, 0.002, tX, 1.10 + dy, tZ - 0.08, tabletGlyM);
+        });
+        addWallAABB(tX, tZ, 0.82, 0.50);
+      }
+
       // ── Guard patrol ─────────────────────────────────────
       guardData.push({
         spawnX: ECX, spawnZ: ECZ,
@@ -4786,6 +4942,444 @@ window.GameMap = (function () {
         box(scene, 0.20, 0.036, 0.036, 47.0, 0.900, 104.44, paperMt);
         box(scene, 0.16, 0.032, 0.032, 46.8, 0.900, 104.72, paperMt);
         box(scene, 0.14, 0.028, 0.028, 47.3, 0.900, 105.08, paperMt);
+      }
+
+      // ── Additional taxidermy specimens ─────────────────────
+
+      // Grizzly bear — rearing mount (NW quadrant)
+      {
+        const bFurMat = new THREE.MeshStandardMaterial({ color: 0x2a1a08, roughness: 0.96, metalness: 0.0 });
+        const bEyeMat = new THREE.MeshStandardMaterial({ color: 0x100800, emissive: 0x0a0500, emissiveIntensity: 0.20, roughness: 0.10 });
+        box(scene, 2.4, 0.16, 1.6, 30, 0.08, 103, mahogMat);
+        addWallAABB(30, 103, 2.5, 1.8);
+        const bear = new THREE.Group();
+        const bBody = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.36, 1.20, 8), bFurMat);
+        bBody.position.set(0, 1.00, 0); bear.add(bBody);
+        const bNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.38, 0.30, 7), bFurMat);
+        bNeck.position.set(0, 1.68, 0); bear.add(bNeck);
+        const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.32, 9, 7), bFurMat);
+        bHead.scale.set(0.94, 0.82, 1.08); bHead.position.set(0, 2.04, 0.08); bear.add(bHead);
+        const bSnout = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.28, 7), bFurMat);
+        bSnout.rotation.x = Math.PI / 2 - 0.3; bSnout.position.set(0, 1.92, 0.34); bear.add(bSnout);
+        [-0.18, 0.18].forEach(ex => {
+          const ear = new THREE.Mesh(new THREE.SphereGeometry(0.078, 6, 5), bFurMat);
+          ear.position.set(ex, 2.30, -0.04); bear.add(ear);
+          const beye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 6, 5), bEyeMat);
+          beye.position.set(ex * 0.6, 2.06, 0.28); bear.add(beye);
+        });
+        [-1, 1].forEach(s => {
+          const armU = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.60, 6), bFurMat);
+          armU.rotation.z = s * 0.55; armU.position.set(s * 0.52, 1.52, 0); bear.add(armU);
+          const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 0.52, 6), bFurMat);
+          armL.rotation.z = s * 0.95; armL.position.set(s * 0.86, 1.70, 0); bear.add(armL);
+          const paw = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 5), bFurMat);
+          paw.scale.set(0.90, 0.55, 1.20); paw.position.set(s * 1.10, 1.76, 0.06); bear.add(paw);
+        });
+        [-0.24, 0.24].forEach(lz => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.08, 0.62, 6), bFurMat);
+          leg.position.set(0, 0.28, lz); bear.add(leg);
+        });
+        bear.position.set(30, 0.24, 103);
+        scene.add(bear);
+      }
+
+      // Stag mount — near north wall with full antlers
+      {
+        const stagFurMat = new THREE.MeshStandardMaterial({ color: 0x5a3010, roughness: 0.92, metalness: 0.0 });
+        const antlerMat  = new THREE.MeshStandardMaterial({ color: 0xb09058, roughness: 0.62, metalness: 0.0 });
+        const stagEyeMat = new THREE.MeshStandardMaterial({ color: 0x301808, emissive: 0x180c00, emissiveIntensity: 0.22, roughness: 0.06 });
+        box(scene, 1.4, 0.16, 1.0, 36, 0.08, 108, mahogMat);
+        addWallAABB(36, 108, 1.5, 1.2);
+        const stag = new THREE.Group();
+        const stBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.90, 8), stagFurMat);
+        stBody.rotation.z = Math.PI / 2; stBody.position.set(0, 0.52, 0); stag.add(stBody);
+        const stNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.20, 0.26, 7), stagFurMat);
+        stNeck.rotation.z = Math.PI / 2 - 0.45; stNeck.position.set(0.50, 0.58, 0); stag.add(stNeck);
+        const stHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), stagFurMat);
+        stHead.scale.set(0.82, 0.88, 1.10); stHead.position.set(0.70, 0.66, 0); stag.add(stHead);
+        const stSnout = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 6), stagFurMat);
+        stSnout.rotation.z = Math.PI / 2; stSnout.position.set(0.86, 0.58, 0); stag.add(stSnout);
+        [-0.09, 0.09].forEach(ez => {
+          const sear = new THREE.Mesh(new THREE.SphereGeometry(0.052, 5, 4), stagFurMat);
+          sear.scale.set(0.40, 0.70, 1.30); sear.position.set(0.60, 0.84, ez); stag.add(sear);
+          const seye = new THREE.Mesh(new THREE.SphereGeometry(0.032, 5, 4), stagEyeMat);
+          seye.position.set(0.80, 0.68, ez); stag.add(seye);
+        });
+        [-1, 1].forEach(s => {
+          const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.64, 5), antlerMat);
+          beam.rotation.z = s * -0.40; beam.rotation.x = 0.18; beam.position.set(0.60 + s * 0.08, 0.90, 0); stag.add(beam);
+          const t1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.020, 0.28, 4), antlerMat);
+          t1.rotation.z = s * -0.70; t1.rotation.x = -0.30; t1.position.set(0.58 + s * 0.18, 1.06, -0.06); stag.add(t1);
+          const t2 = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.016, 0.24, 4), antlerMat);
+          t2.rotation.z = s * -0.90; t2.position.set(0.56 + s * 0.28, 1.16, 0.04); stag.add(t2);
+          const t3 = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.014, 0.20, 4), antlerMat);
+          t3.rotation.z = s * -1.10; t3.position.set(0.54 + s * 0.38, 1.26, 0); stag.add(t3);
+        });
+        [[-0.30, -0.36], [-0.30, 0.36], [0.30, -0.36], [0.30, 0.36]].forEach(([lx, lz]) => {
+          const l = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.034, 0.44, 5), stagFurMat);
+          l.position.set(lx, 0.20, lz); stag.add(l);
+        });
+        stag.position.set(36, 0.16, 108); stag.rotation.y = Math.PI; scene.add(stag);
+      }
+
+      // Wild boar — near south wall
+      {
+        const boarMat  = new THREE.MeshStandardMaterial({ color: 0x2c1e10, roughness: 0.95, metalness: 0.0 });
+        const boarEyeM = new THREE.MeshStandardMaterial({ color: 0x800c00, emissive: 0x600800, emissiveIntensity: 0.40, roughness: 0.06 });
+        const tuskMat  = new THREE.MeshStandardMaterial({ color: 0xd4c890, roughness: 0.38, metalness: 0.0 });
+        box(scene, 1.6, 0.12, 1.1, 35, 0.06, 93, mahogMat);
+        addWallAABB(35, 93, 1.7, 1.2);
+        const boar = new THREE.Group();
+        const boBody = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.88, 8), boarMat);
+        boBody.rotation.z = Math.PI / 2; boBody.position.set(0, 0.44, 0); boar.add(boBody);
+        const boNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.22, 7), boarMat);
+        boNeck.rotation.z = Math.PI / 2 - 0.30; boNeck.position.set(0.46, 0.50, 0); boar.add(boNeck);
+        const boHead = new THREE.Mesh(new THREE.SphereGeometry(0.20, 8, 6), boarMat);
+        boHead.scale.set(0.80, 0.78, 1.20); boHead.position.set(0.64, 0.54, 0); boar.add(boHead);
+        const boSnout = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.22, 6), boarMat);
+        boSnout.rotation.z = Math.PI / 2; boSnout.position.set(0.84, 0.48, 0); boar.add(boSnout);
+        [-0.07, 0.07].forEach(ez => {
+          const tusk = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.008, 0.22, 4), tuskMat);
+          tusk.rotation.z = Math.PI / 2 + 0.55; tusk.position.set(0.90, 0.38, ez); boar.add(tusk);
+          const beye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 5, 4), boarEyeM);
+          beye.position.set(0.76, 0.52, ez); boar.add(beye);
+        });
+        [[-0.28, -0.32], [-0.28, 0.32], [0.28, -0.32], [0.28, 0.32]].forEach(([lx, lz]) => {
+          const l = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.030, 0.38, 5), boarMat);
+          l.position.set(lx, 0.15, lz); boar.add(l);
+        });
+        const boTail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.008, 0.20, 4), boarMat);
+        boTail.rotation.z = -0.80; boTail.position.set(-0.52, 0.52, 0); boar.add(boTail);
+        boar.position.set(35, 0.12, 93); boar.rotation.y = -0.40; scene.add(boar);
+      }
+
+      // Owl on perch — central east area
+      {
+        const owlMat  = new THREE.MeshStandardMaterial({ color: 0x4a3c1a, roughness: 0.88, metalness: 0.0 });
+        const owlEyeM = new THREE.MeshStandardMaterial({ color: 0xf0a800, emissive: 0xc07800, emissiveIntensity: 0.88, roughness: 0.04 });
+        box(scene, 0.72, 0.72, 0.72, 43, 0.36, 103, mahogMat);
+        addWallAABB(43, 103, 0.84, 0.84);
+        const owl = new THREE.Group();
+        const oBody = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), owlMat);
+        oBody.scale.set(0.88, 1.10, 0.80); oBody.position.set(0, 0.22, 0); owl.add(oBody);
+        const oHead = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), owlMat);
+        oHead.position.set(0, 0.48, 0.02); owl.add(oHead);
+        const oDisc = new THREE.Mesh(new THREE.SphereGeometry(0.11, 7, 5),
+          new THREE.MeshStandardMaterial({ color: 0x6a5430, roughness: 0.88 }));
+        oDisc.scale.set(0.94, 0.88, 0.30); oDisc.position.set(0, 0.47, 0.10); owl.add(oDisc);
+        [-0.052, 0.052].forEach(ex => {
+          const oe = new THREE.Mesh(new THREE.SphereGeometry(0.030, 6, 5), owlEyeM);
+          oe.position.set(ex, 0.48, 0.13); owl.add(oe);
+        });
+        const oBk = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.048, 4), owlMat);
+        oBk.rotation.x = Math.PI / 2; oBk.position.set(0, 0.44, 0.13); owl.add(oBk);
+        [-0.065, 0.065].forEach(ex => {
+          const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.020, 0.070, 4), owlMat);
+          tuft.position.set(ex, 0.60, 0); owl.add(tuft);
+        });
+        [-1, 1].forEach(s => {
+          const w = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.24, 0.34), owlMat);
+          w.rotation.z = s * 0.10; w.position.set(s * 0.20, 0.22, -0.02); owl.add(w);
+        });
+        const perc = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.028, 0.42, 6),
+          new THREE.MeshStandardMaterial({ color: 0x2c1808, roughness: 0.86 }));
+        perc.rotation.z = Math.PI / 2; owl.add(perc);
+        owl.position.set(43, 0.74, 103); scene.add(owl);
+      }
+
+      // Peacock with spread tail — NE area
+      {
+        const peaBlue  = new THREE.MeshStandardMaterial({ color: 0x1040a0, roughness: 0.38, metalness: 0.08, emissive: 0x061040, emissiveIntensity: 0.28 });
+        const peaGreen = new THREE.MeshStandardMaterial({ color: 0x0a5a20, roughness: 0.32, metalness: 0.04, emissive: 0x022010, emissiveIntensity: 0.22 });
+        const peaGoldM = new THREE.MeshStandardMaterial({ color: 0xc8a020, roughness: 0.22, metalness: 0.12, emissive: 0x584000, emissiveIntensity: 0.28 });
+        box(scene, 1.8, 0.12, 1.0, 46, 0.06, 107, mahogMat);
+        addWallAABB(46, 107, 1.9, 1.2);
+        const pea = new THREE.Group();
+        const peaBody = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.66, 8), peaBlue);
+        peaBody.rotation.z = Math.PI / 2 - 0.18; peaBody.position.set(0, 0.34, 0); pea.add(peaBody);
+        const peaNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.10, 0.30, 7), peaBlue);
+        peaNeck.rotation.z = -1.10; peaNeck.position.set(0.30, 0.52, 0); pea.add(peaNeck);
+        const peaHead = new THREE.Mesh(new THREE.SphereGeometry(0.072, 7, 5), peaBlue);
+        peaHead.position.set(0.38, 0.74, 0); pea.add(peaHead);
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 4) * Math.PI * 0.6 - 0.3;
+          const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.10, 4), peaGoldM);
+          pl.rotation.z = -a - 1.4; pl.position.set(0.38 + Math.cos(a + 1.5) * 0.08, 0.80 + Math.sin(a + 1.5) * 0.08, 0); pea.add(pl);
+        }
+        const peaBk = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.04, 4), peaGoldM);
+        peaBk.rotation.z = Math.PI / 2; peaBk.position.set(0.46, 0.73, 0); pea.add(peaBk);
+        const peaEye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 5, 4),
+          new THREE.MeshStandardMaterial({ color: 0xd8b800, emissive: 0xb08000, emissiveIntensity: 0.60, roughness: 0.06 }));
+        peaEye.position.set(0.44, 0.75, 0.04); pea.add(peaEye);
+        for (let i = 0; i < 11; i++) {
+          const a = -0.82 / 2 + (i / 10) * 0.82;
+          const fLen = 0.70 + (1 - Math.abs(i - 5) / 5) * 0.20;
+          const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.005, fLen, 4), peaGreen);
+          shaft.rotation.z = -a - 1.70; shaft.rotation.x = a * 0.6;
+          shaft.position.set(-0.18 + Math.sin(a) * fLen * 0.45, 0.36 + Math.cos(a + 1.7) * fLen * 0.42, Math.cos(a) * fLen * 0.25); pea.add(shaft);
+          if (i % 2 === 0) {
+            const eyeSpot = new THREE.Mesh(new THREE.SphereGeometry(0.036, 6, 5), peaBlue);
+            eyeSpot.scale.set(0.90, 0.90, 0.28);
+            eyeSpot.position.set(-0.18 + Math.sin(a) * fLen * 0.84, 0.36 + Math.cos(a + 1.7) * fLen * 0.82, Math.cos(a) * fLen * 0.48); pea.add(eyeSpot);
+          }
+        }
+        pea.position.set(46, 0.12, 107); pea.rotation.y = Math.PI; scene.add(pea);
+      }
+
+      // Badger specimen on pedestal — west side
+      {
+        const badgMat  = new THREE.MeshStandardMaterial({ color: 0x1c1c18, roughness: 0.94, metalness: 0.0 });
+        const badgWM   = new THREE.MeshStandardMaterial({ color: 0xe8e0d0, roughness: 0.90, metalness: 0.0 });
+        const badgEyeM = new THREE.MeshStandardMaterial({ color: 0x1a1000, emissive: 0x0c0800, emissiveIntensity: 0.18, roughness: 0.08 });
+        box(scene, 0.60, 0.60, 0.60, 28, 0.30, 96, mahogMat);
+        addWallAABB(28, 96, 0.72, 0.72);
+        const badger = new THREE.Group();
+        const bgBody = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.10, 0.52, 7), badgMat);
+        bgBody.rotation.z = Math.PI / 2; bgBody.position.set(0, 0.18, 0); badger.add(bgBody);
+        const bgHead = new THREE.Mesh(new THREE.SphereGeometry(0.13, 7, 5), badgMat);
+        bgHead.scale.set(0.84, 0.78, 1.10); bgHead.position.set(0.34, 0.24, 0); badger.add(bgHead);
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.062, 0.26), badgWM);
+        stripe.position.set(0.34, 0.25, 0); badger.add(stripe);
+        const bgSnout = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.14, 5), badgMat);
+        bgSnout.rotation.z = Math.PI / 2; bgSnout.position.set(0.46, 0.22, 0); badger.add(bgSnout);
+        [-0.06, 0.06].forEach(ez => {
+          const bge = new THREE.Mesh(new THREE.SphereGeometry(0.022, 5, 4), badgEyeM);
+          bge.position.set(0.42, 0.26, ez); badger.add(bge);
+        });
+        [[-0.16, -0.18], [-0.16, 0.18], [0.16, -0.18], [0.16, 0.18]].forEach(([lx, lz]) => {
+          const l = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.020, 0.24, 5), badgMat);
+          l.position.set(lx, 0.04, lz); badger.add(l);
+        });
+        badger.position.set(28, 0.62, 96); badger.rotation.y = Math.PI / 4; scene.add(badger);
+      }
+
+      // Otter specimen — west side, mid
+      {
+        const ottMat  = new THREE.MeshStandardMaterial({ color: 0x3a2010, roughness: 0.92, metalness: 0.0 });
+        const ottBelM = new THREE.MeshStandardMaterial({ color: 0xb09870, roughness: 0.90, metalness: 0.0 });
+        const ottEyeM = new THREE.MeshStandardMaterial({ color: 0x201008, emissive: 0x140800, emissiveIntensity: 0.22, roughness: 0.06 });
+        box(scene, 0.58, 0.58, 0.58, 28, 0.29, 101, mahogMat);
+        addWallAABB(28, 101, 0.70, 0.70);
+        const otter = new THREE.Group();
+        const otBody = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.08, 0.56, 7), ottMat);
+        otBody.rotation.z = Math.PI / 2 - 0.22; otBody.position.set(0, 0.14, 0); otter.add(otBody);
+        const otBelly = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.062, 0.44, 6), ottBelM);
+        otBelly.rotation.z = Math.PI / 2 - 0.22; otBelly.position.set(0, 0.12, 0.06); otter.add(otBelly);
+        const otHead = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 5), ottMat);
+        otHead.scale.set(0.86, 0.82, 1.04); otHead.position.set(0.34, 0.22, 0); otter.add(otHead);
+        const otSnout = new THREE.Mesh(new THREE.ConeGeometry(0.044, 0.12, 5), ottMat);
+        otSnout.rotation.z = Math.PI / 2; otSnout.position.set(0.44, 0.19, 0); otter.add(otSnout);
+        [-0.05, 0.05].forEach(ez => {
+          const oe = new THREE.Mesh(new THREE.SphereGeometry(0.022, 5, 4), ottEyeM);
+          oe.position.set(0.40, 0.23, ez); otter.add(oe);
+        });
+        const otTail = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.016, 0.42, 5), ottMat);
+        otTail.rotation.z = 0.55; otTail.position.set(-0.40, 0.22, 0); otter.add(otTail);
+        [[-0.12, -0.14], [-0.12, 0.14], [0.14, -0.14], [0.14, 0.14]].forEach(([lx, lz]) => {
+          const l = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.016, 0.20, 4), ottMat);
+          l.position.set(lx, 0.02, lz); otter.add(l);
+        });
+        otter.position.set(28, 0.60, 101); otter.rotation.y = -Math.PI / 4; scene.add(otter);
+      }
+
+      // Trophy fish on south wall — wall-mounted plaque
+      {
+        const fishMat  = new THREE.MeshStandardMaterial({ color: 0x1a5a8a, roughness: 0.28, metalness: 0.08, emissive: 0x062040, emissiveIntensity: 0.12 });
+        const fishBelM = new THREE.MeshStandardMaterial({ color: 0xd0d8d0, roughness: 0.32, metalness: 0.04 });
+        const fishEyeM = new THREE.MeshStandardMaterial({ color: 0xd0d800, emissive: 0xa0a800, emissiveIntensity: 0.55, roughness: 0.04 });
+        box(scene, 0.06, 0.60, 1.10, 26.03, 3.0, 93, mahogMat);
+        const fish = new THREE.Group();
+        const fBody = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.05, 0.88, 8), fishMat);
+        fBody.rotation.z = Math.PI / 2; fish.add(fBody);
+        const fBelly = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.04, 0.76, 7), fishBelM);
+        fBelly.rotation.z = Math.PI / 2; fBelly.position.set(0, -0.06, 0); fish.add(fBelly);
+        const fHead = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), fishMat);
+        fHead.scale.set(0.88, 0.82, 0.72); fHead.position.set(0.48, 0.02, 0); fish.add(fHead);
+        const fEye = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), fishEyeM);
+        fEye.position.set(0.54, 0.04, 0.10); fish.add(fEye);
+        const fTail = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.32), fishMat);
+        fTail.position.set(-0.48, 0, 0); fish.add(fTail);
+        const fDors = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.18, 0.036), fishMat);
+        fDors.position.set(0, 0.18, 0); fish.add(fDors);
+        fish.rotation.y = Math.PI / 2; fish.position.set(26.06, 3.0, 93); scene.add(fish);
+      }
+
+      // Hare specimen on pedestal — central area
+      {
+        const hareMat  = new THREE.MeshStandardMaterial({ color: 0x7a6030, roughness: 0.94, metalness: 0.0 });
+        const hareEyeM = new THREE.MeshStandardMaterial({ color: 0xcc3000, emissive: 0xaa2000, emissiveIntensity: 0.50, roughness: 0.04 });
+        box(scene, 0.50, 0.50, 0.50, 44, 0.25, 97, mahogMat);
+        addWallAABB(44, 97, 0.62, 0.62);
+        const hare = new THREE.Group();
+        const hBody = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 5), hareMat);
+        hBody.scale.set(0.80, 0.72, 1.40); hBody.position.set(0, 0.12, 0); hare.add(hBody);
+        const hHead = new THREE.Mesh(new THREE.SphereGeometry(0.072, 6, 5), hareMat);
+        hHead.scale.set(0.88, 0.88, 1.04); hHead.position.set(0, 0.22, 0.14); hare.add(hHead);
+        [-0.040, 0.040].forEach(ex => {
+          const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.020, 0.32, 4), hareMat);
+          ear.position.set(ex, 0.44, 0.12); hare.add(ear);
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.020, 5, 4), hareEyeM);
+          eye.position.set(ex, 0.24, 0.17); hare.add(eye);
+        });
+        const hSnout = new THREE.Mesh(new THREE.SphereGeometry(0.024, 5, 4),
+          new THREE.MeshStandardMaterial({ color: 0xcc6060, roughness: 0.60 }));
+        hSnout.position.set(0, 0.21, 0.20); hare.add(hSnout);
+        [-0.06, 0.06].forEach(ez => {
+          const hl = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.020, 0.22, 4), hareMat);
+          hl.rotation.z = 0.60; hl.position.set(-0.10, 0.06, ez); hare.add(hl);
+        });
+        hare.position.set(44, 0.52, 97); scene.add(hare);
+      }
+
+      // Crocodile — low floor mount near south wall
+      {
+        const crocMat  = new THREE.MeshStandardMaterial({ color: 0x1a2a0a, roughness: 0.90, metalness: 0.0 });
+        const crocBelM = new THREE.MeshStandardMaterial({ color: 0x9aaa70, roughness: 0.88, metalness: 0.0 });
+        const crocEyeM = new THREE.MeshStandardMaterial({ color: 0xd4a800, emissive: 0xa07000, emissiveIntensity: 0.55, roughness: 0.04 });
+        box(scene, 2.80, 0.10, 1.0, 42, 0.05, 92, mahogMat);
+        addWallAABB(42, 92, 2.9, 1.1);
+        const croc = new THREE.Group();
+        const cBody = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 1.60, 8), crocMat);
+        cBody.rotation.z = Math.PI / 2; cBody.position.set(0, 0.22, 0); croc.add(cBody);
+        const cBelly = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.09, 1.46, 7), crocBelM);
+        cBelly.rotation.z = Math.PI / 2; cBelly.position.set(0, 0.16, 0); croc.add(cBelly);
+        const cTail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.14, 1.10, 7), crocMat);
+        cTail.rotation.z = Math.PI / 2; cTail.position.set(-1.34, 0.20, 0); croc.add(cTail);
+        const cHead = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.14, 0.30), crocMat);
+        cHead.position.set(1.06, 0.22, 0); croc.add(cHead);
+        const cJawU = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.10, 0.28), crocMat);
+        cJawU.rotation.z = 0.20; cJawU.position.set(1.28, 0.24, 0); croc.add(cJawU);
+        const cJawL = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.08, 0.24), crocBelM);
+        cJawL.rotation.z = -0.12; cJawL.position.set(1.28, 0.14, 0); croc.add(cJawL);
+        for (let i = 0; i < 6; i++) {
+          const tooth = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.004, 0.048, 4),
+            new THREE.MeshStandardMaterial({ color: 0xf0e8c8, roughness: 0.40 }));
+          tooth.position.set(1.06 + i * 0.060, 0.15, (i % 2 === 0 ? 0.08 : -0.08)); croc.add(tooth);
+        }
+        [-0.12, 0.12].forEach(ez => {
+          const ce = new THREE.Mesh(new THREE.SphereGeometry(0.030, 5, 4), crocEyeM);
+          ce.position.set(0.94, 0.30, ez); croc.add(ce);
+        });
+        [[-0.40, -0.24], [-0.40, 0.24], [0.36, -0.24], [0.36, 0.24]].forEach(([lx, lz]) => {
+          const cl = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.030, 0.20, 5), crocMat);
+          cl.rotation.z = Math.PI / 2; cl.rotation.x = (lz > 0 ? 0.50 : -0.50);
+          cl.position.set(lx, 0.10, lz); croc.add(cl);
+        });
+        croc.position.set(42, 0.10, 92); croc.rotation.y = -0.15; scene.add(croc);
+      }
+
+      // Wild turkey mount on pedestal — north wall
+      {
+        const turkMat  = new THREE.MeshStandardMaterial({ color: 0x2a1c0a, roughness: 0.92, metalness: 0.0 });
+        const turkBelM = new THREE.MeshStandardMaterial({ color: 0x5a3a10, roughness: 0.88, metalness: 0.0 });
+        const turkRedM = new THREE.MeshStandardMaterial({ color: 0x9a1808, emissive: 0x600800, emissiveIntensity: 0.28, roughness: 0.28 });
+        box(scene, 0.65, 0.65, 0.65, 40, 0.325, 108, mahogMat);
+        addWallAABB(40, 108, 0.78, 0.78);
+        const turk = new THREE.Group();
+        const tBody = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), turkMat);
+        tBody.scale.set(0.88, 1.0, 0.72); tBody.position.set(0, 0.18, 0); turk.add(tBody);
+        const tNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.090, 0.22, 6), turkMat);
+        tNeck.rotation.z = -1.0; tNeck.position.set(0.08, 0.38, 0); turk.add(tNeck);
+        const tHead = new THREE.Mesh(new THREE.SphereGeometry(0.058, 6, 5), turkRedM);
+        tHead.position.set(0.16, 0.50, 0); turk.add(tHead);
+        const tSnood = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.010, 0.054, 4), turkRedM);
+        tSnood.position.set(0.18, 0.50, 0.04); turk.add(tSnood);
+        const tBk = new THREE.Mesh(new THREE.ConeGeometry(0.010, 0.036, 4), turkBelM);
+        tBk.rotation.z = Math.PI / 2; tBk.position.set(0.22, 0.49, 0); turk.add(tBk);
+        const tEye = new THREE.Mesh(new THREE.SphereGeometry(0.016, 5, 4),
+          new THREE.MeshStandardMaterial({ color: 0xd8a800, emissive: 0xb07000, emissiveIntensity: 0.55, roughness: 0.04 }));
+        tEye.position.set(0.20, 0.51, 0.04); turk.add(tEye);
+        for (let i = 0; i < 8; i++) {
+          const a = -0.55 + (i / 7) * 1.10;
+          const feath = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.52, 0.022), turkBelM);
+          feath.rotation.z = a - 1.55; feath.position.set(-0.06 + Math.sin(a) * 0.24, 0.14 + Math.cos(a) * 0.24, 0); turk.add(feath);
+        }
+        [-0.06, 0.06].forEach(ez => {
+          const l = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.015, 0.22, 5), turkBelM);
+          l.position.set(0, 0.01, ez); turk.add(l);
+        });
+        turk.position.set(40, 0.68, 108); turk.rotation.y = Math.PI; scene.add(turk);
+      }
+
+      // Pheasant on pedestal — SW area
+      {
+        const pheasMat   = new THREE.MeshStandardMaterial({ color: 0x7a3a0a, roughness: 0.88, metalness: 0.0 });
+        const pheasIridM = new THREE.MeshStandardMaterial({ color: 0x1a5020, roughness: 0.22, metalness: 0.08, emissive: 0x081e08, emissiveIntensity: 0.30 });
+        const pheasRingM = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 0.88, metalness: 0.0 });
+        box(scene, 0.60, 0.60, 0.60, 31, 0.30, 107, mahogMat);
+        addWallAABB(31, 107, 0.72, 0.72);
+        const pheas = new THREE.Group();
+        const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.08, 0.46, 7), pheasMat);
+        pBody.rotation.z = Math.PI / 2 - 0.18; pBody.position.set(0, 0.16, 0); pheas.add(pBody);
+        const pChest = new THREE.Mesh(new THREE.SphereGeometry(0.088, 6, 5), pheasIridM);
+        pChest.scale.set(0.60, 0.58, 0.42); pChest.position.set(0.14, 0.20, 0.08); pheas.add(pChest);
+        const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.066, 7, 5), pheasIridM);
+        pHead.position.set(0.30, 0.28, 0); pheas.add(pHead);
+        const pRing = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.010, 5, 10), pheasRingM);
+        pRing.rotation.x = Math.PI / 2; pRing.position.set(0.30, 0.28, 0); pheas.add(pRing);
+        const pBk = new THREE.Mesh(new THREE.ConeGeometry(0.010, 0.034, 4), pheasMat);
+        pBk.rotation.z = Math.PI / 2; pBk.position.set(0.37, 0.28, 0); pheas.add(pBk);
+        [-0.04, 0.04].forEach(ez => {
+          const pe = new THREE.Mesh(new THREE.SphereGeometry(0.016, 5, 4),
+            new THREE.MeshStandardMaterial({ color: 0xd88000, emissive: 0xb06000, emissiveIntensity: 0.55, roughness: 0.04 }));
+          pe.position.set(0.35, 0.28, ez); pheas.add(pe);
+        });
+        for (let i = 0; i < 5; i++) {
+          const tLen = 0.28 + i * 0.06;
+          const tf = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, tLen, 4), pheasMat);
+          tf.rotation.z = 0.30 + i * 0.06; tf.rotation.x = (i - 2) * 0.12;
+          tf.position.set(-0.18 - i * 0.02, 0.16 + i * 0.02, (i - 2) * 0.04); pheas.add(tf);
+        }
+        [-0.04, 0.04].forEach(ez => {
+          const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.014, 0.18, 4), pheasMat);
+          pl.position.set(0, 0.01, ez); pheas.add(pl);
+        });
+        pheas.position.set(31, 0.64, 107); pheas.rotation.y = Math.PI * 0.6; scene.add(pheas);
+      }
+
+      // Wall-mounted antler trophy — west wall, mid height
+      {
+        const antlerBrownM = new THREE.MeshStandardMaterial({ color: 0x6a4010, roughness: 0.62, metalness: 0.0 });
+        box(scene, 0.06, 0.52, 0.62, 26.03, 4.0, 100, mahogMat);
+        const sk2 = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.15, 0.24), antlerBrownM);
+        sk2.position.set(26.10, 4.02, 100); scene.add(sk2);
+        [-1, 1].forEach(s => {
+          const aBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.034, 0.68, 5), antlerBrownM);
+          aBeam.rotation.z = s * -0.38; aBeam.position.set(26.12, 4.32, 100 + s * 0.14); scene.add(aBeam);
+          [0.22, 0.38, 0.52].forEach((t, i) => {
+            const tine = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.018, 0.22 + i * 0.04, 4), antlerBrownM);
+            tine.rotation.z = s * -(0.80 + i * 0.24); tine.rotation.x = 0.20;
+            tine.position.set(26.12 + t * 0.06, 4.14 + t * 0.50, 100 + s * (0.10 + i * 0.06)); scene.add(tine);
+          });
+        });
+      }
+
+      // Mounted lynx on pedestal — south area
+      {
+        const lynxMat  = new THREE.MeshStandardMaterial({ color: 0x8a6020, roughness: 0.93, metalness: 0.0 });
+        const lynxEyeM = new THREE.MeshStandardMaterial({ color: 0x88c800, emissive: 0x609000, emissiveIntensity: 0.70, roughness: 0.04 });
+        box(scene, 0.80, 0.80, 0.80, 28, 0.40, 106, mahogMat);
+        addWallAABB(28, 106, 0.92, 0.92);
+        const lynx = new THREE.Group();
+        const lBody = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.66, 7), lynxMat);
+        lBody.rotation.z = Math.PI / 2; lBody.position.set(0, 0.26, 0); lynx.add(lBody);
+        const lHead = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), lynxMat);
+        lHead.scale.set(0.90, 0.84, 1.04); lHead.position.set(0.42, 0.30, 0); lynx.add(lHead);
+        const lSnout = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.16, 6), lynxMat);
+        lSnout.rotation.z = Math.PI / 2; lSnout.position.set(0.56, 0.26, 0); lynx.add(lSnout);
+        [-0.09, 0.09].forEach(ez => {
+          const lear = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.14, 4), lynxMat);
+          lear.position.set(0.34, 0.44, ez); lynx.add(lear);
+          const leye = new THREE.Mesh(new THREE.SphereGeometry(0.030, 5, 4), lynxEyeM);
+          leye.position.set(0.52, 0.31, ez); lynx.add(leye);
+        });
+        const lTail = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.016, 0.22, 5), lynxMat);
+        lTail.rotation.z = -0.72; lTail.position.set(-0.40, 0.36, 0); lynx.add(lTail);
+        [[-0.20, -0.22], [-0.20, 0.22], [0.20, -0.22], [0.20, 0.22]].forEach(([lx, lz]) => {
+          const ll = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.028, 0.36, 5), lynxMat);
+          ll.position.set(lx, 0.08, lz); lynx.add(ll);
+        });
+        lynx.position.set(28, 0.82, 106); lynx.rotation.y = -0.60; scene.add(lynx);
       }
 
       // ── Security camera (north wall, watching the room) ───

@@ -624,6 +624,16 @@
         if (obj.isMesh && obj.userData.aerialhide) obj.visible = !on;
       });
     }
+    // Clear fog in aerial view for a bright, readable overhead map
+    if (scene.fog) {
+      if (on) {
+        scene.fog.near = 300;
+        scene.fog.far  = 500;
+      } else {
+        scene.fog.near = 18;
+        scene.fog.far  = 72;
+      }
+    }
     if (!on) {
       // Snap camera back (player.js will lerp it naturally next frame)
       _aerialCamSave.copy(camera.position);

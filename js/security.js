@@ -51,11 +51,21 @@ window.Security = (function () {
     noguard: { CAM_SPEED: 0.3,  DETECT_TIME: 999, ALARM_DURATION: 999 },
   };
 
+  let _noGuardMode = false;
+
   function setDifficulty(d) {
+    _noGuardMode = (d === 'noguard');
     const p = _SEC_DIFF[d] || _SEC_DIFF.normal;
     CAM_SPEED      = p.CAM_SPEED;
     DETECT_TIME    = p.DETECT_TIME;
     ALARM_DURATION = p.ALARM_DURATION;
+    // Hide all laser meshes in no-guard mode
+    if (_noGuardMode) {
+      lasers.forEach(l => {
+        if (l.mesh)      l.mesh.visible      = false;
+        if (l._glowMesh) l._glowMesh.visible = false;
+      });
+    }
   }
 
   let cameras      = [];
@@ -345,7 +355,8 @@ window.Security = (function () {
     const crouching = playerState === 'crouching';
     cameras.forEach((c, i) => c.update(dt, playerPos, crouching, i % 3 === _camVisionFrame));
 
-    // Check laser beams
+    // Check laser beams — skipped entirely in no-guard mode
+    if (_noGuardMode) return;
     for (const laser of lasers) {
       laser.update(dt);
       if (laser.checkPlayer(playerPos, playerState)) {

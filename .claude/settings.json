@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/maryeuteneuer/showcase-heist show --stat HEAD)"
+    ]
+  }
+}

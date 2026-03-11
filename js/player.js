@@ -1263,7 +1263,7 @@ window.Player = (function () {
       if (d.open) continue;
       const _dx = d.x - pos.x, _dz = d.z - pos.z;
       if (_dx * _dx + _dz * _dz < REACH2) {
-        if (!d.keyRequired || G.inventory[d.keyRequired]) {
+        if (!d.keyRequired || G.inventory[d.keyRequired] || G.difficulty === 'noguard') {
           d.open    = true;
           d.opening = true;
           // Mesh hide + AABB removal now handled by tickDoors() when animation completes
