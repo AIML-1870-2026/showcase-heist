@@ -2216,8 +2216,10 @@ window.GameMap = (function () {
     wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
     paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
-    // Dr. Harnoor Dhaliwal — Scott Scholars, UNO — across from the Mona Lisa
-    wallPainting(scene, 24.9, 3.8, 92, M.harnoor, false);
+    // Dr. Harnoor Dhaliwal — Scott Scholars, UNO — across from the Mona Lisa (east wall)
+    // Frame sits against the wall face, canvas box protrudes into the room so it is always visible
+    box(scene, 0.06, 2.2, 3.0, 24.74, 3.8, 92, M.frame);
+    box(scene, 0.05, 2.0, 2.8, 24.70, 3.8, 92, M.harnoor);
     paintingSpotlight(scene, 24.9, 3.8, 92, 'east');
     placard(scene, 24.9, 2.6, 92, 'Dr. Harnoor Dhaliwal', 'Scott Scholars, UNO', false);
     stealables.push({ mesh: paintMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
