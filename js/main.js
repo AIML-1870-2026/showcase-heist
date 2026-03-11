@@ -457,7 +457,7 @@
     const charMesh = Player.buildPreviewMesh(
       custom.suitColor, custom.eyeColor, custom.suitTheme,
       custom.hairStyle, custom.hairColor, custom.skinColor,
-      custom.shoeColor, custom.shoeTheme, custom.sparkleIntensity
+      custom.shoeColor, custom.shoeTheme, custom.sparkleIntensity, custom.jewelryColor
     );
     charMesh.position.set(0, 0, 0);
     celScene.add(charMesh);
@@ -1120,7 +1120,7 @@
     // Customization screen helpers
     let _pendingMode = 'solo';
 
-    // Hair color: slider 0-100 → hex color (black → all browns → white → ginger)
+    // Hair color: slider 0-100 → hex color (black → all browns → white)
     function _hairSliderToHex(val) {
       const stops = [
         { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },  // jet black
@@ -1133,9 +1133,8 @@
         { v: 65,  r: 0xb8, g: 0x78, b: 0x3c },  // light warm brown
         { v: 73,  r: 0xc8, g: 0x98, b: 0x50 },  // caramel / honey brown
         { v: 81,  r: 0xd4, g: 0xb4, b: 0x70 },  // sandy / tawny brown
-        { v: 88,  r: 0xe0, g: 0xcc, b: 0xa8 },  // very light brown / ash
-        { v: 93,  r: 0xf0, g: 0xec, b: 0xe6 },  // white
-        { v: 100, r: 0xc0, g: 0x48, b: 0x18 },  // ginger / copper
+        { v: 90,  r: 0xe0, g: 0xcc, b: 0xa8 },  // very light brown / ash
+        { v: 100, r: 0xf0, g: 0xec, b: 0xe6 },  // white
       ];
       for (let i = 0; i < stops.length - 1; i++) {
         const a = stops[i], b = stops[i + 1];
@@ -1192,11 +1191,12 @@
         eye:              es ? Number(es.dataset.color) : 0x88ccff,
         suitTheme:        ss ? (ss.dataset.suitTheme || null) : null,
         hairStyle:        hs ? hs.dataset.style : 'ponytail',
-        hairColor:        _hairSliderToHex(hairVal),
+        hairColor:        window._gingerActive ? 0xc04818 : _hairSliderToHex(hairVal),
         skinColor:        _skinSliderToHex(skinVal),
         shoeColor:        sh && !sh.dataset.shoeTheme ? Number(sh.dataset.color) : 0x111111,
         shoeTheme:        sh ? (sh.dataset.shoeTheme || null) : null,
         sparkleIntensity: sparkleVal,
+        jewelryColor:     window._jewelryColor !== undefined ? window._jewelryColor : 0xffd700,
       };
     }
 
@@ -1204,8 +1204,8 @@
       if (!_prevScene || !_prevMesh) return;
       const rot = _prevMesh.rotation.y;
       _prevScene.remove(_prevMesh);
-      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity, jewelryColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity, jewelryColor);
       _prevMesh.rotation.y = rot;
       _prevScene.add(_prevMesh);
     }
@@ -1228,8 +1228,8 @@
       _prevCam = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 50);
       _prevCam.position.set(0, 1.2, 4.0);
       _prevCam.lookAt(0, 1.0, 0);
-      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity } = _previewColors();
-      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity);
+      const { suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity, jewelryColor } = _previewColors();
+      _prevMesh = Player.buildPreviewMesh(suit, eye, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity, jewelryColor);
       _prevScene.add(_prevMesh);
       (function loop() {
         _prevRaf = requestAnimationFrame(loop);
@@ -1267,11 +1267,12 @@
         suitTheme:        suitSw ? (suitSw.dataset.suitTheme || null) : null,
         eyeColor:         eyeSw  ? Number(eyeSw.dataset.color)  : 0x88ccff,
         hairStyle:        hairBtn  ? hairBtn.dataset.style : 'ponytail',
-        hairColor:        _hairSliderToHex(hairSlider    ? Number(hairSlider.value)    : 0),
+        hairColor:        window._gingerActive ? 0xc04818 : _hairSliderToHex(hairSlider ? Number(hairSlider.value) : 0),
         skinColor:        _skinSliderToHex(skinSlider    ? Number(skinSlider.value)    : 50),
         sparkleIntensity: sparkleSlider ? Number(sparkleSlider.value) : 0,
         shoeColor:        shoeSw && !shoeSw.dataset.shoeTheme ? Number(shoeSw.dataset.color) : 0x111111,
         shoeTheme:        shoeSw ? (shoeSw.dataset.shoeTheme || null) : null,
+        jewelryColor:     window._jewelryColor !== undefined ? window._jewelryColor : 0xffd700,
 
         codename:         name,
       };
@@ -1331,19 +1332,50 @@
       };
     });
 
-    // ── Hair color slider ───────────────────────────────────
+    // ── Hair color slider + ginger toggle ──────────────────
     (function () {
       const hairSlider  = document.getElementById('hair-color-slider');
       const hairPreview = document.getElementById('hair-color-preview');
+      const gingerBtn   = document.getElementById('ginger-btn');
+      let _gingerActive = false;
+      window._gingerActive = false;
+
       function updateHairPreview() {
-        const hex = _hairSliderToHex(Number(hairSlider.value));
+        const hex = _gingerActive ? 0xc04818 : _hairSliderToHex(Number(hairSlider.value));
         const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff;
         hairPreview.style.background = 'rgb(' + r + ',' + g + ',' + b + ')';
         _previewUpdate();
       }
-      if (hairSlider) hairSlider.addEventListener('input', updateHairPreview);
+
+      if (gingerBtn) {
+        gingerBtn.addEventListener('click', () => {
+          _gingerActive = !_gingerActive;
+          window._gingerActive = _gingerActive;
+          gingerBtn.style.border = _gingerActive ? '2px solid #fff' : '2px solid transparent';
+          updateHairPreview();
+        });
+      }
+      if (hairSlider) {
+        hairSlider.addEventListener('input', () => {
+          _gingerActive = false;
+          window._gingerActive = false;
+          if (gingerBtn) gingerBtn.style.border = '2px solid transparent';
+          updateHairPreview();
+        });
+      }
       if (hairSlider) updateHairPreview();
     }());
+
+    // ── Jewelry buttons ────────────────────────────────────
+    window._jewelryColor = 0xffd700; // default gold
+    document.querySelectorAll('.jewelry-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.jewelry-btn').forEach(b => b.style.border = '2px solid transparent');
+        btn.style.border = '2px solid #fff';
+        window._jewelryColor = btn.dataset.jewelry === 'silver' ? 0xc0c0c0 : 0xffd700;
+        _previewUpdate();
+      });
+    });
 
     // ── Intro cutscene / mission briefing ──────────────────
     const INTRO_LINES = [

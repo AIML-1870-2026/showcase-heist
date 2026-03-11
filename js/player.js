@@ -480,25 +480,48 @@ window.Player = (function () {
     // ── Sparkle overlay ────────────────────────────────
     const sp = sparkleIntensity || 0;
     if (sp > 0) {
-      const count  = Math.round(sp * 5.5);    // 0 → 0, 100 → 550 dots
-      const maxR   = 0.5 + sp * 0.04;         // dot radius scales with intensity
-      const alphaB = 0.3 + sp * 0.007;        // base alpha
+      // Helper: draw a 4-point star burst at (cx,cy) with arm length r
+      function drawStar(cx, cy, r, alpha, color) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, alpha);
+        // Glow halo
+        const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.2);
+        grd.addColorStop(0,   color.replace(')', ',0.9)').replace('rgb', 'rgba'));
+        grd.addColorStop(0.4, color.replace(')', ',0.3)').replace('rgb', 'rgba'));
+        grd.addColorStop(1,   color.replace(')', ',0)').replace('rgb', 'rgba'));
+        ctx.fillStyle = grd;
+        ctx.beginPath(); ctx.arc(cx, cy, r * 2.2, 0, Math.PI * 2); ctx.fill();
+        // 4-point cross spikes
+        ctx.fillStyle = color;
+        ctx.globalAlpha = Math.min(1, alpha * 1.3);
+        [[0, -r, 0, r], [-r, 0, r, 0]].forEach(([x1, y1, x2, y2]) => {
+          ctx.beginPath();
+          ctx.moveTo(cx + x1 * 0.18, cy + y1 * 0.18);
+          ctx.lineTo(cx + x2 * 0.18, cy + y2 * 0.18);
+          ctx.lineTo(cx + x2, cy + y2);
+          ctx.closePath(); ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(cx - x1 * 0.18, cy - y1 * 0.18);
+          ctx.lineTo(cx - x2 * 0.18, cy - y2 * 0.18);
+          ctx.lineTo(cx - x2, cy - y2);
+          ctx.closePath(); ctx.fill();
+        });
+        // Bright center dot
+        ctx.globalAlpha = Math.min(1, alpha * 1.5);
+        ctx.beginPath(); ctx.arc(cx, cy, r * 0.22, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgb(255,255,255)'; ctx.fill();
+        ctx.restore();
+      }
+
+      const count = Math.round(sp * 0.9 + 4);   // ~4 at low, ~94 at max
       for (let i = 0; i < count; i++) {
         const sx = Math.random() * S;
         const sy = Math.random() * S;
-        const r  = Math.random() * maxR + 0.3;
-        const a  = alphaB + Math.random() * 0.5;
-        ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${Math.min(1, a)})`; ctx.fill();
-      }
-      // A few larger star-bursts at high intensities
-      if (sp > 40) {
-        const stars = Math.round((sp - 40) * 0.25);
-        for (let i = 0; i < stars; i++) {
-          const sx = Math.random() * S, sy = Math.random() * S;
-          ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 3 + 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255,240,180,${0.5 + Math.random() * 0.5})`; ctx.fill();
-        }
+        const r  = 1.5 + Math.random() * (2.5 + sp * 0.06);
+        const a  = 0.55 + Math.random() * 0.45;
+        // Alternate warm white and gold tints
+        const col = Math.random() < 0.5 ? 'rgb(255,255,255)' : 'rgb(255,240,160)';
+        drawStar(sx, sy, r, a, col);
       }
     }
 
@@ -522,6 +545,7 @@ window.Player = (function () {
     const shoeHex         = custom.shoeColor      !== undefined ? custom.shoeColor      : 0x111111;
     const shoeTheme       = custom.shoeTheme      || null;
     const sparkleIntensity = custom.sparkleIntensity !== undefined ? custom.sparkleIntensity : 0;
+    const jewelryHex      = custom.jewelryColor     !== undefined ? custom.jewelryColor     : 0xffd700; // default gold
 
     const needsTex = suitTheme || sparkleIntensity > 0;
     const matSuit = needsTex
@@ -780,6 +804,15 @@ window.Player = (function () {
       });
 
     }
+
+    // ── Hoop earrings ─────────────────────────────────────
+    const matJewelry = new THREE.MeshStandardMaterial({ color: jewelryHex, roughness: 0.2, metalness: 0.9 });
+    [-0.295, 0.295].forEach(xOff => {
+      const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.040, 0.008, 8, 18), matJewelry);
+      hoop.position.set(xOff, 1.72, -0.04);
+      hoop.rotation.y = Math.PI / 2;
+      group.add(hoop);
+    });
 
     // ── Direction arrow — floor-level, rotates independently toward objective ──
     const arrowMat = new THREE.MeshStandardMaterial({
@@ -1523,7 +1556,7 @@ window.Player = (function () {
       if (playerMesh) playerMesh.position.set(x, y, z);
     },
     // Build a standalone mesh for the customize screen preview (not added to game scene)
-    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity) {
+    buildPreviewMesh(suitColor, eyeColor, suitTheme, hairStyle, hairColor, skinColor, shoeColor, shoeTheme, sparkleIntensity, jewelryColor) {
       const prev = window.G && window.G.playerCustom;
       if (window.G) window.G.playerCustom = {
         suitColor, eyeColor, suitTheme: suitTheme || null,
@@ -1533,6 +1566,7 @@ window.Player = (function () {
         shoeColor: shoeColor !== undefined ? shoeColor : 0x111111,
         shoeTheme: shoeTheme || null,
         sparkleIntensity: sparkleIntensity || 0,
+        jewelryColor: jewelryColor !== undefined ? jewelryColor : 0xffd700,
       };
       const g = buildMesh({ add() {} });
       if (window.G) window.G.playerCustom = prev;

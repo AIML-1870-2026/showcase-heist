@@ -197,11 +197,22 @@
             <div class="hair-color-row">
               <span class="hair-color-label">Black</span>
               <input id="hair-color-slider" type="range" min="0" max="100" value="0" />
-              <span class="hair-color-label">Platinum</span>
+              <span class="hair-color-label">White</span>
             </div>
-            <div id="hair-color-preview" class="hair-color-preview"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+              <div id="hair-color-preview" class="hair-color-preview" style="margin-top:0;"></div>
+              <button id="ginger-btn" style="background:#c04818;color:#fff;border:2px solid transparent;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.85em;font-family:inherit;">Ginger</button>
+            </div>
           </div>
 
+
+          <div class="customize-section">
+            <label class="customize-label">Jewelry</label>
+            <div style="display:flex;gap:10px;">
+              <button id="jewelry-gold-btn" class="jewelry-btn active" data-jewelry="gold" style="background:#ffd700;color:#222;border:2px solid #fff;border-radius:6px;padding:3px 14px;cursor:pointer;font-size:0.85em;font-family:inherit;font-weight:bold;">Gold</button>
+              <button id="jewelry-silver-btn" class="jewelry-btn" data-jewelry="silver" style="background:#c0c0c0;color:#222;border:2px solid transparent;border-radius:6px;padding:3px 14px;cursor:pointer;font-size:0.85em;font-family:inherit;font-weight:bold;">Silver</button>
+            </div>
+          </div>
 
           <div class="menu-buttons" style="margin-top:16px;">
             <button id="btn-start-heist" class="btn btn-primary">Begin Heist</button>
