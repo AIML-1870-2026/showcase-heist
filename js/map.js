@@ -2314,8 +2314,9 @@ window.GameMap = (function () {
     // Gallery east wall stubs — 3-unit gap at Z=77 leading to the Salon des Antiquités
     // South stub: Z 55→75.5  (length 20.5, centre 65.25)
     wall(scene, 25, 65.25, WALL_T, 20.5, M.galleryWall);
-    // North stub: Z 78.5→100  (length 21.5, centre 89.25)
-    wall(scene, 25, 89.25, WALL_T, 21.5, M.galleryWall);
+    // North stub split for Taxidermie entrance at Z=93 (3-unit gap, Z 91.5→94.5)
+    wall(scene, 25, 85,    WALL_T, 13,  M.galleryWall);  // Z 78.5→91.5  south of taxi door
+    wall(scene, 25, 97.25, WALL_T, 5.5, M.galleryWall);  // Z 94.5→100   north of taxi door
 
     // Gallery west wall stubs — 3-unit gap at Z=77 leading to the Galerie des Sculptures
     //   and additional 3-unit gap at Z=64 leading to the Power Breaker Room (Feature 7)
@@ -4475,6 +4476,332 @@ window.GameMap = (function () {
         scene.add(g);
         stealables.push({ mesh: g, item: 'broochlobby', x: -18, z: 5, taken: false, bonus: true, hidden: true, label: 'Antique Brooch', value: 160000 }); }
     }());
+
+    // ════════════════════════════════════════════════════════
+    //  SALLE DE TAXIDERMIE  (Victorian Taxidermy Hall)
+    //  X 25→53  Z 90→110  (cx=39, cz=100, 28×20)
+    //  Attached to Gallery east wall — door at X=25, Z=93
+    // ════════════════════════════════════════════════════════
+    {
+      const TXX = 39, TXZ = 100, TXW = 28, TXD = 20;
+
+      // ── Materials ─────────────────────────────────────────
+      const taxiWallMat = new THREE.MeshStandardMaterial({
+        color: 0x1a2a18, roughness: 0.90, metalness: 0.0,  // dark peeling damask green
+      });
+      const taxiFloorMat = new THREE.MeshStandardMaterial({
+        color: 0x271507, roughness: 0.95, metalness: 0.0,  // worn dark floorboards
+      });
+      const taxiCeilMat = new THREE.MeshStandardMaterial({
+        color: 0x141310, roughness: 0.93, metalness: 0.0,  // stained plaster ceiling
+      });
+      const mahogMat = new THREE.MeshStandardMaterial({
+        color: 0x3c1808, roughness: 0.68, metalness: 0.04, // mahogany wood
+      });
+      const brassSmMat = new THREE.MeshStandardMaterial({
+        color: 0xc09030, roughness: 0.30, metalness: 0.82,
+      });
+
+      // ── Room shell ────────────────────────────────────────
+      floor(scene,   TXX, TXZ, TXW, TXD, taxiFloorMat);
+      ceiling(scene, TXX, TXZ, TXW, TXD, taxiCeilMat);
+      wall(scene, TXX, 90,  TXW, WALL_T, taxiWallMat);  // south wall Z=90
+      wall(scene, TXX, 110, TXW, WALL_T, taxiWallMat);  // north wall Z=110
+      wall(scene, 53,  TXZ, WALL_T, TXD, taxiWallMat);  // east wall  X=53
+      wall(scene, 25,  105, WALL_T, 10,  taxiWallMat);  // west wall extension Z=100→110
+
+      // ── Entrance archway — dark oxidised timber frame ─────
+      const taxiArchMat = new THREE.MeshStandardMaterial({
+        color: 0x280f04, emissive: 0x120601, emissiveIntensity: 0.18, roughness: 0.88,
+      });
+      box(scene, 0.14, 0.14, 3.8, 25, WALL_H + 0.16, 93, taxiArchMat);          // top bar
+      box(scene, 0.14, WALL_H + 0.32, 0.14, 25, WALL_H / 2, 91.1, taxiArchMat); // south post
+      box(scene, 0.14, WALL_H + 0.32, 0.14, 25, WALL_H / 2, 94.9, taxiArchMat); // north post
+      door(scene, 25, 93, null, Math.PI / 2);
+
+      // ── Room label ────────────────────────────────────────
+      roomLabel(scene, TXX, TXZ, 'Salle de Taxidermie', Math.PI / 2);
+
+      // ── Dim amber point light (central) ──────────────────
+      {
+        const taxiPt = new THREE.PointLight(0xffa040, 1.1, 30);
+        taxiPt.position.set(TXX, 4.5, TXZ);
+        scene.add(taxiPt);
+      }
+
+      // ── Wall lanterns on east wall ────────────────────────
+      wallLantern(scene, 52.85, 3.5, 93,  -1);
+      wallLantern(scene, 52.85, 3.5, 100, -1);
+      wallLantern(scene, 52.85, 3.5, 107, -1);
+
+      // ── Simple iron sconces on north wall (pointing south) ─
+      {
+        const ironScM = new THREE.MeshStandardMaterial({ color: 0x100c04, roughness: 0.54, metalness: 0.70 });
+        const amberGM = new THREE.MeshStandardMaterial({
+          color: 0xffa030, emissive: 0xff6800, emissiveIntensity: 2.0,
+          transparent: true, opacity: 0.82, roughness: 0.10,
+        });
+        [31, 47].forEach(sx => {
+          const reach = 0.40;
+          box(scene, 0.04, 0.04, reach + 0.04, sx, 3.54, 109.8 - reach * 0.5, ironScM);  // bracket
+          box(scene, 0.032, 0.16, 0.032, sx, 3.44, 109.8 - reach,             ironScM);  // drop rod
+          box(scene, 0.22, 0.30, 0.22,   sx, 3.28, 109.8 - reach,             ironScM);  // cage body
+          box(scene, 0.15, 0.22, 0.04,   sx, 3.28, 109.8 - reach - 0.11,     amberGM);  // glass panels
+          box(scene, 0.15, 0.22, 0.04,   sx, 3.28, 109.8 - reach + 0.11,     amberGM);
+          box(scene, 0.04, 0.22, 0.15,   sx - 0.11, 3.28, 109.8 - reach,     amberGM);
+          box(scene, 0.04, 0.22, 0.15,   sx + 0.11, 3.28, 109.8 - reach,     amberGM);
+          box(scene, 0.26, 0.04, 0.26,   sx, 3.44, 109.8 - reach,             ironScM);  // cap
+          const coneMesh = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.14, 4), ironScM);
+          coneMesh.position.set(sx, 3.58, 109.8 - reach); scene.add(coneMesh);
+        });
+      }
+
+      // ── Central moth-eaten rug ────────────────────────────
+      rug(scene, TXX, TXZ, 17, 11, 0x3d1a12, 0x2c2010);
+
+      // ── Cobwebs in ceiling corners (thin transparent quads) ─
+      {
+        const cobMat = new THREE.MeshStandardMaterial({
+          color: 0x808878, roughness: 0.95,
+          transparent: true, opacity: 0.20,
+          side: THREE.DoubleSide, depthWrite: false,
+        });
+        box(scene, 2.2, 0.012, 2.2, 26.1, WALL_H - 0.008, 108.9, cobMat);  // NW corner
+        box(scene, 2.2, 0.012, 2.2, 51.9, WALL_H - 0.008, 108.9, cobMat);  // NE corner
+        box(scene, 1.8, 0.012, 1.8, 51.9, WALL_H - 0.008, 91.1,  cobMat);  // SE corner
+        box(scene, 1.4, 0.012, 1.4, 26.1, WALL_H - 0.008, 91.1,  cobMat);  // SW corner
+      }
+
+      // ── Tall glass-fronted display cabinets (east wall) ───
+      [93, 100, 107].forEach(cz => {
+        const cD = 2.0;
+        box(scene, 0.52, 2.5, cD,        52.74, 1.25, cz, mahogMat);        // wooden back/sides
+        box(scene, 0.04, 2.0, cD - 0.12, 52.43, 1.25, cz, M.glass);         // glass front
+        box(scene, 0.56, 0.08, cD + 0.04, 52.74, 2.54, cz, mahogMat);       // top rail
+        [-cD / 2 + 0.06, cD / 2 - 0.06].forEach(oz =>
+          box(scene, 0.07, 2.58, 0.07, 52.44, 1.29, cz + oz, mahogMat));    // corner posts
+        addWallAABB(52.65, cz, 0.64, cD + 0.1);
+      });
+
+      // ── Cabinet contents — mounted specimens behind glass ─
+      {
+        const specBrdMat = new THREE.MeshStandardMaterial({ color: 0x181008, roughness: 0.88 });
+        const bonesMat   = new THREE.MeshStandardMaterial({ color: 0xd8cab0, roughness: 0.72 });
+        const scaleMat   = new THREE.MeshStandardMaterial({ color: 0x2a380a, roughness: 0.88 });
+
+        // Cabinet at Z=93: mounted raven / bird of prey (standing)
+        { const b = new THREE.Group();
+          const bd = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 5), specBrdMat);
+          bd.scale.set(0.88, 0.70, 0.60); b.add(bd);
+          const bh = new THREE.Mesh(new THREE.SphereGeometry(0.056, 6, 5), specBrdMat);
+          bh.position.set(0, 0.11, 0.08); b.add(bh);
+          const bk = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.052, 4),
+            new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.3 }));
+          bk.rotation.x = Math.PI / 2 + 0.3; bk.position.set(0, 0.07, 0.135); b.add(bk);
+          // Wing stubs
+          [-1, 1].forEach(s => {
+            const w = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 0.32), specBrdMat);
+            w.rotation.z = s * 0.22; w.position.set(s * 0.12, -0.02, -0.04); b.add(w);
+          });
+          b.position.set(52.0, 1.36, 93); scene.add(b); }
+
+        // Cabinet at Z=100: small mammal skull
+        { const sk = new THREE.Mesh(new THREE.SphereGeometry(0.11, 7, 5), bonesMat);
+          sk.scale.set(1.0, 0.74, 0.88);
+          sk.position.set(52.0, 1.34, 100); scene.add(sk);
+          const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.03, 0.14), bonesMat);
+          jaw.position.set(52.0, 1.19, 100.06); scene.add(jaw); }
+
+        // Cabinet at Z=107: coiled preserved snake
+        for (let i = 0; i < 9; i++) {
+          const a = (i / 9) * Math.PI * 2;
+          const seg = new THREE.Mesh(new THREE.SphereGeometry(0.050, 5, 4), scaleMat);
+          seg.position.set(52.0 + Math.cos(a) * 0.17, 1.12 + i * 0.052, 107 + Math.sin(a) * 0.20);
+          scene.add(seg);
+        }
+      }
+
+      // ── Taxidermy wolf mount — predatory centrepiece ──────
+      {
+        const wFurMat = new THREE.MeshStandardMaterial({ color: 0x3a2d1e, roughness: 0.94, metalness: 0.0 });
+        const wEyeMat = new THREE.MeshStandardMaterial({
+          color: 0xd4a000, emissive: 0xa07000, emissiveIntensity: 0.58, roughness: 0.04,
+        });
+        // Wooden display platform
+        box(scene, 2.2, 0.14, 1.0, 39, 0.07, 97, mahogMat);
+        addWallAABB(39, 97, 2.3, 1.1);
+        const wolf = new THREE.Group();
+        const wBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 1.0, 8), wFurMat);
+        wBody.rotation.z = Math.PI / 2; wBody.position.set(0, 0.54, 0); wolf.add(wBody);
+        const wNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.28, 7), wFurMat);
+        wNeck.rotation.z = Math.PI / 2 - 0.40; wNeck.position.set(0.52, 0.60, 0); wolf.add(wNeck);
+        const wHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), wFurMat);
+        wHead.scale.set(0.92, 0.82, 1.12); wHead.position.set(0.70, 0.66, 0); wolf.add(wHead);
+        const wSnout = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.26, 6), wFurMat);
+        wSnout.rotation.z = Math.PI / 2; wSnout.position.set(0.93, 0.58, 0); wolf.add(wSnout);
+        [-0.09, 0.09].forEach(ez => {
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.068, 0.18, 5), wFurMat);
+          ear.position.set(0.62, 0.86, ez); wolf.add(ear);
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.040, 6, 5), wEyeMat);
+          eye.position.set(0.85, 0.68, ez); wolf.add(eye);
+        });
+        [[-0.32, -0.38], [-0.32, 0.38], [0.32, -0.38], [0.32, 0.38]].forEach(([lx, lz]) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.038, 0.44, 5), wFurMat);
+          leg.position.set(lx, 0.20, lz); wolf.add(leg);
+        });
+        const wTail = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.022, 0.54, 5), wFurMat);
+        wTail.rotation.z = 0.62; wTail.position.set(-0.64, 0.66, 0); wolf.add(wTail);
+        wolf.position.set(39, 0.14, 97);
+        wolf.rotation.y = 0.30;  // slight turn — facing the entrance
+        scene.add(wolf);
+      }
+
+      // ── Fox mount on pedestal ─────────────────────────────
+      {
+        const fFurMat = new THREE.MeshStandardMaterial({ color: 0x8a3a0c, roughness: 0.93, metalness: 0.0 });
+        const fEyeMat = new THREE.MeshStandardMaterial({
+          color: 0xc8b800, emissive: 0x907000, emissiveIntensity: 0.50, roughness: 0.04,
+        });
+        box(scene, 0.65, 0.90, 0.65, 46, 0.45, 93, mahogMat);
+        addWallAABB(46, 93, 0.76, 0.76);
+        const fox = new THREE.Group();
+        const fBody = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.58, 7), fFurMat);
+        fBody.rotation.z = Math.PI / 2 - 0.28; fBody.position.set(0, 0.22, 0); fox.add(fBody);
+        const fHead = new THREE.Mesh(new THREE.SphereGeometry(0.13, 7, 6), fFurMat);
+        fHead.scale.set(0.85, 0.88, 1.05); fHead.position.set(0.34, 0.32, 0); fox.add(fHead);
+        const fSnout = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.20, 5), fFurMat);
+        fSnout.rotation.z = Math.PI / 2; fSnout.position.set(0.50, 0.24, 0); fox.add(fSnout);
+        [-0.06, 0.06].forEach(ez => {
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.13, 4), fFurMat);
+          ear.position.set(0.26, 0.46, ez); fox.add(ear);
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.024, 5, 4), fEyeMat);
+          eye.position.set(0.44, 0.34, ez); fox.add(eye);
+        });
+        const fTail = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.022, 0.42, 6), fFurMat);
+        fTail.rotation.z = 0.72; fTail.position.set(-0.34, 0.36, 0); fox.add(fTail);
+        fox.position.set(46, 0.90, 93);
+        fox.rotation.y = -0.50;
+        scene.add(fox);
+      }
+
+      // ── Imperial Eagle Specimen — stealable centrepiece ───
+      {
+        const eMat  = new THREE.MeshStandardMaterial({ color: 0x1a1008, roughness: 0.88, metalness: 0.0 });
+        const eHead = new THREE.MeshStandardMaterial({ color: 0xe8e0c8, roughness: 0.88, metalness: 0.0 });
+        const eBeak = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.32, metalness: 0.12 });
+        const eEye  = new THREE.MeshStandardMaterial({
+          color: 0xd48000, emissive: 0xb06000, emissiveIntensity: 0.65, roughness: 0.04,
+        });
+        const brMat = new THREE.MeshStandardMaterial({ color: 0x2a1808, roughness: 0.88 });
+        // Pedestal
+        box(scene, 0.55, 1.02, 0.55, 32, 0.51, 95, mahogMat);
+        addWallAABB(32, 95, 0.65, 0.65);
+        const eagle = new THREE.Group();
+        // Perch branch
+        const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.52, 6), brMat);
+        branch.rotation.z = Math.PI / 2; eagle.add(branch);
+        // Body
+        const eBody = new THREE.Mesh(new THREE.SphereGeometry(0.22, 9, 7), eMat);
+        eBody.scale.set(1.0, 0.72, 0.64); eBody.position.set(0, 0.22, 0); eagle.add(eBody);
+        // White head
+        const eHd = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 6), eHead);
+        eHd.position.set(0, 0.38, 0.12); eagle.add(eHd);
+        // Hooked beak
+        const eBk = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.10, 4), eBeak);
+        eBk.rotation.x = Math.PI / 2 + 0.55; eBk.position.set(0, 0.30, 0.23); eagle.add(eBk);
+        // Eyes
+        [-0.06, 0.06].forEach(ex => {
+          const ey = new THREE.Mesh(new THREE.SphereGeometry(0.020, 5, 4), eEye);
+          ey.position.set(ex, 0.38, 0.19); eagle.add(ey);
+        });
+        // Spread wings
+        [-1, 1].forEach(side => {
+          const wA = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.55), eMat);
+          wA.rotation.z = side * 0.28; wA.position.set(side * 0.28, 0.16, -0.06); eagle.add(wA);
+          const wB = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.30), eMat);
+          wB.rotation.z = side * 0.50; wB.position.set(side * 0.46, 0.06, -0.08); eagle.add(wB);
+        });
+        // Talons gripping the branch
+        [-0.14, -0.05, 0.05, 0.14].forEach(ox => {
+          const t = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.004, 0.11, 4),
+            new THREE.MeshStandardMaterial({ color: 0x1a1008, roughness: 0.60 }));
+          t.rotation.x = 0.25; t.position.set(ox, -0.06, 0.06); eagle.add(t);
+        });
+        eagle.position.set(32, 1.02, 95);
+        scene.add(eagle);
+        stealables.push({ mesh: eagle, item: 'eagle', x: 32, z: 95, taken: false, bonus: true, label: 'Imperial Eagle Specimen', value: 18500000 });
+        { const eRing = new THREE.Mesh(new THREE.RingGeometry(0.40, 0.62, 24),
+            new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+          eRing.rotation.x = -Math.PI / 2; eRing.position.set(32, 0.02, 95); scene.add(eRing);
+          eagle.userData.floorRing = eRing; }
+      }
+
+      // ── Victorian Specimen Jar — stealable on the desk ────
+      {
+        const jarGM  = new THREE.MeshStandardMaterial({ color: 0xb8d898, roughness: 0.05, metalness: 0.0, transparent: true, opacity: 0.52 });
+        const jarLM  = new THREE.MeshStandardMaterial({ color: 0x2c1208, roughness: 0.65, metalness: 0.18 });
+        const crtM   = new THREE.MeshStandardMaterial({ color: 0x4a3018, roughness: 0.82 });
+        const lblM   = new THREE.MeshStandardMaterial({ color: 0xe0d080, roughness: 0.86 });
+        const jar = new THREE.Group();
+        const jBody = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.078, 0.26, 10), jarGM);
+        jBody.position.y = 0.13; jar.add(jBody);
+        const jLid  = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.038, 10), jarLM);
+        jLid.position.y = 0.279; jar.add(jLid);
+        const crt   = new THREE.Mesh(new THREE.SphereGeometry(0.052, 6, 5), crtM);
+        crt.scale.set(0.9, 0.55, 1.1); crt.position.y = 0.11; jar.add(crt);
+        jar.position.set(46, 0.88, 104);
+        scene.add(jar);
+        // Yellowed paper specimen label
+        box(scene, 0.001, 0.082, 0.120, 45.912, 0.972, 104, lblM);
+        stealables.push({ mesh: jar, item: 'specimenjar', x: 46, z: 104, taken: false, bonus: true, label: 'Victorian Specimen Jar', value: 3200000 });
+        { const jRing = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.30, 20),
+            new THREE.MeshBasicMaterial({ color: 0x88ff88, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+          jRing.rotation.x = -Math.PI / 2; jRing.position.set(46, 0.02, 104); scene.add(jRing);
+          jar.userData.floorRing = jRing; }
+      }
+
+      // ── Mahogany taxidermist's desk (NE quadrant) ─────────
+      {
+        const toolMt  = new THREE.MeshStandardMaterial({ color: 0xa0a0b2, roughness: 0.32, metalness: 0.80 });
+        const paperMt = new THREE.MeshStandardMaterial({ color: 0xdfd07a, roughness: 0.92 });
+        const inkMt   = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.42 });
+        // Desk top
+        box(scene, 2.2, 0.08, 0.90, 47, 0.86, 104.7, mahogMat);
+        // Legs
+        [[-0.95, 0.38], [-0.95, -0.38], [0.95, 0.38], [0.95, -0.38]].forEach(([lx, lz]) =>
+          box(scene, 0.07, 0.86, 0.07, 47 + lx, 0.43, 104.7 + lz, mahogMat));
+        // Drawer unit
+        box(scene, 0.42, 0.82, 0.82, 47.89, 0.43, 104.7, mahogMat);
+        box(scene, 0.055, 0.016, 0.016, 47.89, 0.50, 104.32, brassSmMat);  // drawer pulls
+        box(scene, 0.055, 0.016, 0.016, 47.89, 0.66, 104.32, brassSmMat);
+        addWallAABB(47, 104.7, 2.3, 0.98);
+        // Surgical tools scattered on surface
+        box(scene, 0.40, 0.016, 0.028, 47.2, 0.908, 104.5, toolMt);   // scalpel
+        box(scene, 0.34, 0.016, 0.022, 46.6, 0.908, 104.9, toolMt);   // pin tool
+        box(scene, 0.26, 0.016, 0.025, 47.5, 0.908, 105.1, toolMt);   // small blade
+        // Ink bottle
+        const inkB = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.034, 0.065, 8), inkMt);
+        inkB.position.set(46.4, 0.902, 104.6); scene.add(inkB);
+        // Rolled specimen-label papers
+        box(scene, 0.20, 0.036, 0.036, 47.0, 0.900, 104.44, paperMt);
+        box(scene, 0.16, 0.032, 0.032, 46.8, 0.900, 104.72, paperMt);
+        box(scene, 0.14, 0.028, 0.028, 47.3, 0.900, 105.08, paperMt);
+      }
+
+      // ── Security camera (north wall, watching the room) ───
+      cameraData.push({ x: 38, y: WALL_H - 0.3, z: 109.8, sweepAngle: Math.PI / 2.5, facingZ: -1 });
+
+      // ── Guard patrol ──────────────────────────────────────
+      guardData.push({
+        spawnX: 39, spawnZ: 100,
+        waypoints: _route(
+          [new THREE.Vector3(32,0,93), new THREE.Vector3(48,0,93), new THREE.Vector3(48,0,108), new THREE.Vector3(30,0,108), new THREE.Vector3(30,0,93)],
+          [new THREE.Vector3(35,0,95), new THREE.Vector3(49,0,102), new THREE.Vector3(35,0,108), new THREE.Vector3(49,0,108)],
+          [new THREE.Vector3(30,0,92), new THREE.Vector3(50,0,100), new THREE.Vector3(30,0,109), new THREE.Vector3(50,0,100)]
+        ),
+      });
+
+    } // end Salle de Taxidermie
 
     return {
       walls,
