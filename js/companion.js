@@ -325,7 +325,7 @@ window.Companion = (function () {
           UI.addItem(lootItem.item);
           if (lootItem.item === 'painting') UI.completeObjective('painting');
           if (lootItem.item === 'crown')    UI.completeObjective('crown');
-          UI.showAlert('Partner grabbed the ' + lootItem.item + '!', 2500);
+          UI.showAlert('Partner grabbed the ' + (lootItem.label || lootItem.item) + '!', 2500);
           UI.SFX.interact();
           G._pickupFlash = 1.0;
           lootTarget = null;

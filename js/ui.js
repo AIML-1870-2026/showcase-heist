@@ -31,10 +31,20 @@ window.UI = (function () {
   const alarmTimerEl  = $('alarm-timer');
   const companionMenu = $('companion-menu');
 
-  const OBJ_ORDER = [
+  let OBJ_ORDER = [
     'enter', 'yellow', 'gallery', 'painting',
     'blue', 'crown', 'escape',
   ];
+
+  const ALL_OBJ_IDS = ['enter', 'yellow', 'gallery', 'painting', 'blue', 'crown', 'escape'];
+
+  function setMissionObjOrder(order) {
+    OBJ_ORDER = order;
+    ALL_OBJ_IDS.forEach(id => {
+      const el = document.querySelector(`[data-obj="${id}"]`);
+      if (el) el.style.display = order.includes(id) ? '' : 'none';
+    });
+  }
 
   // ── Screen management ──────────────────────────────────
   function showScreen(name) {
@@ -596,6 +606,7 @@ window.UI = (function () {
     showAchievement,
     startAmbient,
     stopAmbient,
+    setMissionObjOrder,
     initObjectives,
     setObjective,
     completeObjective,

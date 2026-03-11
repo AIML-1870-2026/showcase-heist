@@ -1174,7 +1174,7 @@ window.Player = (function () {
         } else {
           G.inventory[st.item] = true;
           UI.addItem(st.item === 'painting' ? 'painting' : 'crown');
-          UI.showAlert((st.item === 'painting' ? 'Painting' : 'Crown') + ' stolen! ALARM!', 3500);
+          UI.showAlert((st.label || (st.item === 'painting' ? 'Painting' : 'Crown')) + ' stolen! ALARM!', 3500);
           UI.completeObjective(st.item);
         }
         // Alert guards but do NOT start countdown — only laser trips start the timer
@@ -1423,7 +1423,8 @@ window.Player = (function () {
       }
     }
     // Escape route prompts
-    if (!found && G.inventory.painting && G.inventory.crown) {
+    const _winItems = G.missionWinItems || ['painting', 'crown'];
+    if (!found && _winItems.every(k => G.inventory[k])) {
       // Service exit (west lobby wall, X=-20, Z=15)
       const seDx = pos.x - (-20), seDz = pos.z - 15;
       if (seDx * seDx + seDz * seDz < 3.5 * 3.5) {

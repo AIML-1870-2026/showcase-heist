@@ -41,6 +41,7 @@
     vents:          [],
     alarm:          { level: 0, active: false },
     inventory:      { yellow: false, blue: false, red: false, painting: false, crown: false },
+    missionWinItems: ['painting', 'crown'],
     playerCaught:   false,
     currentRoom:    'Lobby',
     _alarmLight:    null,
@@ -383,8 +384,9 @@
 
   function checkWin(pos) {
     const G = window.G;
-    const hasAnyLoot = G.inventory.painting || G.inventory.crown;
-    const hasFullLoot = G.inventory.painting && G.inventory.crown;
+    const winItems = G.missionWinItems || ['painting', 'crown'];
+    const hasAnyLoot  = winItems.some(k => G.inventory[k]);
+    const hasFullLoot = winItems.every(k => G.inventory[k]);
 
     // Feature 8: Service exit (west Lobby, X=-20, Z=15)
     if (hasAnyLoot) {
@@ -1787,9 +1789,14 @@
   }
 
   // ── Mission variants — randomised each run ─────────────
+  // objOrder: which objectives appear and in what sequence
+  // stealConfig: remap bonus stealables to primary targets (by label → slot)
+  // winItems: inventory keys ALL required to trigger escape
+  // rooms: distinct rooms visited (used to filter in easy mode)
   const MISSION_VARIANTS = [
     {
       name: 'Classic Heist',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'blue', 'crown', 'escape'],
       objectives: {
         enter:    'Break into the Louvre',
         yellow:   'Find the Yellow Keycard (lobby desk)',
@@ -1799,6 +1806,9 @@
         crown:    'Steal the Crown Jewel',
         escape:   'Escape the Louvre',
       },
+      stealConfig: [],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
       navTargets: {
         yellow:  { x:  0,    z: 16.5  },
         gallery: { x: -14,   z: 60    },
@@ -1809,103 +1819,279 @@
       },
     },
     {
-      name: 'East Wing Approach',
+      name: 'Night at the Museum',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'crown', 'escape'],
       objectives: {
-        enter:    'Slip in through the lobby',
-        yellow:   'Locate Yellow Keycard (north lobby)',
-        gallery:  'Sneak into the Grande Galerie',
-        painting: 'Grab the Mona Lisa (far west wall)',
-        blue:     'Find the Blue Keycard (east gallery)',
-        crown:    'Take the Crown',
-        escape:   'Escape via service exit',
-      },
-      navTargets: {
-        yellow:  { x:  8,    z: 22    },
-        gallery: { x:  0,    z: 39.75 },
-        painting:{ x: -24.9, z: 92    },
-        blue:    { x:  14,   z: 96    },
-        crown:   { x:  0,    z: 140   },
-        escape:  { x: -20,   z: 15    },
-      },
-    },
-    {
-      name: 'Night Raid',
-      objectives: {
-        enter:    'Infiltrate after hours',
-        yellow:   'Recover Yellow Keycard (west lobby)',
-        gallery:  'Sneak into the Grande Galerie',
-        painting: 'Swipe the Mona Lisa',
-        blue:     'Find the Blue Keycard',
-        crown:    'Secure the Crown',
-        escape:   'Vanish into the night',
-      },
-      navTargets: {
-        yellow:  { x: -8,   z: 12    },
-        gallery: { x: -14,  z: 60    },
-        painting:{ x: -24.9,z: 92    },
-        blue:    { x:  14,  z: 70    },
-        crown:   { x:  0,   z: 140   },
-        escape:  { x:  0,   z: 163   },
-      },
-    },
-    {
-      name: 'West Vent Infiltration',
-      objectives: {
-        enter:    'Slip through the front entrance',
+        enter:    'Slip in after closing time',
         yellow:   'Find the Yellow Keycard',
         gallery:  'Enter the Grande Galerie',
-        painting: 'Steal the Mona Lisa (west wall)',
-        blue:     'Find the Blue Keycard',
-        crown:    'Take the Crown Jewel',
-        escape:   'Escape out the front',
+        painting: 'Steal the Imperial Eagle (Taxidermy Hall)',
+        crown:    'Steal the Specimen Jar (Taxidermy Hall)',
+        escape:   'Escape before dawn',
       },
+      stealConfig: [
+        { label: 'Imperial Eagle Specimen', mapTo: 'painting' },
+        { label: 'Victorian Specimen Jar',  mapTo: 'crown'   },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
       navTargets: {
-        yellow:  { x: -14,  z: 34    },
-        gallery: { x: -14,  z: 60    },
-        painting:{ x: -24.9,z: 92    },
-        blue:    { x:  14,  z: 96    },
-        crown:   { x:  0,   z: 140   },
-        escape:  { x:  0,   z: 163   },
+        yellow:  { x:  0,   z: 16.5 },
+        gallery: { x: -14,  z: 60   },
+        painting:{ x: 32,   z: 95   },
+        crown:   { x: 46,   z: 104  },
+        escape:  { x:  0,   z: 163  },
       },
     },
     {
-      name: 'East Vent Shortcut',
+      name: 'Sacred Relics',
+      objOrder: ['enter', 'yellow', 'gallery', 'blue', 'painting', 'crown', 'escape'],
+      objectives: {
+        enter:    'Infiltrate the Louvre',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        blue:     'Find the Blue Keycard',
+        painting: 'Steal the Eye of Ra (Egyptian Catacomb)',
+        crown:    "Steal the Pharaoh's Scepter (Catacomb)",
+        escape:   'Escape before sunrise',
+      },
+      stealConfig: [
+        { label: 'Eye of Ra Amulet',  mapTo: 'painting' },
+        { label: "Pharaoh's Scepter", mapTo: 'crown'    },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 4,
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5  },
+        gallery: { x: -14,   z: 60    },
+        blue:    { x:  14,   z: 70    },
+        painting:{ x: 31,    z: 148.5 },
+        crown:   { x: 51,    z: 148.5 },
+        escape:  { x:  0,    z: 163   },
+      },
+    },
+    {
+      name: 'The Impressionist',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'blue', 'crown', 'escape'],
+      objectives: {
+        enter:    'Access the Louvre',
+        yellow:   'Locate the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
+        painting: 'Steal Les Nymphéas — Monet (East Wing)',
+        blue:     'Find the Blue Keycard',
+        crown:    'Steal the Crown Jewel',
+        escape:   'Disappear into the night',
+      },
+      stealConfig: [
+        { label: 'Les Nymphéas', mapTo: 'painting' },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5 },
+        gallery: { x: -14,   z: 60   },
+        painting:{ x: -49.9, z: 77   },
+        blue:    { x:  14,   z: 96   },
+        crown:   { x:  0,    z: 140  },
+        escape:  { x:  0,    z: 163  },
+      },
+    },
+    {
+      name: 'The Fabergé Affair',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'blue', 'crown', 'escape'],
+      objectives: {
+        enter:    'Enter through the front lobby',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        painting: 'Steal the Fabergé Egg (East Wing)',
+        blue:     'Find the Blue Keycard',
+        crown:    'Steal the Crown Jewel',
+        escape:   'Escape the museum',
+      },
+      stealConfig: [
+        { label: 'Fabergé Egg', mapTo: 'painting' },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
+      navTargets: {
+        yellow:  { x:  0,   z: 16.5 },
+        gallery: { x: -14,  z: 60   },
+        painting:{ x: 35,   z: 82   },
+        blue:    { x:  14,  z: 96   },
+        crown:   { x:  0,   z: 140  },
+        escape:  { x:  0,   z: 163  },
+      },
+    },
+    {
+      name: 'The Antiquarian',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'blue', 'crown', 'escape'],
+      objectives: {
+        enter:    'Break into the Louvre',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
+        painting: 'Steal the Jade Figurine (Gallery)',
+        blue:     'Find the Blue Keycard',
+        crown:    'Steal the Royal Scepter (Crown Vault)',
+        escape:   'Escape with the loot',
+      },
+      stealConfig: [
+        { label: 'Jade Figurine',  mapTo: 'painting' },
+        { label: 'Royal Scepter',  mapTo: 'crown'    },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
+      navTargets: {
+        yellow:  { x:  0,   z: 16.5 },
+        gallery: { x: -14,  z: 60   },
+        painting:{ x:  0,   z: 88   },
+        blue:    { x:  14,  z: 96   },
+        crown:   { x: -9,   z: 135  },
+        escape:  { x:  0,   z: 163  },
+      },
+    },
+    {
+      name: 'Taxidermy Run',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'escape'],
+      objectives: {
+        enter:    'Infiltrate the Louvre',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
+        painting: 'Steal the Imperial Eagle (Taxidermy Hall)',
+        escape:   'Escape the museum',
+      },
+      stealConfig: [
+        { label: 'Imperial Eagle Specimen', mapTo: 'painting' },
+      ],
+      winItems: ['painting'],
+      rooms: 3,
+      navTargets: {
+        yellow:  { x:  0,  z: 16.5 },
+        gallery: { x: -14, z: 60   },
+        painting:{ x: 32,  z: 95   },
+        escape:  { x:  0,  z: 163  },
+      },
+    },
+    {
+      name: "Pharaoh's Vault",
+      objOrder: ['enter', 'yellow', 'gallery', 'blue', 'painting', 'escape'],
+      objectives: {
+        enter:    'Breach the Louvre perimeter',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
+        blue:     'Find the Blue Keycard',
+        painting: 'Steal the Eye of Ra (Egyptian Catacomb)',
+        escape:   'Exit before sunrise',
+      },
+      stealConfig: [
+        { label: 'Eye of Ra Amulet', mapTo: 'painting' },
+      ],
+      winItems: ['painting'],
+      rooms: 4,
+      navTargets: {
+        yellow:  { x:  0,  z: 16.5  },
+        gallery: { x: -14, z: 60    },
+        blue:    { x:  14, z: 70    },
+        painting:{ x: 31,  z: 148.5 },
+        escape:  { x:  0,  z: 163   },
+      },
+    },
+    {
+      name: 'The Scarab Conspiracy',
+      objOrder: ['enter', 'yellow', 'gallery', 'blue', 'painting', 'crown', 'escape'],
+      objectives: {
+        enter:    'Enter through the main lobby',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        blue:     'Find the Blue Keycard',
+        painting: 'Steal the Scarab Pectoral (Catacomb)',
+        crown:    'Steal the Crown Jewel (Crown Vault)',
+        escape:   'Escape the Louvre',
+      },
+      stealConfig: [
+        { label: 'Scarab Pectoral', mapTo: 'painting' },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 4,
+      navTargets: {
+        yellow:  { x:  0,  z: 16.5  },
+        gallery: { x: -14, z: 60    },
+        blue:    { x:  14, z: 70    },
+        painting:{ x: 41,  z: 148.5 },
+        crown:   { x:  0,  z: 140   },
+        escape:  { x:  0,  z: 163   },
+      },
+    },
+    {
+      name: 'Grand Tour',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'blue', 'crown', 'escape'],
       objectives: {
         enter:    'Enter through the lobby',
-        yellow:   'Find Yellow Keycard (north lobby)',
-        gallery:  'Enter the Grande Galerie',
-        painting: 'Steal the Mona Lisa',
-        blue:     'Find the Blue Keycard (east gallery)',
-        crown:    'Grab the Crown',
-        escape:   'Escape via the front gate',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        painting: 'Steal Les Nymphéas — Monet (West Wing)',
+        blue:     'Find the Blue Keycard',
+        crown:    'Steal the Royal Scepter (Crown Vault)',
+        escape:   'Exit the museum',
       },
+      stealConfig: [
+        { label: 'Les Nymphéas',  mapTo: 'painting' },
+        { label: 'Royal Scepter', mapTo: 'crown'    },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
       navTargets: {
-        yellow:  { x:  0,   z: 16.5  },
-        gallery: { x:  0,   z: 39.75 },
-        painting:{ x: -24.9,z: 92    },
-        blue:    { x:  14,  z: 96    },
-        crown:   { x:  0,   z: 140   },
-        escape:  { x:  0,   z: 163   },
+        yellow:  { x:  0,    z: 16.5 },
+        gallery: { x: -14,   z: 60   },
+        painting:{ x: -49.9, z: 77   },
+        blue:    { x:  14,   z: 96   },
+        crown:   { x: -9,    z: 135  },
+        escape:  { x:  0,    z: 163  },
       },
     },
     {
-      name: 'Ghost Protocol',
+      name: 'Double Cross',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'crown', 'escape'],
       objectives: {
-        enter:    'Access via the lobby',
+        enter:    'Slip inside the Louvre',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        painting: 'Steal the Mona Lisa (west wall)',
+        crown:    'Steal the Specimen Jar (Taxidermy Hall)',
+        escape:   'Vanish without a trace',
+      },
+      stealConfig: [
+        { label: 'Victorian Specimen Jar', mapTo: 'crown' },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 3,
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5 },
+        gallery: { x: -14,   z: 60   },
+        painting:{ x: -24.9, z: 92   },
+        crown:   { x: 46,    z: 104  },
+        escape:  { x:  0,    z: 163  },
+      },
+    },
+    {
+      name: 'The Crown Gambit',
+      objOrder: ['enter', 'yellow', 'gallery', 'blue', 'crown', 'escape'],
+      objectives: {
+        enter:    'Access the Louvre',
         yellow:   'Find the Yellow Keycard',
         gallery:  'Enter the Grande Galerie',
-        painting: 'Take the Mona Lisa',
         blue:     'Find the Blue Keycard',
-        crown:    'Secure the Crown Jewel',
-        escape:   'Exit through the lobby tunnel',
+        crown:    'Steal the Crown Jewel',
+        escape:   'Escape with the Crown',
       },
+      stealConfig: [],
+      winItems: ['crown'],
+      rooms: 3,
       navTargets: {
-        yellow:  { x: -14,  z: 34    },
-        gallery: { x: -14,  z: 60    },
-        painting:{ x: -24.9,z: 92    },
-        blue:    { x:  14,  z: 96    },
-        crown:   { x:  0,   z: 140   },
-        escape:  { x:  0,   z: 28    },
+        yellow:  { x:  0,  z: 16.5 },
+        gallery: { x: -14, z: 60   },
+        blue:    { x:  14, z: 70   },
+        crown:   { x:  0,  z: 140  },
+        escape:  { x:  0,  z: 163  },
       },
     },
   ];
@@ -1913,18 +2099,56 @@
   let NAV_TARGETS = MISSION_VARIANTS[0].navTargets;
   let _lastVariantIdx = -1;
 
+  // Dynamically reconfigure which stealables are primary targets for this mission
+  function configureMissionStealables(variant) {
+    const G = window.G;
+    if (!G.stealables) return;
+
+    if (variant.stealConfig && variant.stealConfig.length > 0) {
+      // Mark original painting/crown as bonus so they're optional this run
+      ['painting', 'crown'].forEach(key => {
+        const st = G.stealables.find(s => s.item === key);
+        if (st) st.bonus = true;
+      });
+      // Promote mission targets to primary (non-bonus) and remap their item slot
+      variant.stealConfig.forEach(cfg => {
+        const st = G.stealables.find(s => s.label === cfg.label);
+        if (st) { st.bonus = false; st.item = cfg.mapTo; }
+      });
+    }
+
+    G.missionWinItems = variant.winItems || ['painting', 'crown'];
+  }
+
   function pickMissionVariant() {
+    const G = window.G;
+    const diff = G ? G.difficulty : 'easy';
+
+    // In easy mode require missions that visit at least 3 distinct rooms
+    const pool = (diff === 'easy')
+      ? MISSION_VARIANTS.filter(v => v.rooms >= 3)
+      : MISSION_VARIANTS;
+
     let idx;
-    do { idx = Math.floor(Math.random() * MISSION_VARIANTS.length); }
-    while (idx === _lastVariantIdx && MISSION_VARIANTS.length > 1);
-    _lastVariantIdx = idx;
-    const v = MISSION_VARIANTS[idx];
+    do { idx = Math.floor(Math.random() * pool.length); }
+    while (pool.length > 1 && pool[idx] === MISSION_VARIANTS[_lastVariantIdx]);
+    _lastVariantIdx = MISSION_VARIANTS.indexOf(pool[idx]);
+
+    const v = pool[idx];
     NAV_TARGETS = v.navTargets;
+
+    // Set which objectives are visible for this mission
+    UI.setMissionObjOrder(v.objOrder);
+
     // Update objective text in HUD
     Object.entries(v.objectives).forEach(([id, text]) => {
       const el = document.querySelector('[data-obj="' + id + '"]');
       if (el) el.textContent = text;
     });
+
+    // Configure which stealables are required
+    configureMissionStealables(v);
+
     // Show mission name briefly
     UI.showAlert('Mission: ' + v.name, 3000);
   }
