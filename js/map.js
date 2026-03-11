@@ -480,7 +480,8 @@ window.GameMap = (function () {
   }
 
   // ── Painting placard (canvas-texture label beneath a painting) ──
-  function placard(scene, x, y, z, title, artist, isWestWall) {
+  // wallDir: 'west' | 'east' | 'north' | 'south'
+  function placard(scene, x, y, z, title, artist, wallDir) {
     const W = 256, H = 72;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
@@ -499,10 +500,25 @@ window.GameMap = (function () {
     ctx.font = '14px serif';
     ctx.fillText(artist, W/2, 50);
     const mat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) });
-    const offset = isWestWall ? 0.12 : -0.12;
-    const pw = 1.4, ph = 0.4;
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(offset)*2, ph, pw), mat);
-    mesh.position.set(x + offset, y, z);
+    const pw = 1.4, ph = 0.4, thin = 0.04;
+    let mesh;
+    if (wallDir === 'west') {
+      // Plaque flat on west wall, visible face points east (+X)
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(thin, ph, pw), mat);
+      mesh.position.set(x + 0.15, y, z);
+    } else if (wallDir === 'east') {
+      // Plaque flat on east wall, visible face points west (-X)
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(thin, ph, pw), mat);
+      mesh.position.set(x - 0.15, y, z);
+    } else if (wallDir === 'north') {
+      // Plaque flat on north wall, visible face points south (-Z, toward player)
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, thin), mat);
+      mesh.position.set(x, y, z - 0.15);
+    } else { // 'south'
+      // Plaque flat on south wall, visible face points north (+Z, toward player)
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, thin), mat);
+      mesh.position.set(x, y, z + 0.15);
+    }
     scene.add(mesh);
   }
 
@@ -1592,10 +1608,10 @@ window.GameMap = (function () {
     // Paintings on the lobby north-wall stubs (flanking yellow door), facing south into lobby
     wallPaintingNS(scene, -15, 3.5, 39.65, M.paintings[1], false);
     paintingSpotlight(scene, -15, 3.5, 39.65, 'north');
-    placard(scene, -15, 2.6, 39.65, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
+    placard(scene, -15, 2.6, 39.65, 'The Raft of the Medusa', 'Théodore Géricault, 1818', 'north');
     wallPaintingNS(scene,  15, 3.5, 39.65, M.paintings[2], false);
     paintingSpotlight(scene,  15, 3.5, 39.65, 'north');
-    placard(scene,  15, 2.6, 39.65, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
+    placard(scene,  15, 2.6, 39.65, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', 'north');
 
     // Velvet runner carpet toward the gallery door
     rug(scene, 0, 38, 3, 4, 0x6b1a1a, 0xc8a040);
@@ -1650,37 +1666,37 @@ window.GameMap = (function () {
     // Extra lobby paintings — west wall (Z=14 was inside the service exit gap Z=13.5→16.5, moved to Z=11)
     wallPainting(scene, -19.9, 3.5, 11, M.vangoghSunflowers, true);
     paintingSpotlight(scene, -19.9, 3.5, 11, 'west');
-    placard(scene, -19.9, 2.6, 11, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    placard(scene, -19.9, 2.6, 11, 'Sunflowers', 'Vincent van Gogh, 1888', 'west');
     wallPainting(scene, -19.9, 3.5, 20, M.monetSunrise, true);
     paintingSpotlight(scene, -19.9, 3.5, 20, 'west');
-    placard(scene, -19.9, 2.6, 20, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    placard(scene, -19.9, 2.6, 20, 'Impression, Sunrise', 'Claude Monet, 1872', 'west');
     wallPainting(scene, -19.9, 3.5, 34, M.cezanne, true);
     paintingSpotlight(scene, -19.9, 3.5, 34, 'west');
-    placard(scene, -19.9, 2.6, 34, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', true);
+    placard(scene, -19.9, 2.6, 34, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'west');
     // Extra lobby paintings — east wall
     wallPainting(scene, 19.9, 3.5, 10, M.vangoghStarry, false);
     paintingSpotlight(scene, 19.9, 3.5, 10, 'east');
-    placard(scene, 19.9, 2.6, 10, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    placard(scene, 19.9, 2.6, 10, 'The Starry Night', 'Vincent van Gogh, 1889', 'east');
     wallPainting(scene, 19.9, 3.5, 22, M.renoir, false);
     paintingSpotlight(scene, 19.9, 3.5, 22, 'east');
-    placard(scene, 19.9, 2.6, 22, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    placard(scene, 19.9, 2.6, 22, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', 'east');
     wallPainting(scene, 19.9, 3.5, 36, M.monetPoppies, false);
     paintingSpotlight(scene, 19.9, 3.5, 36, 'east');
-    placard(scene, 19.9, 2.6, 36, 'Poppies', 'Claude Monet, 1873', false);
+    placard(scene, 19.9, 2.6, 36, 'Poppies', 'Claude Monet, 1873', 'east');
     // Extra lobby paintings — south wall (entrance wall stubs)
     wallPaintingNS(scene, -16, 3.5, 0.10, M.vangoghIrises, true);
     paintingSpotlight(scene, -16, 3.5, 0.10, 'south');
-    placard(scene, -16, 2.6, 0.10, 'Irises', 'Vincent van Gogh, 1889', true);
+    placard(scene, -16, 2.6, 0.10, 'Irises', 'Vincent van Gogh, 1889', 'south');
     wallPaintingNS(scene,  16, 3.5, 0.10, M.monetSunrise, true);
     paintingSpotlight(scene,  16, 3.5, 0.10, 'south');
-    placard(scene,  16, 2.6, 0.10, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    placard(scene,  16, 2.6, 0.10, 'Impression, Sunrise', 'Claude Monet, 1872', 'south');
     // Extra lobby paintings — north wall stubs
     wallPaintingNS(scene, -8, 3.5, 39.65, M.vangoghStarry, false);
     paintingSpotlight(scene, -8, 3.5, 39.65, 'north');
-    placard(scene, -8, 2.6, 39.65, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    placard(scene, -8, 2.6, 39.65, 'The Starry Night', 'Vincent van Gogh, 1889', 'north');
     wallPaintingNS(scene,  8, 3.5, 39.65, M.vangoghSunflowers, false);
     paintingSpotlight(scene,  8, 3.5, 39.65, 'north');
-    placard(scene,  8, 2.6, 39.65, 'Sunflowers', 'Vincent van Gogh, 1888', false);
+    placard(scene,  8, 2.6, 39.65, 'Sunflowers', 'Vincent van Gogh, 1888', 'north');
     // Extra lobby bay trees
     lorTree(scene, -5, 6);
     lorTree(scene,  5, 6);
@@ -2203,7 +2219,7 @@ window.GameMap = (function () {
     paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
     stealables.push({ mesh: paintMesh, wallMesh: monaWallMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
-    placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', true);
+    placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', 'west');
     // Glowing floor ring — guides player to the stealable painting
     const paintRingMat = new THREE.MeshBasicMaterial({
       color: 0xffe066, emissive: 0xffe066, transparent: true, opacity: 0.45,
@@ -2332,13 +2348,13 @@ window.GameMap = (function () {
     // Gallery decorative paintings
     wallPainting(scene, -24.9, 3.5, 70, M.paintings[0], true);
     paintingSpotlight(scene, -24.9, 3.5, 70, 'west');
-    placard(scene, -24.9, 2.6, 70, 'Liberty Leading the People', 'Eugène Delacroix, 1830', true);
+    placard(scene, -24.9, 2.6, 70, 'Liberty Leading the People', 'Eugène Delacroix, 1830', 'west');
     wallPainting(scene,  24.9, 3.5, 80, M.paintings[1], false);
     paintingSpotlight(scene,  24.9, 3.5, 80, 'east');
-    placard(scene,  24.9, 2.6, 80, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
+    placard(scene,  24.9, 2.6, 80, 'The Raft of the Medusa', 'Théodore Géricault, 1818', 'east');
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
     paintingSpotlight(scene,  24.9, 3.5, 60, 'east');
-    placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
+    placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', 'east');
     // Hack terminal
     terminal(scene, 20, 78);
 
@@ -2456,58 +2472,58 @@ window.GameMap = (function () {
     // Additional paintings on gallery walls (salon-style density)
     wallPainting(scene, -24.9, 3.5, 82, M.paintings[2], true);
     paintingSpotlight(scene, -24.9, 3.5, 82, 'west');
-    placard(scene, -24.9, 2.6, 82, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', true);
+    placard(scene, -24.9, 2.6, 82, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', 'west');
     wallPainting(scene, -24.9, 3.5, 60, M.paintings[4], true);
     paintingSpotlight(scene, -24.9, 3.5, 60, 'west');
-    placard(scene, -24.9, 2.6, 60, 'Wedding at Cana', 'Paolo Veronese, 1563', true);
+    placard(scene, -24.9, 2.6, 60, 'Wedding at Cana', 'Paolo Veronese, 1563', 'west');
     wallPainting(scene,  24.9, 3.5, 70, M.paintings[3], false);
     paintingSpotlight(scene,  24.9, 3.5, 70, 'east');
-    placard(scene,  24.9, 2.6, 70, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    placard(scene,  24.9, 2.6, 70, 'Oath of the Horatii', 'Jacques-Louis David, 1784', 'east');
 
     // Paintings on gallery north-wall stubs (flanking blue door), facing south
     wallPaintingNS(scene, -15, 3.5, 99.90, M.paintings[3], false);
     paintingSpotlight(scene, -15, 3.5, 99.90, 'north');
-    placard(scene, -15, 2.6, 99.90, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    placard(scene, -15, 2.6, 99.90, 'Oath of the Horatii', 'Jacques-Louis David, 1784', 'north');
     wallPaintingNS(scene,  15, 3.5, 99.90, M.paintings[0], false);
     paintingSpotlight(scene,  15, 3.5, 99.90, 'north');
-    placard(scene,  15, 2.6, 99.90, 'Liberty Leading the People', 'Eugène Delacroix, 1830', false);
+    placard(scene,  15, 2.6, 99.90, 'Liberty Leading the People', 'Eugène Delacroix, 1830', 'north');
 
     // Extra gallery paintings — west wall (between existing)
     // Z=64 was inside the breaker-room doorway gap (Z=62.5→65.5), moved to Z=67
     wallPainting(scene, -24.9, 3.5, 67, M.vangoghStarry, true);
     paintingSpotlight(scene, -24.9, 3.5, 67, 'west');
-    placard(scene, -24.9, 2.6, 67, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    placard(scene, -24.9, 2.6, 67, 'The Starry Night', 'Vincent van Gogh, 1889', 'west');
     // Z=76 was inside the Galerie gap (Z=75.5→78.5), moved to Z=73
     wallPainting(scene, -24.9, 3.5, 73, M.vangoghIrises, true);
     paintingSpotlight(scene, -24.9, 3.5, 73, 'west');
-    placard(scene, -24.9, 2.6, 73, 'Irises', 'Vincent van Gogh, 1889', true);
+    placard(scene, -24.9, 2.6, 73, 'Irises', 'Vincent van Gogh, 1889', 'west');
     wallPainting(scene, -24.9, 3.5, 86, M.monetSunrise, true);
     paintingSpotlight(scene, -24.9, 3.5, 86, 'west');
-    placard(scene, -24.9, 2.6, 86, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    placard(scene, -24.9, 2.6, 86, 'Impression, Sunrise', 'Claude Monet, 1872', 'west');
     wallPainting(scene, -24.9, 3.5, 96, M.monetPoppies, true);
     paintingSpotlight(scene, -24.9, 3.5, 96, 'west');
-    placard(scene, -24.9, 2.6, 96, 'Poppies', 'Claude Monet, 1873', true);
+    placard(scene, -24.9, 2.6, 96, 'Poppies', 'Claude Monet, 1873', 'west');
     // Extra gallery paintings — east wall (between existing)
     wallPainting(scene,  24.9, 3.5, 65, M.vangoghSunflowers, false);
     paintingSpotlight(scene,  24.9, 3.5, 65, 'east');
-    placard(scene,  24.9, 2.6, 65, 'Sunflowers', 'Vincent van Gogh, 1888', false);
+    placard(scene,  24.9, 2.6, 65, 'Sunflowers', 'Vincent van Gogh, 1888', 'east');
     wallPainting(scene,  24.9, 3.5, 73, M.renoir, false);  // moved from 75 — frame at Z=75 clipped into Salon entrance gap (Z=75.5→78.5)
     paintingSpotlight(scene,  24.9, 3.5, 73, 'east');
-    placard(scene,  24.9, 2.6, 73, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    placard(scene,  24.9, 2.6, 73, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', 'east');
     wallPainting(scene,  24.9, 3.5, 85, M.cezanne, false);
     paintingSpotlight(scene,  24.9, 3.5, 85, 'east');
-    placard(scene,  24.9, 2.6, 85, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    placard(scene,  24.9, 2.6, 85, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'east');
     wallPainting(scene,  24.9, 3.5, 95, M.vangoghIrises, false);
     paintingSpotlight(scene,  24.9, 3.5, 95, 'east');
-    placard(scene,  24.9, 2.6, 95, 'Irises', 'Vincent van Gogh, 1889', false);
+    placard(scene,  24.9, 2.6, 95, 'Irises', 'Vincent van Gogh, 1889', 'east');
     // (Extra gallery south wall paintings removed — too close to entrance)
     // Extra gallery north wall
     wallPaintingNS(scene, -8, 3.5, 99.90, M.renoir, false);
     paintingSpotlight(scene, -8, 3.5, 99.90, 'north');
-    placard(scene, -8, 2.6, 99.90, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    placard(scene, -8, 2.6, 99.90, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', 'north');
     wallPaintingNS(scene,  8, 3.5, 99.90, M.cezanne, false);
     paintingSpotlight(scene,  8, 3.5, 99.90, 'north');
-    placard(scene,  8, 2.6, 99.90, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    placard(scene,  8, 2.6, 99.90, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'north');
     // Extra gallery trees (center colonnade)
     lorTree(scene, -10, 75);
     lorTree(scene,  10, 75);
@@ -2551,10 +2567,10 @@ window.GameMap = (function () {
     // Extra Salon paintings
     wallPainting(scene, 49.9, 3.5, 75, M.vangoghStarry, false);
     paintingSpotlight(scene, 49.9, 3.5, 75, 'east');
-    placard(scene, 49.9, 2.6, 75, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    placard(scene, 49.9, 2.6, 75, 'The Starry Night', 'Vincent van Gogh, 1889', 'east');
     wallPainting(scene, 49.9, 3.5, 79, M.monetPoppies, false);
     paintingSpotlight(scene, 49.9, 3.5, 79, 'east');
-    placard(scene, 49.9, 2.6, 79, 'Poppies', 'Claude Monet, 1873', false);
+    placard(scene, 49.9, 2.6, 79, 'Poppies', 'Claude Monet, 1873', 'east');
     wallPaintingNS(scene, 30, 3.5, 67.10, M.vangoghSunflowers, true);
     paintingSpotlight(scene, 30, 3.5, 67.10, 'south');
     wallPaintingNS(scene, 44, 3.5, 67.10, M.monetSunrise, true);
@@ -2724,7 +2740,7 @@ window.GameMap = (function () {
         new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       mRing.rotation.x = -Math.PI / 2; mRing.position.set(-49.5, 0.02, 77); scene.add(mRing);
       monetMesh.userData.floorRing = mRing; }
-    placard(scene, -49.9, 2.6, 77, 'Les Nymphéas', 'Claude Monet, c. 1906', true);
+    placard(scene, -49.9, 2.6, 77, 'Les Nymphéas', 'Claude Monet, c. 1906', 'west');
 
     // Extra Galerie des Sculptures paintings
     wallPaintingNS(scene, -30, 3.5, 67.10, M.vangoghStarry, true);
@@ -3363,52 +3379,52 @@ window.GameMap = (function () {
     // More paintings on vault walls (salon style)
     wallPainting(scene, -24.9, 3.5, 137, M.paintings[2], true);
     paintingSpotlight(scene, -24.9, 3.5, 137, 'west');
-    placard(scene, -24.9, 2.6, 137, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', true);
+    placard(scene, -24.9, 2.6, 137, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', 'west');
     wallPainting(scene,  24.9, 3.5, 143, M.paintings[4], false);
     paintingSpotlight(scene,  24.9, 3.5, 143, 'east');
-    placard(scene,  24.9, 2.6, 143, 'Wedding at Cana', 'Paolo Veronese, 1563', false);
+    placard(scene,  24.9, 2.6, 143, 'Wedding at Cana', 'Paolo Veronese, 1563', 'east');
 
     // Paintings on vault north wall stubs (facing south, visible from inside vault)
     wallPaintingNS(scene, -12, 3.5, 159.90, M.paintings[1], false);
     paintingSpotlight(scene, -12, 3.5, 159.90, 'north');
-    placard(scene, -12, 2.6, 159.90, 'The Raft of the Medusa', 'Théodore Géricault, 1818', false);
+    placard(scene, -12, 2.6, 159.90, 'The Raft of the Medusa', 'Théodore Géricault, 1818', 'north');
     wallPaintingNS(scene,  12, 3.5, 159.90, M.paintings[3], false);
     paintingSpotlight(scene,  12, 3.5, 159.90, 'north');
-    placard(scene,  12, 2.6, 159.90, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    placard(scene,  12, 2.6, 159.90, 'Oath of the Horatii', 'Jacques-Louis David, 1784', 'north');
 
     // Extra vault paintings — west wall
     wallPainting(scene, -24.9, 3.5, 120, M.vangoghStarry, true);
     paintingSpotlight(scene, -24.9, 3.5, 120, 'west');
-    placard(scene, -24.9, 2.6, 120, 'The Starry Night', 'Vincent van Gogh, 1889', true);
+    placard(scene, -24.9, 2.6, 120, 'The Starry Night', 'Vincent van Gogh, 1889', 'west');
     wallPainting(scene, -24.9, 3.5, 131, M.monetSunrise, true);
     paintingSpotlight(scene, -24.9, 3.5, 131, 'west');
-    placard(scene, -24.9, 2.6, 131, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    placard(scene, -24.9, 2.6, 131, 'Impression, Sunrise', 'Claude Monet, 1872', 'west');
     wallPainting(scene, -24.9, 3.5, 143, M.vangoghSunflowers, true);
     paintingSpotlight(scene, -24.9, 3.5, 143, 'west');
-    placard(scene, -24.9, 2.6, 143, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    placard(scene, -24.9, 2.6, 143, 'Sunflowers', 'Vincent van Gogh, 1888', 'west');
     wallPainting(scene, -24.9, 3.5, 157, M.vangoghIrises, true);
     paintingSpotlight(scene, -24.9, 3.5, 157, 'west');
-    placard(scene, -24.9, 2.6, 157, 'Irises', 'Vincent van Gogh, 1889', true);
+    placard(scene, -24.9, 2.6, 157, 'Irises', 'Vincent van Gogh, 1889', 'west');
     // Extra vault paintings — east wall
     wallPainting(scene,  24.9, 3.5, 120, M.renoir, false);
     paintingSpotlight(scene,  24.9, 3.5, 120, 'east');
-    placard(scene,  24.9, 2.6, 120, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', false);
+    placard(scene,  24.9, 2.6, 120, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', 'east');
     wallPainting(scene,  24.9, 3.5, 136, M.cezanne, false);
     paintingSpotlight(scene,  24.9, 3.5, 136, 'east');
-    placard(scene,  24.9, 2.6, 136, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', false);
+    placard(scene,  24.9, 2.6, 136, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'east');
     wallPainting(scene,  24.9, 3.5, 148, M.monetPoppies, false);
     paintingSpotlight(scene,  24.9, 3.5, 148, 'east');
-    placard(scene,  24.9, 2.6, 148, 'Poppies', 'Claude Monet, 1873', false);
+    placard(scene,  24.9, 2.6, 148, 'Poppies', 'Claude Monet, 1873', 'east');
     wallPainting(scene,  24.9, 3.5, 157, M.vangoghStarry, false);
     paintingSpotlight(scene,  24.9, 3.5, 157, 'east');
-    placard(scene,  24.9, 2.6, 157, 'The Starry Night', 'Vincent van Gogh, 1889', false);
+    placard(scene,  24.9, 2.6, 157, 'The Starry Night', 'Vincent van Gogh, 1889', 'east');
     // Vault south wall paintings (on stubs flanking corridor entrance)
     wallPaintingNS(scene, -15, 3.5, 115.10, M.vangoghSunflowers, true);
     paintingSpotlight(scene, -15, 3.5, 115.10, 'south');
-    placard(scene, -15, 2.6, 115.10, 'Sunflowers', 'Vincent van Gogh, 1888', true);
+    placard(scene, -15, 2.6, 115.10, 'Sunflowers', 'Vincent van Gogh, 1888', 'south');
     wallPaintingNS(scene,  15, 3.5, 115.10, M.monetSunrise, true);
     paintingSpotlight(scene,  15, 3.5, 115.10, 'south');
-    placard(scene,  15, 2.6, 115.10, 'Impression, Sunrise', 'Claude Monet, 1872', true);
+    placard(scene,  15, 2.6, 115.10, 'Impression, Sunrise', 'Claude Monet, 1872', 'south');
     // Vault north wall extra
     wallPaintingNS(scene, -6, 3.5, 159.90, M.cezanne, false);
     paintingSpotlight(scene, -6, 3.5, 159.90, 'north');
@@ -3448,16 +3464,16 @@ window.GameMap = (function () {
     // Vault wall paintings
     wallPainting(scene, -24.9, 3.5, 125, M.paintings[0], true);
     paintingSpotlight(scene, -24.9, 3.5, 125, 'west');
-    placard(scene, -24.9, 2.6, 125, 'Liberty Leading the People', 'Eugène Delacroix, 1830', true);
+    placard(scene, -24.9, 2.6, 125, 'Liberty Leading the People', 'Eugène Delacroix, 1830', 'west');
     wallPainting(scene, -24.9, 3.5, 150, M.paintings[1], true);
     paintingSpotlight(scene, -24.9, 3.5, 150, 'west');
-    placard(scene, -24.9, 2.6, 150, 'The Raft of the Medusa', 'Théodore Géricault, 1818', true);
+    placard(scene, -24.9, 2.6, 150, 'The Raft of the Medusa', 'Théodore Géricault, 1818', 'west');
     wallPainting(scene,  24.9, 3.5, 130, M.paintings[2], false);
     paintingSpotlight(scene,  24.9, 3.5, 130, 'east');
-    placard(scene,  24.9, 2.6, 130, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
+    placard(scene,  24.9, 2.6, 130, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', 'east');
     wallPainting(scene,  24.9, 3.5, 155, M.paintings[3], false);
     paintingSpotlight(scene,  24.9, 3.5, 155, 'east');
-    placard(scene,  24.9, 2.6, 155, 'Oath of the Horatii', 'Jacques-Louis David, 1784', false);
+    placard(scene,  24.9, 2.6, 155, 'Oath of the Horatii', 'Jacques-Louis David, 1784', 'east');
     wallSconce(scene, -24.75, 2.9, 125,  1);
     wallSconce(scene, -24.75, 2.9, 150,  1);
     wallSconce(scene,  24.75, 2.9, 130, -1);

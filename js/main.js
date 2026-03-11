@@ -447,11 +447,11 @@
     celRdr.setSize(canvas.width, canvas.height, false);
     celRdr.outputEncoding = THREE.sRGBEncoding;
     const celScene = new THREE.Scene();
-    celScene.background = new THREE.Color(0xff8030);
-    celScene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const keyL = new THREE.DirectionalLight(0xffe8a0, 1.2);
+    celScene.background = null;
+    celScene.add(new THREE.AmbientLight(0x8ab0e0, 0.6));
+    const keyL = new THREE.DirectionalLight(0xd0e8ff, 1.1);
     keyL.position.set(3, 6, 3); celScene.add(keyL);
-    const rimL = new THREE.DirectionalLight(0xff6020, 0.5);
+    const rimL = new THREE.DirectionalLight(0x4488ff, 0.6);
     rimL.position.set(-3, 1, -2); celScene.add(rimL);
 
     const celCam = new THREE.PerspectiveCamera(55, canvas.width / canvas.height, 0.1, 60);
