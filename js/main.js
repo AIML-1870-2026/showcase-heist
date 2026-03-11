@@ -1121,14 +1121,17 @@
     // Customization screen helpers
     let _pendingMode = 'solo';
 
-    // Hair color: slider 0-100 → hex color (black → white)
+    // Hair color: slider 0-100 → hex color (black → auburn → red → blonde → white)
     function _hairSliderToHex(val) {
       const stops = [
-        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },
-        { v: 25,  r: 0x3d, g: 0x1a, b: 0x08 },
-        { v: 50,  r: 0x7a, g: 0x3c, b: 0x1a },
-        { v: 75,  r: 0xcb, g: 0x9b, b: 0x40 },
-        { v: 100, r: 0xe0, g: 0xd0, b: 0xc0 },
+        { v: 0,   r: 0x0a, g: 0x06, b: 0x04 },  // black
+        { v: 18,  r: 0x3d, g: 0x1a, b: 0x08 },  // dark brown
+        { v: 34,  r: 0x7a, g: 0x22, b: 0x0c },  // auburn/chestnut
+        { v: 48,  r: 0xbb, g: 0x28, b: 0x08 },  // deep red
+        { v: 58,  r: 0xd4, g: 0x40, b: 0x10 },  // bright copper red
+        { v: 68,  r: 0xd4, g: 0x80, b: 0x30 },  // strawberry blonde
+        { v: 82,  r: 0xcb, g: 0x9b, b: 0x40 },  // golden blonde
+        { v: 100, r: 0xe0, g: 0xd0, b: 0xc0 },  // platinum/white
       ];
       for (let i = 0; i < stops.length - 1; i++) {
         const a = stops[i], b = stops[i + 1];
