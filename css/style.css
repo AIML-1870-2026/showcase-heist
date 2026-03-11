@@ -476,6 +476,7 @@ html, body {
 
 .win-title {
   color: #e8f2ff;
+  font-size: 1.8rem;
   text-shadow: 0 0 22px rgba(100, 160, 255, 0.7), 0 0 6px rgba(180, 210, 255, 0.5);
 }
 
@@ -487,6 +488,10 @@ html, body {
 #win-screen .screen-content {
   border-color: rgba(80, 130, 220, 0.35);
   background: rgba(4, 8, 18, 0.82);
+  padding: 24px 28px;
+  gap: 10px;
+  max-height: 96vh;
+  overflow-y: auto;
 }
 
 .screen-content p {
