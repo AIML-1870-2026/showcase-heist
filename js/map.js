@@ -570,11 +570,6 @@ window.GameMap = (function () {
       map: loadPaintingTex('assets/paintings/waterlilies.jpg'),
       roughness: 0.88, metalness: 0.0,
     }),
-    // Jon Smail — Assistant Director, Scott Scholars, UNO
-    jon: new THREE.MeshStandardMaterial({
-      map: loadPaintingTex('assets/paintings/jon.jpg'),
-      roughness: 0.88, metalness: 0.0,
-    }),
     // Procedural Impressionist paintings
     vangoghStarry:     new THREE.MeshStandardMaterial({ map: makeVanGoghStarryNight(),  roughness: 0.88, metalness: 0.0 }),
     vangoghSunflowers: new THREE.MeshStandardMaterial({ map: makeVanGoghSunflowers(),   roughness: 0.88, metalness: 0.0 }),
@@ -2343,9 +2338,6 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 60, M.paintings[2], false);
     paintingSpotlight(scene,  24.9, 3.5, 60, 'east');
     placard(scene,  24.9, 2.6, 60, 'Coronation of Napoleon', 'Jacques-Louis David, 1807', false);
-    wallPaintingNS(scene,   8, 3.5, 55.10, M.jon, true);
-    paintingSpotlight(scene,   8, 3.5, 55.10, 'south');
-
     // Hack terminal
     terminal(scene, 20, 78);
 
