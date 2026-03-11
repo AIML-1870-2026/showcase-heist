@@ -1440,9 +1440,11 @@ window.Player = (function () {
     _staminaExhausted = false;
     _scActive         = false;
     _cancelSafeCrack();
-    // Reset camera position to behind the starting location so it doesn't
-    // carry over from the previous game session (avoids black screen on restart)
-    camPos.set(pos.x, pos.y + CAM_H_OFFSET + pitch * 3, pos.z);
+    // Snap camera to its ideal position behind the player so the first frame
+    // isn't black (camPos at same z as player would look straight down).
+    const snapX = pos.x - Math.sin(yaw) * CAM_DIST;
+    const snapZ = pos.z - Math.cos(yaw) * CAM_DIST;
+    camPos.set(snapX, pos.y + CAM_H_OFFSET + pitch * 3, snapZ);
     if (camera) {
       camera.position.copy(camPos);
       camera.lookAt(pos.x, pos.y + 1.4, pos.z);
