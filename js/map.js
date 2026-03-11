@@ -729,8 +729,8 @@ window.GameMap = (function () {
     // Base cabinet with stepped plinth
     box(scene, 1.35, 0.14, 1.35, x, 0.07, z, _baseMat);   // plinth lip
     box(scene, 1.2,  0.80, 1.2,  x, 0.54, z, M.desk);     // main cabinet body
-    // Glass vitrine
-    box(scene, 1.0,  1.20, 1.0,  x, 1.40, z, M.glass);
+    // Glass vitrine — returned so callers can reference it for shatter
+    const glassMesh = box(scene, 1.0, 1.20, 1.0, x, 1.40, z, M.glass);
     // Slim metal corner posts
     const postMat = new THREE.MeshStandardMaterial({ color: 0xb87820, roughness: 0.22, metalness: 0.88 });
     [[-0.50, -0.50], [-0.50, 0.50], [0.50, -0.50], [0.50, 0.50]].forEach(([ox, oz]) => {
@@ -739,6 +739,7 @@ window.GameMap = (function () {
     // Lid cap
     box(scene, 1.08, 0.048, 1.08, x, 2.064, z, postMat);
     addWallAABB(x, z, 1.2, 1.2);
+    return glassMesh;
   }
 
   // Painting on a wall (frame + canvas) — returns the canvas mesh so callers can hide it on steal
@@ -2228,7 +2229,7 @@ window.GameMap = (function () {
     displayCase(scene, -14, 70);
     displayCaseContents(scene, -14, 70, 'ring');
     displayCaseRopes(scene, -14, 70);
-    displayCase(scene,   0, 88);
+    const _jadeGlass = displayCase(scene,   0, 88);
     displayCaseRopes(scene,   0, 88);
 
     // Blue keycard in display case
@@ -2248,7 +2249,7 @@ window.GameMap = (function () {
     jadeHead.position.y = 0.29; jadeFig.add(jadeHead);
     jadeFig.position.set(0, 1.45, 88);
     scene.add(jadeFig);
-    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine', value: 2000000, hasCase: true, caseBroken: false });
+    stealables.push({ mesh: jadeFig, item: 'jade', x: 0, z: 88, taken: false, bonus: true, label: 'Jade Figurine', value: 2000000, hasCase: true, caseBroken: false, caseMesh: _jadeGlass });
     { const jRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.52, 24),
         new THREE.MeshBasicMaterial({ color: 0x44ff88, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));
       jRing.rotation.x = -Math.PI / 2; jRing.position.set(0, 0.96, 88); scene.add(jRing);
@@ -3026,6 +3027,91 @@ window.GameMap = (function () {
     // Vault north wall stubs — 10-unit gap for exit passage
     wall(scene, -(25 - VS / 2), 160, VS, WALL_T, M.vaultWall);   // west stub
     wall(scene,  (25 - VS / 2), 160, VS, WALL_T, M.vaultWall);   // east stub
+
+    // ── Crown Vault Door — massive hydraulic steel door blocking entrance ────────
+    {
+      const vdGroup = new THREE.Group();
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0x252c35, roughness: 0.30, metalness: 0.84 });
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x40505e, roughness: 0.40, metalness: 0.75 });
+      const goldHdl  = new THREE.MeshStandardMaterial({ color: 0xb87020, roughness: 0.16, metalness: 0.92 });
+      const boltMat  = new THREE.MeshStandardMaterial({ color: 0x303840, roughness: 0.28, metalness: 0.88 });
+
+      // Main door slab
+      vdGroup.add(new THREE.Mesh(new THREE.BoxGeometry(10, 6, 0.32), steelMat));
+
+      // Outer frame border (4 bars)
+      [
+        [0,  3.08, 0, 10.4, 0.16, 0.38],   // top
+        [0, -3.08, 0, 10.4, 0.16, 0.38],   // bottom
+        [-5.12, 0, 0, 0.24,  6.0, 0.38],   // left
+        [ 5.12, 0, 0, 0.24,  6.0, 0.38],   // right
+      ].forEach(([x, y, z, w, h, d]) => {
+        vdGroup.add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), frameMat));
+        vdGroup.children[vdGroup.children.length - 1].position.set(x, y, z);
+      });
+
+      // Recessed panel insets (2 vertical panels)
+      [-2.4, 2.4].forEach(px => {
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(3.8, 5.1, 0.06), frameMat);
+        panel.position.set(px, 0, -0.14);
+        vdGroup.add(panel);
+      });
+
+      // Central wheel handle
+      const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.10, 8, 18), goldHdl);
+      wheel.position.set(0, 0, 0.22);
+      vdGroup.add(wheel);
+      // Wheel hub
+      vdGroup.add(Object.assign(
+        new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.18, 10), goldHdl),
+        { position: new THREE.Vector3(0, 0, 0.28) }
+      ));
+      vdGroup.children[vdGroup.children.length - 1].rotation.x = Math.PI / 2;
+      // Wheel spokes (4)
+      for (let i = 0; i < 4; i++) {
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.30, 0.07), goldHdl);
+        spoke.position.set(0, 0, 0.24);
+        spoke.rotation.z = (i / 4) * Math.PI;
+        vdGroup.add(spoke);
+      }
+
+      // Locking bolts — 4 per side
+      [-2.0, -0.65, 0.65, 2.0].forEach(by => {
+        // Left bolts
+        const bL = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.28, 8), boltMat);
+        bL.rotation.z = Math.PI / 2;
+        bL.position.set(-5.22, by, 0.10);
+        vdGroup.add(bL);
+        // Right bolts
+        const bR = bL.clone();
+        bR.position.set(5.22, by, 0.10);
+        vdGroup.add(bR);
+      });
+
+      // Rivets — 5×3 grid on each panel
+      [-2.4, 2.4].forEach(px => {
+        for (let row = -1; row <= 1; row++) {
+          for (let col = -2; col <= 2; col++) {
+            const r = new THREE.Mesh(new THREE.SphereGeometry(0.045, 5, 4), boltMat);
+            r.position.set(px + col * 0.70, row * 1.55, 0.20);
+            vdGroup.add(r);
+          }
+        }
+      });
+
+      vdGroup.position.set(0, 3, 115);
+      scene.add(vdGroup);
+
+      // AABB covers the 10-wide entrance gap
+      addWallAABB(0, 115, 10.4, 0.45);
+      doors.push({
+        mesh: vdGroup, x: 0, z: 115,
+        keyRequired: 'blue',
+        open: false, opening: false, openProgress: 0,
+        vaultDoor: true, origX: 0,
+        aabbHalfW: 5.2, aabbHalfD: 0.225,
+      });
+    }
 
     // Vault lasers: low + high + crossed
     laserData.push({ type: 'low',  x1: -20, x2:  20, y: 0.5, z: 122 });

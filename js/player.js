@@ -925,6 +925,7 @@ window.Player = (function () {
     tickLockpick(dt);
     tickSafeCrack(dt);
     if (state === 'caught') return;
+    if (G._vaultCinematicActive) return;
 
     // Slide timer
     if (state === 'sliding') {
@@ -1160,6 +1161,10 @@ window.Player = (function () {
         st.taken        = true;
         st.mesh.visible = false;
         if (st.wallMesh) st.wallMesh.visible = false;
+        if (st.caseMesh) {
+          st.caseMesh.visible = false;
+          G._glassShatterEvent = { x: st.x, z: st.z };
+        }
         G._pickupFlash  = 1.0;
         G._moneyStolen  = (G._moneyStolen || 0) + (st.value || 0);
         UI.SFX.pickup();
@@ -1508,6 +1513,24 @@ window.Player = (function () {
     if (!G) return;
     G.doors.forEach(d => {
       if (!d.opening || d.openProgress >= 1) return;
+
+      if (d.vaultDoor) {
+        // Vault door slides east over 1.4 s with ease-out cubic
+        d.openProgress = Math.min(1, d.openProgress + dt / 1.4);
+        const ease = 1 - Math.pow(1 - d.openProgress, 3);
+        d.mesh.position.x = (d.origX || 0) + ease * 12;
+        if (d.openProgress >= 1) {
+          d.mesh.visible = false;
+          const idx = G.walls.findIndex(w =>
+            Math.abs((w.minX + w.maxX) / 2 - d.x) < 6 &&
+            Math.abs((w.minZ + w.maxZ) / 2 - d.z) < 1
+          );
+          if (idx >= 0) { G.walls.splice(idx, 1); wallGrid = _buildWallGrid(G.walls); }
+          d.opening = false;
+        }
+        return;
+      }
+
       d.openProgress = Math.min(1, d.openProgress + dt / 0.45);
       const s = 1 - d.openProgress;
       d.mesh.scale.y    = s;

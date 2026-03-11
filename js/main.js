@@ -48,8 +48,9 @@
     _moneyStolen:   0,
     _noiseEvent:    null,
     _dustEvent:     null,
-    _smokeEvent:    null,
-    _smokeClouds:   [],
+    _smokeEvent:        null,
+    _smokeClouds:       [],
+    _glassShatterEvent: null,
     _stamina:       1.0,
     smokeCount:     1,
     _startMs:       0,
@@ -62,9 +63,11 @@
     _throwEvent:    null,
     _powerOut:      false,
     _powerOutTimer: 0,
-    _checkpointReached: { Gallery: false, 'Crown Vault': false },
-    _checkpointData:    null,
-    _earnedAchs:    null,
+    _checkpointReached:     { Gallery: false, 'Crown Vault': false },
+    _checkpointData:        null,
+    _earnedAchs:            null,
+    _vaultCinematicDone:    false,
+    _vaultCinematicActive:  false,
   };
 
   // ── Achievement system ─────────────────────────────────
@@ -330,6 +333,9 @@
       if (CP_SPAWN[r] && r !== prevRoom && !G._checkpointReached[r]) {
         G._checkpointReached[r] = true;
         saveCheckpoint(r);
+      }
+      if (r === 'Crown Vault' && r !== prevRoom && !G._vaultCinematicDone) {
+        startVaultCinematic();
       }
     }
   }
@@ -917,6 +923,72 @@
     }
   }
 
+  // ── Glass shatter ──────────────────────────────────────
+  const SHARD_COUNT = 18;
+  const _shards = [];
+  (function initShards() {
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0xaaddff, roughness: 0.05, metalness: 0.15,
+      transparent: true, opacity: 0.75, side: THREE.DoubleSide,
+    });
+    for (let i = 0; i < SHARD_COUNT; i++) {
+      const w = 0.06 + Math.random() * 0.16;
+      const h = 0.05 + Math.random() * 0.14;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.007), glassMat.clone());
+      m.visible = false;
+      m.castShadow = false;
+      scene.add(m);
+      _shards.push({ mesh: m, vx: 0, vy: 0, vz: 0, rx: 0, rz: 0, life: 1, dead: true });
+    }
+  }());
+
+  function _spawnGlassShatter(ox, oz) {
+    _shards.forEach((s, i) => {
+      const angle  = (i / SHARD_COUNT) * Math.PI * 2 + Math.random() * 0.6;
+      const speed  = 0.8 + Math.random() * 1.8;
+      s.mesh.position.set(
+        ox + (Math.random() - 0.5) * 0.6,
+        1.4 + Math.random() * 0.5,
+        oz + (Math.random() - 0.5) * 0.6
+      );
+      s.mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      s.vx   = Math.cos(angle) * speed;
+      s.vy   = 1.5 + Math.random() * 2.5;
+      s.vz   = Math.sin(angle) * speed;
+      s.rx   = (Math.random() - 0.5) * 14;
+      s.rz   = (Math.random() - 0.5) * 14;
+      s.life = 1;
+      s.dead = false;
+      s.mesh.material.opacity = 0.75;
+      s.mesh.visible = true;
+    });
+  }
+
+  function tickGlassShards(dt) {
+    const G = window.G;
+    if (G && G._glassShatterEvent) {
+      _spawnGlassShatter(G._glassShatterEvent.x, G._glassShatterEvent.z);
+      G._glassShatterEvent = null;
+    }
+    _shards.forEach(s => {
+      if (s.dead) return;
+      s.vy   -= 14 * dt;
+      s.mesh.position.x += s.vx * dt;
+      s.mesh.position.y += s.vy * dt;
+      s.mesh.position.z += s.vz * dt;
+      s.mesh.rotation.x += s.rx * dt;
+      s.mesh.rotation.z += s.rz * dt;
+      // Friction on XZ once near floor
+      if (s.mesh.position.y <= 0.04) {
+        s.mesh.position.y = 0.04;
+        s.vy = 0; s.vx *= 0.88; s.vz *= 0.88; s.rx *= 0.85; s.rz *= 0.85;
+      }
+      s.life -= dt * 0.55;
+      s.mesh.material.opacity = Math.max(0, s.life * 0.75);
+      if (s.life <= 0) { s.dead = true; s.mesh.visible = false; }
+    });
+  }
+
   // ── Skylight hatch slide-open animation ────────────────
   function tickSkylightHatch(dt) {
     const G = window.G;
@@ -937,6 +1009,76 @@
     if (t >= 1.0) {
       h.opening = false;
       h.open    = true;
+    }
+  }
+
+  // ── Vault intro cinematic ──────────────────────────────
+  let _vaultCinT       = 0;
+  const _vaultCinDur   = 3.8;   // total cinematic length in seconds
+  // Saved camera for lerp-back
+  const _vaultCinCamSave = new THREE.Vector3();
+  // Target shots
+  const _vcShotPos  = new THREE.Vector3(0, 4.5, 123);
+  const _vcShotLook = new THREE.Vector3(0, 1.6, 140);
+
+  function startVaultCinematic() {
+    const G = window.G;
+    if (!G || G._vaultCinematicDone) return;
+    G._vaultCinematicDone   = true;
+    G._vaultCinematicActive = true;
+    _vaultCinT = 0;
+    _vaultCinCamSave.copy(camera.position);
+    UI.showAlert('CROWN VAULT', 3000);
+  }
+
+  function tickVaultCinematic(dt) {
+    const G = window.G;
+    if (!G || !G._vaultCinematicActive) return;
+
+    _vaultCinT += dt;
+    const progress = _vaultCinT / _vaultCinDur;
+
+    // Phase 0-0.25 (0→1s): push camera toward crown
+    // Phase 0.25-0.72 (1→2.75s): held shot
+    // Phase 0.72-1.0 (2.75→3.8s): lerp back behind player
+    if (progress <= 0.25) {
+      const t = Math.min(1, progress / 0.25);
+      const ease = t * t * (3 - 2 * t);
+      camera.position.lerpVectors(_vaultCinCamSave, _vcShotPos, ease);
+      const lookTarget = new THREE.Vector3().lerpVectors(_vaultCinCamSave, _vcShotLook, ease);
+      camera.lookAt(lookTarget);
+
+    } else if (progress <= 0.72) {
+      camera.position.copy(_vcShotPos);
+      camera.lookAt(_vcShotLook);
+      // Subtle slow push-in during hold
+      const holdT = (progress - 0.25) / 0.47;
+      camera.position.z += holdT * 2.5;
+
+    } else {
+      // Return to behind player
+      const t = Math.min(1, (progress - 0.72) / 0.28);
+      const ease = t * t * (3 - 2 * t);
+      const pp = Player.getPositionRef();
+      const returnPos = new THREE.Vector3(pp.x, pp.y + 4.5, pp.z - 7);
+      camera.position.lerpVectors(_vcShotPos, returnPos, ease);
+      camera.lookAt(new THREE.Vector3(pp.x, pp.y + 1.5, pp.z));
+    }
+
+    // Pulse the vault gold accent light
+    if (flickerLights.length > 0) {
+      const pulse = 1 + Math.sin(_vaultCinT * 3.5) * 0.4;
+      const accent = flickerLights[flickerLights.length - 1]; // gold accent is last
+      accent.intensity = accent._baseIntensity * Math.max(1, pulse * 2.2);
+    }
+
+    if (_vaultCinT >= _vaultCinDur) {
+      G._vaultCinematicActive = false;
+      // Restore accent light
+      if (flickerLights.length > 0) {
+        const accent = flickerLights[flickerLights.length - 1];
+        accent.intensity = accent._baseIntensity;
+      }
     }
   }
 
@@ -1024,8 +1166,10 @@
     G._earnedAchs   = new Set();
     G._throwEvent   = null;
     G.takedownCount = 0;
-    G._checkpointReached = { Gallery: false, 'Crown Vault': false };
-    G._checkpointData    = null;
+    G._checkpointReached    = { Gallery: false, 'Crown Vault': false };
+    G._checkpointData       = null;
+    G._vaultCinematicDone   = false;
+    G._vaultCinematicActive = false;
     _prevCaught = false;
     _smokeT     = SMOKE_DUR;
     UI.updateDistractCount(G.distractCount);
@@ -1086,13 +1230,16 @@
         d.mesh.visible    = true;
         d.mesh.scale.y    = 1;
         d.mesh.position.y = 3;
+        if (d.vaultDoor) d.mesh.position.x = d.origX || 0;
         // Re-add AABB only if it was fully removed (animation completed)
         if (wasFullyOpen) {
+          const hw = d.aabbHalfW || 1.5;
+          const hd = d.aabbHalfD || 0.3;
           G.walls.push({
-            minX: d.x - 1.5,
-            maxX: d.x + 1.5,
-            minZ: d.z - 0.3,
-            maxZ: d.z + 0.3,
+            minX: d.x - hw,
+            maxX: d.x + hw,
+            minZ: d.z - hd,
+            maxZ: d.z + hd,
           });
         }
       }
@@ -1834,6 +1981,8 @@
     tickSmoke(dt);
     tickNoiseRing(dt);
     tickPickupAndChroma(dt);
+    tickGlassShards(dt);
+    tickVaultCinematic(dt);
     Player.tickDoors(dt);
     tickScreenShake(dt);
     tickStressVignette(dt, playerPos);
