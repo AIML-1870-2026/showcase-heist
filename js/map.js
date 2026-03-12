@@ -3391,6 +3391,56 @@ window.GameMap = (function () {
       // ── Central decorative rug ──────────────────────────────
       rug(scene, SCX, SCZ, 20, 14, 0x1C1408, 0xD4A828);
 
+      // ── Stealables ─────────────────────────────────────────
+      // Golden Laurel Crown — on a marble pedestal near the west wall
+      { const goldLaurelMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.14, metalness: 0.92, emissive: 0x5a3000, emissiveIntensity: 0.22 });
+        const pedMat = new THREE.MeshStandardMaterial({ color: 0xd0ccc4, roughness: 0.55, metalness: 0.06 });
+        // Pedestal
+        const ped = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 0.55), pedMat);
+        ped.position.set(-75, 0.5, 105); ped.castShadow = true; scene.add(ped);
+        const pedTop = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.08, 0.65), pedMat);
+        pedTop.position.set(-75, 1.04, 105); scene.add(pedTop);
+        // Laurel crown — torus + small leaf bumps
+        const crown = new THREE.Group();
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 7, 22), goldLaurelMat);
+        ring.rotation.x = Math.PI / 2; crown.add(ring);
+        for (let i = 0; i < 10; i++) {
+          const ang = (i / 10) * Math.PI * 2;
+          const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.045, 5, 4), goldLaurelMat);
+          leaf.position.set(Math.cos(ang) * 0.18, 0.03, Math.sin(ang) * 0.18);
+          leaf.scale.set(1.2, 0.6, 0.8); crown.add(leaf);
+        }
+        crown.position.set(-75, 1.14, 105);
+        scene.add(crown);
+        // Glass case (faint)
+        const caseMat = new THREE.MeshStandardMaterial({ color: 0xaaddff, roughness: 0.04, metalness: 0.0, transparent: true, opacity: 0.12 });
+        const caseBox = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.52, 0.46), caseMat);
+        caseBox.position.set(-75, 1.38, 105); scene.add(caseBox);
+        stealables.push({ mesh: crown, item: 'laurel', x: -75, z: 105, taken: false, bonus: true, label: 'Golden Laurel Crown', value: 12000000 });
+      }
+
+      // Marble Bust of Augustus — on a pedestal near the north wall
+      { const marbMat = new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 0.48, metalness: 0.0 });
+        const pedMat2 = new THREE.MeshStandardMaterial({ color: 0xc8c4bc, roughness: 0.60, metalness: 0.04 });
+        const ped2 = new THREE.Mesh(new THREE.BoxGeometry(0.52, 1.1, 0.52), pedMat2);
+        ped2.position.set(-70, 0.55, 116); ped2.castShadow = true; scene.add(ped2);
+        const pedTop2 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.07, 0.62), pedMat2);
+        pedTop2.position.set(-70, 1.115, 116); scene.add(pedTop2);
+        // Bust — simplified head+neck+shoulders
+        const bust = new THREE.Group();
+        const shoulders = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.28, 0.34), marbMat);
+        bust.add(shoulders);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.22, 8), marbMat);
+        neck.position.y = 0.25; bust.add(neck);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.20, 10, 8), marbMat);
+        head.position.y = 0.50; bust.add(head);
+        const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.21, 8, 5), marbMat);
+        hairCap.position.set(0, 0.56, -0.04); hairCap.scale.y = 0.55; bust.add(hairCap);
+        bust.position.set(-70, 1.185, 116);
+        scene.add(bust);
+        stealables.push({ mesh: bust, item: 'augustus', x: -70, z: 116, taken: false, bonus: true, label: 'Marble Bust of Augustus', value: 9500000 });
+      }
+
       // ── Guard patrol ────────────────────────────────────────
       guardData.push({
         spawnX: -55, spawnZ: 98,
@@ -4903,6 +4953,11 @@ window.GameMap = (function () {
     makeVentGrate(14, 96);
     makeVentGrate(14, 118);
     vents.push({ entryX: 14, entryZ: 96, exitX: 14, exitZ: 118 });
+
+    // Vent 3: Taxidermy Hall (z=107) ↔ Egyptian Catacomb (z=123) — east corridor shortcut
+    makeVentGrate(43, 107);
+    makeVentGrate(43, 123);
+    vents.push({ entryX: 43, entryZ: 107, exitX: 43, exitZ: 123 });
 
     // ── FEATURE 3: Tunnel floor grate in Crown Vault (exit point at Z=130) ──────
     makeVentGrate(0, 130);
