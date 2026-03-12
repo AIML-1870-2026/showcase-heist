@@ -6528,9 +6528,12 @@ window.GameMap = (function () {
         // Pointed bottom
         const tip = new THREE.Mesh(new THREE.ConeGeometry(0.30, 0.28, 4), metalMat);
         tip.rotation.z = Math.PI; tip.position.y = -0.56; ksh.add(tip);
-        // Cross decoration
-        box(scene, 0.60, 0.04, 0.04, 0, 0, 0.04, new THREE.MeshStandardMaterial({ color: 0xcc2010, roughness: 0.55, metalness: 0.0 }));
-        box(scene, 0.04, 0.80, 0.04, 0, 0, 0.04, new THREE.MeshStandardMaterial({ color: 0xcc2010, roughness: 0.55, metalness: 0.0 }));
+        // Cross decoration — added to ksh group so it follows the shield's position/rotation
+        const crossMat = new THREE.MeshStandardMaterial({ color: 0xcc2010, roughness: 0.55, metalness: 0.0 });
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.04, 0.04), crossMat);
+        crossH.position.set(0, 0, 0.04); ksh.add(crossH);
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.80, 0.04), crossMat);
+        crossV.position.set(0, 0, 0.04); ksh.add(crossV);
         ksh.position.set(76, 1.55, 106); ksh.rotation.x = -0.18; scene.add(ksh);
         addWallAABB(76, 106, 1.1, 1.1); }
 
@@ -6646,7 +6649,7 @@ window.GameMap = (function () {
         aGrip.position.y = -0.82; aSword.add(aGrip);
         const aPommel = new THREE.Mesh(new THREE.SphereGeometry(0.050, 7, 6), metalMat);
         aPommel.position.y = -1.04; aSword.add(aPommel);
-        aSword.position.set(97, 2.02, 86);
+        aSword.position.set(97, 1.00, 86);
         aSword.userData.float = true; scene.add(aSword);
         const swRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.44, 24),
           new THREE.MeshBasicMaterial({ color: 0xff6030, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }));

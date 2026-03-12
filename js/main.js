@@ -238,17 +238,22 @@
   }
 
   // ── Zone culling — hide static map meshes far from player ──
-  let _cullList  = [];   // [{ obj, z }]
+  let _cullList  = [];   // [{ obj, x, z }]
   let _lastCullZ = -9999;
+  let _lastCullX = -9999;
   const _cullWP  = new THREE.Vector3();
 
-  function updateCulling(pz) {
-    if (Math.abs(pz - _lastCullZ) < 4) return;
+  function updateCulling(pz, px) {
+    if (Math.abs(pz - _lastCullZ) < 4 && Math.abs(px - _lastCullX) < 4) return;
     _lastCullZ = pz;
+    _lastCullX = px;
     const near = pz - 55, far = pz + 55;
+    const playerInEastWing = px > 40;
     for (let i = 0; i < _cullList.length; i++) {
-      const { obj, z } = _cullList[i];
-      const inRange = z >= near && z <= far;
+      const { obj, x, z } = _cullList[i];
+      const inZRange = z >= near && z <= far;
+      // East wing objects (x > 50) only render when player is also in the east wing
+      const inRange = inZRange && (x <= 50 || playerInEastWing);
       if (!inRange && obj.visible) {
         obj.userData._cullHidden = true;
         obj.visible = false;
@@ -280,7 +285,7 @@
       if (_preBuild.has(obj)) return;
       if (!obj.isMesh && !obj.isLight) return;
       obj.getWorldPosition(_cullWP);
-      _cullList.push({ obj, z: _cullWP.z });
+      _cullList.push({ obj, x: _cullWP.x, z: _cullWP.z });
     });
 
     Guards.init(scene, data.guardData);
@@ -1107,7 +1112,8 @@
         }
       }
       if (!st.taken && st.mesh) {
-        st.mesh.position.y = 1.5 + Math.sin(floatT * 1.5 + st.z) * 0.1;
+        if (st.mesh.userData.floatY === undefined) st.mesh.userData.floatY = st.mesh.position.y;
+        st.mesh.position.y = st.mesh.userData.floatY + Math.sin(floatT * 1.5 + st.z) * 0.1;
         st.mesh.rotation.y += dt * 0.8;
       }
     });
@@ -2339,7 +2345,7 @@
 
     // World
     updateRoom(playerPos.z);
-    updateCulling(playerPos.z);
+    updateCulling(playerPos.z, playerPos.x);
     tickNavArrow(playerPos);
     tickAlarmLight(dt);
 
