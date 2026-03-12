@@ -121,7 +121,11 @@ window.Guards = (function () {
     return _iconMatCache[key];
   }
 
+  // Cache keyed by "text|state" — guards reuse the same ~20 phrases so the cache stays small
+  const _bubbleMatCache = {};
   function makeBubbleMaterial(text, state) {
+    const key = text + '|' + state;
+    if (_bubbleMatCache[key]) return _bubbleMatCache[key];
     const W = 256, H = 72;
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
@@ -153,7 +157,8 @@ window.Guards = (function () {
     c.fillText(text, W / 2, 30);
 
     const tex = new THREE.CanvasTexture(canvas);
-    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    _bubbleMatCache[key] = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    return _bubbleMatCache[key];
   }
 
   let guards     = [];
@@ -975,8 +980,7 @@ window.Guards = (function () {
     _showBubble(text) {
       if (text === this._bubblePhrase) return;
       this._bubblePhrase = text;
-      if (this._bubbleMat) { this._bubbleMat.map.dispose(); this._bubbleMat.dispose(); }
-      this._bubbleMat = makeBubbleMaterial(text, this.state);
+      this._bubbleMat = makeBubbleMaterial(text, this.state); // returns cached material
       this.bubble.material = this._bubbleMat;
       this.bubble.visible  = true;
       this._bubbleVisible  = true;

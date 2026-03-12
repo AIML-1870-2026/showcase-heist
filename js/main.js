@@ -849,7 +849,7 @@
       puffVel[i * 3 + 1] -= 2.5 * dt;  // light gravity
       anyAlive = true;
     }
-    puffGeo.attributes.position.needsUpdate = true;
+    if (anyAlive) puffGeo.attributes.position.needsUpdate = true;
     puffMesh.material.opacity = 0.55 * Math.max(0, 1 - (puffLife[0] / PUFF_DUR));
     if (!anyAlive) { puffActive = false; puffMesh.visible = false; }
   }
@@ -1099,8 +1099,10 @@
     G.stealables.forEach(st => {
       if (st.mesh && st.mesh.userData.floorRing) {
         const ring = st.mesh.userData.floorRing;
-        ring.visible = !st.taken;
-        if (!st.taken) {
+        if (st.taken) {
+          if (ring.visible) ring.visible = false; // hide once; skip every subsequent frame
+        } else {
+          ring.visible = true;
           ring.material.opacity = 0.24 + Math.sin(floatT * 2.6 + st.z) * 0.14;
           const s = 0.94 + Math.sin(floatT * 1.8 + st.x) * 0.06;
           ring.scale.set(s, 1, s);
