@@ -1149,8 +1149,15 @@ window.Guards = (function () {
     return false;
   }
 
+  const _guardPosCache = [];
   function getGuardPositions() {
-    return guards.map(g => ({ x: g.pos.x, z: g.pos.z }));
+    _guardPosCache.length = guards.length;
+    for (let i = 0; i < guards.length; i++) {
+      if (!_guardPosCache[i]) _guardPosCache[i] = { x: 0, z: 0 };
+      _guardPosCache[i].x = guards[i].pos.x;
+      _guardPosCache[i].z = guards[i].pos.z;
+    }
+    return _guardPosCache;
   }
 
   // Returns positions of guards that are suspicious or alerted (for companion auto-distract)
