@@ -147,10 +147,10 @@ window.Player = (function () {
 
   // ── Safe-cracking helpers ──────────────────────────────
   function _newSCTumbler() {
-    const zoneSize = 0.20 + Math.random() * 0.18;
+    const zoneSize = 0.55 + Math.random() * 0.25;
     _scZone.start  = Math.random() * (Math.PI * 2 - zoneSize);
     _scZone.end    = _scZone.start + zoneSize;
-    _scSpeed       = 0.85 + Math.random() * 0.7 + _scTumbler * 0.25;
+    _scSpeed       = 0.45 + Math.random() * 0.25 + _scTumbler * 0.08;
     _scAngle       = 0;
   }
 
