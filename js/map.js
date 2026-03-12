@@ -4115,9 +4115,9 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 120, M.renoir, false);
     paintingSpotlight(scene,  24.9, 3.5, 120, 'east');
     placard(scene,  24.9, 2.6, 120, 'Luncheon of the Boating Party', 'Pierre-Auguste Renoir, 1881', 'east');
-    wallPainting(scene,  24.9, 3.5, 136, M.cezanne, false);
-    paintingSpotlight(scene,  24.9, 3.5, 136, 'east');
-    placard(scene,  24.9, 2.6, 136, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'east');
+    wallPainting(scene,  24.9, 3.5, 133, M.cezanne, false);
+    paintingSpotlight(scene,  24.9, 3.5, 133, 'east');
+    placard(scene,  24.9, 2.6, 133, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'east');
     wallPainting(scene,  24.9, 3.5, 148, M.monetPoppies, false);
     paintingSpotlight(scene,  24.9, 3.5, 148, 'east');
     placard(scene,  24.9, 2.6, 148, 'Poppies', 'Claude Monet, 1873', 'east');
