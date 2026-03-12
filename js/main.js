@@ -6,10 +6,10 @@
 (function () {
 
   // ── Renderer ───────────────────────────────────────────
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  const renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
   renderer.shadowMap.enabled  = true;
-  renderer.shadowMap.type     = THREE.PCFShadowMap;
+  renderer.shadowMap.type     = THREE.BasicShadowMap;
   renderer.toneMapping        = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
   renderer.outputEncoding     = THREE.sRGBEncoding;
@@ -119,14 +119,14 @@
     sun = new THREE.DirectionalLight(0xd0e0f8, 0.65);
     sun.position.set(15, 25, 10);
     sun.castShadow = true;
-    sun.shadow.mapSize.width  = 1024;
-    sun.shadow.mapSize.height = 1024;
+    sun.shadow.mapSize.width  = 512;
+    sun.shadow.mapSize.height = 512;
     sun.shadow.camera.near   = 0.5;
-    sun.shadow.camera.far    = 120;
-    sun.shadow.camera.left   = -28;
-    sun.shadow.camera.right  =  28;
-    sun.shadow.camera.top    =  28;
-    sun.shadow.camera.bottom = -28;
+    sun.shadow.camera.far    = 80;
+    sun.shadow.camera.left   = -20;
+    sun.shadow.camera.right  =  20;
+    sun.shadow.camera.top    =  20;
+    sun.shadow.camera.bottom = -20;
     sun.shadow.bias = -0.0015;
     sun.shadow.camera.updateProjectionMatrix();
     scene.add(sun);
@@ -239,8 +239,34 @@
     window.G._alarmLight = alarmLight;
   }
 
+  // ── Zone culling — hide static map meshes far from player ──
+  let _cullList  = [];   // [{ obj, z }]
+  let _lastCullZ = -9999;
+  const _cullWP  = new THREE.Vector3();
+
+  function updateCulling(pz) {
+    if (Math.abs(pz - _lastCullZ) < 4) return;
+    _lastCullZ = pz;
+    const near = pz - 55, far = pz + 55;
+    for (let i = 0; i < _cullList.length; i++) {
+      const { obj, z } = _cullList[i];
+      const inRange = z >= near && z <= far;
+      if (!inRange && obj.visible) {
+        obj.userData._cullHidden = true;
+        obj.visible = false;
+      } else if (inRange && obj.userData._cullHidden) {
+        obj.userData._cullHidden = false;
+        obj.visible = true;
+      }
+    }
+  }
+
   // ── Map build ──────────────────────────────────────────
   function buildMap() {
+    // Snapshot existing scene objects so we can identify map-only meshes
+    const _preBuild = new Set();
+    scene.traverse(o => _preBuild.add(o));
+
     const data = GameMap.init(scene);
     window.G.walls          = data.walls;
     window.G.doors          = data.doors;
@@ -250,6 +276,15 @@
     window.G.terminals      = data.terminals;
     window.G.vents          = data.vents || [];
     window.G.skylightHatch  = data.skylightHatch || null;
+
+    // Collect static map meshes added by GameMap.init for zone culling
+    scene.traverse(obj => {
+      if (_preBuild.has(obj)) return;
+      if (!obj.isMesh) return;
+      obj.getWorldPosition(_cullWP);
+      _cullList.push({ obj, z: _cullWP.z });
+    });
+
     Guards.init(scene, data.guardData);
     Security.init(scene, data.laserData, data.cameraData);
   }
@@ -694,7 +729,7 @@
   }
 
   // ── Dust mote particles ────────────────────────────────
-  const DUST_COUNT = 180;
+  const DUST_COUNT = 60;
   const dustPositions = new Float32Array(DUST_COUNT * 3);
   const dustVelocities = new Float32Array(DUST_COUNT);  // y-drift speed per particle
   (function initDust() {
@@ -2284,11 +2319,17 @@
       return;
     }
 
-    // Shadow camera follows player for consistent resolution across the full map
+    // Shadow camera follows player — only update when player moves >4 units
     if (sun) {
-      sun.position.set(playerPos.x + 15, 25, playerPos.z + 10);
-      sun.target.position.set(playerPos.x, 0, playerPos.z);
-      sun.target.updateMatrixWorld();
+      const _dx = playerPos.x - (sun._lastX || 0);
+      const _dz = playerPos.z - (sun._lastZ || 0);
+      if (_dx * _dx + _dz * _dz > 16) {
+        sun.position.set(playerPos.x + 15, 25, playerPos.z + 10);
+        sun.target.position.set(playerPos.x, 0, playerPos.z);
+        sun.target.updateMatrixWorld();
+        sun._lastX = playerPos.x;
+        sun._lastZ = playerPos.z;
+      }
     }
 
     // Core updates
@@ -2299,6 +2340,7 @@
 
     // World
     updateRoom(playerPos.z);
+    updateCulling(playerPos.z);
     tickNavArrow(playerPos);
     tickAlarmLight(dt);
 
