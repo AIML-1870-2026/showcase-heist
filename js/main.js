@@ -7,7 +7,7 @@
 
   // ── Renderer ───────────────────────────────────────────
   const renderer = new THREE.WebGLRenderer({ antialias: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.shadowMap.enabled  = true;
   renderer.shadowMap.type     = THREE.BasicShadowMap;
   renderer.toneMapping        = THREE.ACESFilmicToneMapping;
