@@ -3550,6 +3550,39 @@ window.GameMap = (function () {
       pillar(scene, -48, 112);
       pillar(scene, -72, 112);
 
+      // ── Garden pond (impluvium) — west mid-section ──────────
+      { const PX = -74, PZ = 105;
+        const pStoneMat = new THREE.MeshStandardMaterial({
+          color: 0xB8B4A8, roughness: 0.68, metalness: 0.04,
+        });
+        const pWaterMat = new THREE.MeshStandardMaterial({
+          color: 0x2A7A5C, emissive: 0x0A3222, emissiveIntensity: 0.20,
+          roughness: 0.04, metalness: 0.02, transparent: true, opacity: 0.74,
+        });
+        const lilyMat = new THREE.MeshStandardMaterial({
+          color: 0x2C6418, roughness: 0.90, metalness: 0.0,
+        });
+        // Border slabs (4 sides of stone frame)
+        box(scene, 5.40, 0.32, 0.32, PX,        0.16, PZ - 2.04, pStoneMat); // south
+        box(scene, 5.40, 0.32, 0.32, PX,        0.16, PZ + 2.04, pStoneMat); // north
+        box(scene, 0.32, 0.32, 3.76, PX - 2.54, 0.16, PZ,        pStoneMat); // west
+        box(scene, 0.32, 0.32, 3.76, PX + 2.54, 0.16, PZ,        pStoneMat); // east
+        // Basin floor
+        box(scene, 4.76, 0.10, 3.44, PX, 0.05, PZ, pStoneMat);
+        // Water surface
+        const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(4.56, 0.06, 3.24), pWaterMat);
+        waterMesh.position.set(PX, 0.22, PZ); scene.add(waterMesh);
+        // Lily pads
+        [[PX - 0.80, PZ + 0.70], [PX + 0.55, PZ - 0.85], [PX + 0.20, PZ + 0.95]].forEach(([lx, lz]) => {
+          const lily = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.03, 9), lilyMat);
+          lily.position.set(lx, 0.26, lz); scene.add(lily);
+        });
+        // Subtle teal water glow
+        const pondPt = new THREE.PointLight(0x44cc88, 0.28, 8);
+        pondPt.position.set(PX, 1.4, PZ); scene.add(pondPt);
+        addWallAABB(PX, PZ, 5.8, 4.5);
+      }
+
       // ── Central decorative rug ──────────────────────────────
       rug(scene, SCX, SCZ, 20, 14, 0x1C1408, 0xD4A828);
 
