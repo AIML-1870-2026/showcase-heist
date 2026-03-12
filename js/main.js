@@ -277,10 +277,10 @@
     window.G.vents          = data.vents || [];
     window.G.skylightHatch  = data.skylightHatch || null;
 
-    // Collect static map meshes added by GameMap.init for zone culling
+    // Collect static map meshes and lights added by GameMap.init for zone culling
     scene.traverse(obj => {
       if (_preBuild.has(obj)) return;
-      if (!obj.isMesh) return;
+      if (!obj.isMesh && !obj.isLight) return;
       obj.getWorldPosition(_cullWP);
       _cullList.push({ obj, z: _cullWP.z });
     });

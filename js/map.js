@@ -6040,8 +6040,8 @@ window.GameMap = (function () {
       wall(scene, 70, 113.25, WALL_T, 19.5, discWallMat);   // Z 103.5→123
       wall(scene, 70, 142.5,  WALL_T, 15,   discWallMat);   // Z 135→150
       // Spine lights
-      [64, 80, 97.5, 115, 132, 147].forEach(z => {
-        const sl = new THREE.PointLight(0x9980cc, 0.55, 20);
+      [64, 97.5, 147].forEach(z => {
+        const sl = new THREE.PointLight(0x9980cc, 0.55, 30);
         sl.position.set(63.5, 4.5, z); scene.add(sl);
       });
     }
@@ -6083,12 +6083,8 @@ window.GameMap = (function () {
       box(scene, 0.14, WALL_H + 0.32, 0.14, 70, WALL_H / 2, 74.1, foArchMat);
 
       // ── Lighting ─────────────────────────────────────────
-      { const pt = new THREE.PointLight(0xffd080, 1.0, 35);
+      { const pt = new THREE.PointLight(0xffd080, 1.0, 40);
         pt.position.set(FRX, 4.5, FRZ); scene.add(pt); }
-      { const pt = new THREE.PointLight(0xffc060, 0.6, 20);
-        pt.position.set(80, 4, 62); scene.add(pt); }
-      { const pt = new THREE.PointLight(0xffd090, 0.6, 20);
-        pt.position.set(100, 4, 75); scene.add(pt); }
 
       // ── T-Rex Skeleton (center of room, facing east) ──────────────────────
       {
@@ -6452,10 +6448,8 @@ window.GameMap = (function () {
       box(scene, 0.14, WALL_H + 0.32, 0.14, 70, WALL_H / 2, 103.6, waArchMat);
 
       // ── Lighting (dramatic red-tinted war ambience) ───────────────────────
-      { const pt = new THREE.PointLight(0xff3010, 0.7, 30); pt.position.set(WRX, 4.5, WRZ); scene.add(pt); }
-      { const pt = new THREE.PointLight(0xcc2008, 0.5, 18); pt.position.set(80, 4, 88); scene.add(pt); }
-      { const pt = new THREE.PointLight(0xff4418, 0.5, 18); pt.position.set(102, 4, 107); scene.add(pt); }
-      { const pt = new THREE.PointLight(0xffa060, 0.45, 16); pt.position.set(89, 4.5, 97.5); scene.add(pt); }
+      { const pt = new THREE.PointLight(0xff3010, 0.7, 40); pt.position.set(WRX, 4.5, WRZ); scene.add(pt); }
+      { const pt = new THREE.PointLight(0xffa060, 0.45, 22); pt.position.set(89, 4.5, 97.5); scene.add(pt); }
 
       // ── Country flag banners on south wall ───────────────────────────────
       const flagConfigs = [
@@ -6741,10 +6735,8 @@ window.GameMap = (function () {
       box(scene, 0.14, WALL_H + 0.32, 0.14, 70, WALL_H / 2, 135.1, spArchMat);
 
       // ── Lighting (deep space ambience) ────────────────────────────────────
-      { const pt = new THREE.PointLight(0x4444ff, 0.65, 35); pt.position.set(SPX, 4.5, SPZ); scene.add(pt); }
-      { const pt = new THREE.PointLight(0x2222cc, 0.45, 22); pt.position.set(78, 4, 118); scene.add(pt); }
-      { const pt = new THREE.PointLight(0x6622aa, 0.45, 22); pt.position.set(102, 4, 142); scene.add(pt); }
-      { const pt = new THREE.PointLight(0xaaaaff, 0.40, 18); pt.position.set(89, 5, 129); scene.add(pt); }
+      { const pt = new THREE.PointLight(0x4444ff, 0.65, 42); pt.position.set(SPX, 4.5, SPZ); scene.add(pt); }
+      { const pt = new THREE.PointLight(0x6622aa, 0.45, 26); pt.position.set(89, 5, 129); scene.add(pt); }
 
       // ── Planets hanging from ceiling ──────────────────────────────────────
 
