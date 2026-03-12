@@ -1619,11 +1619,8 @@ window.GameMap = (function () {
     // Lobby walls — skip west wall so we can add a service exit gap
     roomWalls(scene, 0, 20, 40, 40, { north: true, south: true, west: true });
 
-    // Lobby west wall with 3-unit service exit gap at Z=15
-    // Full west wall: X=-20, Z 0→40 (length 40, centre Z=20)
-    // Gap at Z 13.5→16.5 (3 units), so stubs: Z 0→13.5 (len 13.5, ctr 6.75) and Z 16.5→40 (len 23.5, ctr 28.25)
-    wall(scene, -20,  6.75, WALL_T, 13.5);   // south stub
-    wall(scene, -20, 28.25, WALL_T, 23.5);   // north stub
+    // Lobby west wall — full continuous wall X=-20, Z 0→40
+    wall(scene, -20, 20, WALL_T, 40);
 
     // South wall stubs flanking the 3-unit front entrance gap
     const _enStub = (40 - 3) / 2;  // 18.5
@@ -1917,19 +1914,6 @@ window.GameMap = (function () {
       };
     }
 
-    // ── FEATURE 8: Service Exit (west Lobby wall at X=-20, Z=15) ────────────
-    // The west wall already runs the full height. We need a gap for the door.
-    // The lobby west wall is at X=-20, Z=-11 (exterior section) and the interior
-    // is covered by roomWalls(). We add a door mesh and an EXIT sign.
-    door(scene, -20, 15, null, Math.PI / 2);
-    // Glowing EXIT sign above the service exit
-    {
-      const exitSignMat = new THREE.MeshStandardMaterial({
-        color: 0x00ff55, emissive: 0x00ff55, emissiveIntensity: 2.0,
-        roughness: 0.3,
-      });
-      box(scene, 0.08, 0.35, 1.5, -19.92, WALL_H - 0.45, 15, exitSignMat);
-    }
 
     // ── FEATURE 3: Trapdoor in Lobby → Underground Service Tunnel ──────────
     {
@@ -2532,7 +2516,7 @@ window.GameMap = (function () {
     paintingSpotlight(scene, -24.9, 3.8, 86, 'west');
     const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 86, M.monaLisa);
     stealables.push({ mesh: paintMesh, wallMesh: monaWallMesh, item: 'painting', x: -24.9, z: 86, taken: false, value: 800000000 });
-    placard(scene, -24.9, 2.6, 86, 'La Joconde', 'Léonard de Vinci, c. 1503', 'west');
+    placard(scene, -24.9, 2.6, 86, 'Mona Lisa', 'Léonard de Vinci, c. 1503', 'west');
     // Glowing floor ring — guides player to the stealable painting
     const paintRingMat = new THREE.MeshBasicMaterial({
       color: 0xffe066, emissive: 0xffe066, transparent: true, opacity: 0.45,
@@ -2810,12 +2794,12 @@ window.GameMap = (function () {
     wallPainting(scene, -24.9, 3.5, 73, M.vangoghIrises, true);
     paintingSpotlight(scene, -24.9, 3.5, 73, 'west');
     placard(scene, -24.9, 2.6, 73, 'Irises', 'Vincent van Gogh, 1889', 'west');
-    wallPainting(scene, -24.9, 3.5, 86, M.monetSunrise, true);
-    paintingSpotlight(scene, -24.9, 3.5, 86, 'west');
-    placard(scene, -24.9, 2.6, 86, 'Impression, Sunrise', 'Claude Monet, 1872', 'west');
-    wallPainting(scene, -24.9, 3.5, 96, M.monetPoppies, true);
-    paintingSpotlight(scene, -24.9, 3.5, 96, 'west');
-    placard(scene, -24.9, 2.6, 96, 'Poppies', 'Claude Monet, 1873', 'west');
+    wallPainting(scene, -24.9, 3.5, 88, M.monetSunrise, true);
+    paintingSpotlight(scene, -24.9, 3.5, 88, 'west');
+    placard(scene, -24.9, 2.6, 88, 'Impression, Sunrise', 'Claude Monet, 1872', 'west');
+    wallPainting(scene, -24.9, 3.5, 98, M.monetPoppies, true);
+    paintingSpotlight(scene, -24.9, 3.5, 98, 'west');
+    placard(scene, -24.9, 2.6, 98, 'Poppies', 'Claude Monet, 1873', 'west');
     // Extra gallery paintings — east wall (between existing)
     wallPainting(scene,  24.9, 3.5, 65, M.vangoghSunflowers, false);
     paintingSpotlight(scene,  24.9, 3.5, 65, 'east');
@@ -2826,9 +2810,9 @@ window.GameMap = (function () {
     wallPainting(scene,  24.9, 3.5, 85, M.cezanne, false);
     paintingSpotlight(scene,  24.9, 3.5, 85, 'east');
     placard(scene,  24.9, 2.6, 85, 'Mont Sainte-Victoire', 'Paul Cézanne, 1887', 'east');
-    wallPainting(scene,  24.9, 3.5, 95, M.vangoghIrises, false);
-    paintingSpotlight(scene,  24.9, 3.5, 95, 'east');
-    placard(scene,  24.9, 2.6, 95, 'Irises', 'Vincent van Gogh, 1889', 'east');
+    wallPainting(scene,  24.9, 3.5, 97, M.vangoghIrises, false);
+    paintingSpotlight(scene,  24.9, 3.5, 97, 'east');
+    placard(scene,  24.9, 2.6, 97, 'Irises', 'Vincent van Gogh, 1889', 'east');
     // (Extra gallery south wall paintings removed — too close to entrance)
     // Extra gallery north wall
     wallPaintingNS(scene, -8, 3.5, 99.90, M.renoir, false);
