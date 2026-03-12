@@ -6437,8 +6437,8 @@ window.GameMap = (function () {
         const fish = new THREE.Group();
         const fbody = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 6), fossilMat);
         fbody.scale.set(1.9, 0.55, 0.28); fish.add(fbody);
-        fish.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.04), fossilMat),
-          { position: { set(x,y,z) { this.x=x;this.y=y;this.z=z; return this; } } }));
+        const fspine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.04), fossilMat);
+        fspine.rotation.z = Math.PI / 2; fspine.position.set(0, 0, 0); fish.add(fspine);
         const ftail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.04), fossilMat);
         ftail.position.set(-0.38, 0, 0); fish.add(ftail);
         const ffin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.03), fossilMat);
