@@ -964,10 +964,12 @@ window.Player = (function () {
       mz = 1; // slide continues forward
     }
 
-    const spd = state === 'crouching' ? SPEED_CROUCH
+    const _diff = window.G && window.G.difficulty;
+    const _spdMult = (_diff === 'easy' || _diff === 'noguard') ? 1.4 : 1.0;
+    const spd = (state === 'crouching' ? SPEED_CROUCH
               : state === 'sliding'   ? SPEED_SLIDE
               : state === 'sprinting' ? SPEED_SPRINT
-              : SPEED_WALK;
+              : SPEED_WALK) * _spdMult;
 
     const moving = mx !== 0 || mz !== 0;
 
