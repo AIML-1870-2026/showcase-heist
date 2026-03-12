@@ -2222,6 +2222,81 @@
         escape:  { x:  0,    z: 163   },
       },
     },
+    {
+      name: 'Bones of Time',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'crown', 'escape'],
+      objectives: {
+        enter:    'Breach the Louvre perimeter',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        painting: 'Steal the T-Rex Fossil Skull (Fossil Room)',
+        crown:    'Steal the Ancient Bone Key (Fossil Room)',
+        escape:   'Escape with the fossils',
+      },
+      stealConfig: [
+        { label: 'T-Rex Fossil Skull', mapTo: 'painting' },
+        { label: 'Ancient Bone Key',   mapTo: 'crown'    },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 4,
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5 },
+        gallery: { x: -14,   z: 60   },
+        painting:{ x:  82,   z: 70   },
+        crown:   { x:  85,   z: 78   },
+        escape:  { x:  0,    z: 163  },
+      },
+    },
+    {
+      name: 'Art of War',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'crown', 'escape'],
+      objectives: {
+        enter:    'Infiltrate the Louvre',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Enter the Grande Galerie',
+        painting: 'Steal the War Standard (War Room)',
+        crown:    'Steal the Ancient Sword (War Room)',
+        escape:   'Escape before the alarm resets',
+      },
+      stealConfig: [
+        { label: 'War Standard',  mapTo: 'painting' },
+        { label: 'Ancient Sword', mapTo: 'crown'    },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 4,
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5 },
+        gallery: { x: -14,   z: 60   },
+        painting:{ x:  84,   z: 97.5 },
+        crown:   { x:  97,   z: 86   },
+        escape:  { x:  0,    z: 163  },
+      },
+    },
+    {
+      name: 'Dark Side of the Moon',
+      objOrder: ['enter', 'yellow', 'gallery', 'painting', 'crown', 'escape'],
+      objectives: {
+        enter:    'Slip into the Louvre undetected',
+        yellow:   'Find the Yellow Keycard',
+        gallery:  'Reach the Grande Galerie',
+        painting: 'Steal the Moon Rock Sample (Space Room)',
+        crown:    'Steal the Astronaut Helmet (Space Room)',
+        escape:   'Disappear into the night',
+      },
+      stealConfig: [
+        { label: 'Moon Rock Sample',  mapTo: 'painting' },
+        { label: 'Astronaut Helmet',  mapTo: 'crown'    },
+      ],
+      winItems: ['painting', 'crown'],
+      rooms: 4,
+      navTargets: {
+        yellow:  { x:  0,    z: 16.5 },
+        gallery: { x: -14,   z: 60   },
+        painting:{ x:  84,   z: 125  },
+        crown:   { x:  93,   z: 142  },
+        escape:  { x:  0,    z: 163  },
+      },
+    },
   ];
 
   let NAV_TARGETS = MISSION_VARIANTS[0].navTargets;
