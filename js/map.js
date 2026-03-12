@@ -1960,13 +1960,17 @@ window.GameMap = (function () {
     // ════════════════════════════════
     {
       // ── Materials ──────────────────────────────────────
-      const extFloorMat = new THREE.MeshStandardMaterial({ color: 0xb0aaa0, roughness: 0.94, metalness: 0.0 });
-      const mFacade     = new THREE.MeshStandardMaterial({ color: 0xd0c4a0, roughness: 0.85, metalness: 0.0 });
-      const mCorniceExt = new THREE.MeshStandardMaterial({ color: 0xb8a870, roughness: 0.55, metalness: 0.12 });
+      const extFloorMat = new THREE.MeshStandardMaterial({ color: 0x8a8480, roughness: 0.96, metalness: 0.0 });
+      const mFacade     = new THREE.MeshStandardMaterial({ color: 0x787068, roughness: 0.92, metalness: 0.0 });
+      const mCorniceExt = new THREE.MeshStandardMaterial({ color: 0x9a8860, roughness: 0.60, metalness: 0.12 });
       const mWinExt     = new THREE.MeshBasicMaterial({ color: 0x1a2a3a });
-      const mWalkExt    = new THREE.MeshStandardMaterial({ color: 0xd0c8b4, roughness: 0.84, metalness: 0.0 });
-      const mStoneDec   = new THREE.MeshStandardMaterial({ color: 0x9a9080, roughness: 0.75, metalness: 0.0 });
-      const mStep       = new THREE.MeshStandardMaterial({ color: 0xc8c0a8, roughness: 0.80, metalness: 0.0 });
+      const mWalkExt    = new THREE.MeshStandardMaterial({ color: 0xa09888, roughness: 0.90, metalness: 0.0 });
+      const mStoneDec   = new THREE.MeshStandardMaterial({ color: 0x6a6460, roughness: 0.82, metalness: 0.0 });
+      const mStep       = new THREE.MeshStandardMaterial({ color: 0x807870, roughness: 0.88, metalness: 0.0 });
+      const mHedge      = new THREE.MeshStandardMaterial({ color: 0x224a1c, roughness: 0.98, metalness: 0.0 });
+      const mSoil       = new THREE.MeshStandardMaterial({ color: 0x3a2810, roughness: 0.99, metalness: 0.0 });
+      const mGardenStat = new THREE.MeshStandardMaterial({ color: 0x928e88, roughness: 0.80, metalness: 0.0 });
+      const mGrass      = new THREE.MeshStandardMaterial({ color: 0x3a6830, roughness: 0.98, metalness: 0.0 });
       const mFence      = new THREE.MeshStandardMaterial({ color: 0x181814, roughness: 0.40, metalness: 0.80 });
       const mLion       = new THREE.MeshStandardMaterial({ color: 0xc8b890, roughness: 0.72, metalness: 0.0  });
       const mLanternM   = new THREE.MeshStandardMaterial({ color: 0x1a1810, roughness: 0.40, metalness: 0.75 });
@@ -2026,6 +2030,28 @@ window.GameMap = (function () {
       [-18.5, -13.5, -7.5, 7.5, 13.5, 18.5].forEach(px => {
         box(scene, 0.45, WALL_H, 0.38, px, WALL_H / 2, -0.44, mFacade);
       });
+
+      // ── Stone quoins at facade corners ─────────────────
+      {
+        const mQuoin = new THREE.MeshStandardMaterial({ color: 0x5e5a56, roughness: 0.90, metalness: 0.0 });
+        // Alternating tall/short quoin blocks at building corners
+        [0.22, 1.00, 1.72, 2.48, 3.28, 4.14, 5.05].forEach((qy, i) => {
+          const qh = (i % 2 === 0) ? 0.56 : 0.40;
+          const qd = (i % 2 === 0) ? 0.62 : 0.46;
+          const qw = (i % 2 === 0) ? 0.80 : 0.60;
+          box(scene, qw, qh, qd, -18.95, qy + qh / 2, -0.52, mQuoin);
+          box(scene, qw, qh, qd,  18.95, qy + qh / 2, -0.52, mQuoin);
+        });
+        // Horizontal rustication grooves on lower base (scored-stone look)
+        [0.82, 1.64, 2.45].forEach(gy => {
+          box(scene, 18.2, 0.055, 0.40, -10.75, gy, -0.42, mQuoin);
+          box(scene, 18.2, 0.055, 0.40,  10.75, gy, -0.42, mQuoin);
+        });
+        // Window keystones above each facade window
+        [-16.5, -10.75, -5, 5, 10.75, 16.5].forEach(kx => {
+          box(scene, 0.52, 0.34, 0.20, kx, 5.38, -0.50, mQuoin);
+        });
+      }
 
       // ── Wing extensions — WNG=12, corner pavilion towers ──
       const WNG = 12, WNG_H = WALL_H + 2, PAVH = WALL_H + 5;
@@ -2090,9 +2116,66 @@ window.GameMap = (function () {
       pillar(scene, -5, -3);
       pillar(scene,  5, -3);
 
-      // ── Gold nameplate ─────────────────────────────────
-      const plaqueMat = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.28, metalness: 0.75 });
-      box(scene, 5.5, 0.38, 0.14, 0, WALL_H - 0.55, -0.08, plaqueMat);
+      // ── "THE LOUVRE" entrance sign — canvas texture ────
+      {
+        const sCv = document.createElement('canvas');
+        sCv.width = 1024; sCv.height = 128;
+        const sCtx = sCv.getContext('2d');
+        // Rich dark background gradient
+        const sBg = sCtx.createLinearGradient(0, 0, 0, 128);
+        sBg.addColorStop(0, '#0d0c0a'); sBg.addColorStop(1, '#1a1510');
+        sCtx.fillStyle = sBg; sCtx.fillRect(0, 0, 1024, 128);
+        // Outer gold border
+        sCtx.strokeStyle = '#c8a030'; sCtx.lineWidth = 5;
+        sCtx.strokeRect(5, 5, 1014, 118);
+        // Inner thin border
+        sCtx.strokeStyle = '#e8c050'; sCtx.lineWidth = 2;
+        sCtx.strokeRect(14, 14, 996, 100);
+        // Corner diamond ornaments
+        const drawDiamond = (dx, dy, sz) => {
+          sCtx.save(); sCtx.translate(dx, dy); sCtx.rotate(Math.PI / 4);
+          sCtx.fillStyle = '#e8c050'; sCtx.fillRect(-sz / 2, -sz / 2, sz, sz); sCtx.restore();
+        };
+        drawDiamond(14, 14, 9); drawDiamond(1010, 14, 9);
+        drawDiamond(14, 114, 9); drawDiamond(1010, 114, 9);
+        // Decorative vertical rules at sides
+        sCtx.strokeStyle = '#c8a030'; sCtx.lineWidth = 1.5;
+        [25, 999].forEach(ex => { sCtx.beginPath(); sCtx.moveTo(ex, 28); sCtx.lineTo(ex, 100); sCtx.stroke(); });
+        // Main text — THE LOUVRE
+        sCtx.shadowColor = '#c8900a'; sCtx.shadowBlur = 10;
+        sCtx.fillStyle = '#ead060';
+        sCtx.font = 'bold 58px "Times New Roman", Georgia, serif';
+        sCtx.textAlign = 'center'; sCtx.textBaseline = 'alphabetic';
+        sCtx.fillText('THE LOUVRE', 512, 76);
+        // Subtitle
+        sCtx.shadowBlur = 0; sCtx.fillStyle = '#b89030';
+        sCtx.font = 'italic 20px "Times New Roman", Georgia, serif';
+        sCtx.fillText('Musée du Louvre  ·  Paris', 512, 106);
+        // Horizontal rules flanking title
+        sCtx.strokeStyle = '#c8a030'; sCtx.lineWidth = 1;
+        sCtx.beginPath(); sCtx.moveTo(34, 62); sCtx.lineTo(300, 62); sCtx.stroke();
+        sCtx.beginPath(); sCtx.moveTo(724, 62); sCtx.lineTo(990, 62); sCtx.stroke();
+        const sTex = new THREE.CanvasTexture(sCv);
+        // Sign backing (dark stone frame)
+        const mSignBack = new THREE.MeshStandardMaterial({ color: 0x1a1510, roughness: 0.5, metalness: 0.3 });
+        box(scene, 8.8, 1.20, 0.14, 0, WALL_H - 0.88, -0.22, mSignBack);
+        // Sign face panel
+        const signMat = new THREE.MeshStandardMaterial({
+          map: sTex, emissiveMap: sTex, emissive: 0xffd868, emissiveIntensity: 0.40,
+          roughness: 0.25, metalness: 0.0, side: THREE.DoubleSide,
+        });
+        const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 1.05), signMat);
+        signMesh.position.set(0, WALL_H - 0.88, -0.14); scene.add(signMesh);
+        // Gold accent moldings above and below sign
+        const mGoldMold = new THREE.MeshStandardMaterial({ color: 0xc8a030, roughness: 0.22, metalness: 0.80 });
+        box(scene, 9.0, 0.13, 0.22, 0, WALL_H - 0.30, -0.20, mGoldMold);
+        box(scene, 9.0, 0.13, 0.22, 0, WALL_H - 1.46, -0.20, mGoldMold);
+        // Gold bolt rivets at sign corners
+        [-3.9, 3.9].forEach(bx => {
+          const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.16, 8), mGoldMold);
+          bolt.rotation.x = Math.PI / 2; bolt.position.set(bx, WALL_H - 0.88, -0.12); scene.add(bolt);
+        });
+      }
 
       // ── Hanging lantern above entrance ────────────────
       box(scene, 0.07, 1.4, 0.07, 0, WALL_H - 0.55, -1.9, mLanternM);  // rod
@@ -2189,6 +2272,85 @@ window.GameMap = (function () {
         jet.position.set(0, 2.95, FZ); scene.add(jet);
         addWallAABB(0, FZ, 2.2, 2.2);
       }
+
+      // ── Lawn panels flanking the central walkway ─────────
+      box(scene, 10, 0.018, 20, -15, 0.009, -11, mGrass);
+      box(scene, 10, 0.018, 20,  15, 0.009, -11, mGrass);
+
+      // ── Formal hedge borders ──────────────────────────────
+      // Long hedge rows against the building side walls
+      box(scene, 0.55, 1.05, 20, -18.7, 0.525, -11, mHedge);
+      box(scene, 0.55, 1.05, 20,  18.7, 0.525, -11, mHedge);
+      // Cross hedges dividing lawn into garden compartments
+      box(scene, 9.5, 1.05, 0.55, -15, 0.525,  -4, mHedge);
+      box(scene, 9.5, 1.05, 0.55,  15, 0.525,  -4, mHedge);
+      box(scene, 9.5, 1.05, 0.55, -15, 0.525, -19, mHedge);
+      box(scene, 9.5, 1.05, 0.55,  15, 0.525, -19, mHedge);
+
+      // ── Flower beds in garden compartments ───────────────
+      {
+        function flowerBed(fbx, fbz, fw, fd) {
+          box(scene, fw, 0.12, fd, fbx, 0.06, fbz, mSoil);
+          const bedColors = [0xee3333, 0xffcc00, 0xff88bb, 0x9933ee, 0xff6600, 0x44bbee, 0xff4488, 0x88dd44];
+          let fi = 0;
+          for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 5; col++) {
+              const fx = fbx - fw / 2 + 0.28 + col * ((fw - 0.56) / 4);
+              const fz = fbz - fd / 2 + 0.28 + row * ((fd - 0.56) / 2);
+              const fh = 0.20 + (fi % 3) * 0.09;
+              const clr = bedColors[fi % bedColors.length];
+              box(scene, 0.04, fh, 0.04, fx, fh / 2 + 0.12, fz,
+                new THREE.MeshStandardMaterial({ color: 0x2a6020, roughness: 0.9 }));
+              const flwr = new THREE.Mesh(new THREE.SphereGeometry(0.09 + (fi % 2) * 0.03, 5, 4),
+                new THREE.MeshStandardMaterial({ color: clr, roughness: 0.78, emissive: clr, emissiveIntensity: 0.12 }));
+              flwr.position.set(fx, 0.12 + fh + 0.05, fz); scene.add(flwr);
+              fi++;
+            }
+          }
+        }
+        flowerBed(-15, -11.5, 7.5, 5.5);  // west central bed (large)
+        flowerBed( 15, -11.5, 7.5, 5.5);  // east central bed (large)
+        flowerBed(-15,  -2.0, 7.5, 1.6);  // west near-entrance bed
+        flowerBed( 15,  -2.0, 7.5, 1.6);  // east near-entrance bed
+        flowerBed(-15, -20.5, 7.5, 1.6);  // west far bed (near fence)
+        flowerBed( 15, -20.5, 7.5, 1.6);  // east far bed (near fence)
+      }
+
+      // ── Classical garden statues on pedestals ─────────────
+      {
+        function gardenStatue(sx, sz) {
+          // Tiered stone pedestal
+          box(scene, 1.05, 0.18, 1.05, sx, 0.09, sz, mStoneDec);
+          box(scene, 0.78, 1.22, 0.78, sx, 0.79, sz, mStoneDec);
+          box(scene, 1.05, 0.18, 1.05, sx, 1.47, sz, mStoneDec);
+          const PY = 1.65;
+          // Draped lower figure (robe/skirt)
+          const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.27, 1.05, 8), mGardenStat);
+          robe.position.set(sx, PY + 0.525, sz); scene.add(robe);
+          // Torso
+          const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.19, 0.55, 8), mGardenStat);
+          torso.position.set(sx, PY + 1.30, sz); scene.add(torso);
+          // Head (slight tilt for life)
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6), mGardenStat);
+          head.scale.set(0.88, 1.10, 0.88);
+          head.position.set(sx + 0.04, PY + 1.88, sz - 0.06); scene.add(head);
+          // Arms (Venus de Milo style — graceful partial limbs)
+          const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.068, 0.38, 6), mGardenStat);
+          armL.position.set(sx - 0.21, PY + 1.27, sz); armL.rotation.z = 0.55; scene.add(armL);
+          const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.068, 0.44, 6), mGardenStat);
+          armR.position.set(sx + 0.20, PY + 1.33, sz); armR.rotation.z = -0.38; scene.add(armR);
+        }
+        gardenStatue(-17,  -8);
+        gardenStatue( 17,  -8);
+        gardenStatue(-17, -16);
+        gardenStatue( 17, -16);
+      }
+
+      // ── Ornamental trees flanking entrance and fence ──────
+      lorTree(scene, -13, -3.5);
+      lorTree(scene,  13, -3.5);
+      lorTree(scene, -13, -20);
+      lorTree(scene,  13, -20);
 
       // Baseboard strip
       box(scene, 39.6, 0.22, 0.09, 0, 0.11, -21.75, _baseMat);
