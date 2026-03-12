@@ -927,8 +927,6 @@ window.Player = (function () {
     tickLockpick(dt);
     tickSafeCrack(dt);
     if (state === 'caught') return;
-    if (G._vaultCinematicActive) return;
-
     // Slide timer
     if (state === 'sliding') {
       slideTimer -= dt;
