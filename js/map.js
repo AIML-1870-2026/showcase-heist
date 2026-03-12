@@ -11,6 +11,7 @@
 //   Corridor 2  X  −5→ 5,  Z 100→115
 //   Crown Vault X −25→25,  Z 115→160
 //   Exit zone   X  −5→ 5,  Z 160→165
+//   Salle des Statues  X −80→−40,  Z  90→120  (off Gallery west wall via corridor)
 
 window.GameMap = (function () {
 
@@ -2324,8 +2325,9 @@ window.GameMap = (function () {
     wall(scene, -25, 58.75, WALL_T, 7.5, M.galleryWall);
     // Middle stub: Z 65.5→75.5 (length 10, centre 70.5) — between breaker gap and Galerie gap
     wall(scene, -25, 70.5, WALL_T, 10, M.galleryWall);
-    // North stub: Z 78.5→100  (length 21.5, centre 89.25)
-    wall(scene, -25, 89.25, WALL_T, 21.5, M.galleryWall);
+    // North stub split for Salle des Statues corridor at Z=90→96 (6-unit gap)
+    wall(scene, -25, 84.25, WALL_T, 11.5, M.galleryWall);  // Z 78.5→90  south of Statues corridor
+    wall(scene, -25, 98,    WALL_T,  4.0, M.galleryWall);  // Z 96→100   north of Statues corridor
 
     // Glowing archway at side-room entrance (opening in X-wall, strips run along Z)
     const sideGlowMat = new THREE.MeshStandardMaterial({
@@ -3064,6 +3066,346 @@ window.GameMap = (function () {
       const breakerTerminal = { mesh: breakerMesh, x: -30.6, z: 64, hacked: false, type: 'breaker' };
       terminals.push(breakerTerminal);
     }
+
+    // ════════════════════════════════════════════════════════
+    //  COULOIR DES STATUES  (Statues Corridor)
+    //  X -25→-40  Z 90→96  (cx=-32.5, cz=93, 15×6)
+    //  Connects Gallery west wall (opening Z=90→96) to Salle des Statues
+    // ════════════════════════════════════════════════════════
+    floor(scene,   -32.5, 93, 15, 6);
+    ceiling(scene, -32.5, 93, 15, 6);
+    wall(scene, -32.5, 90, 15, WALL_T, M.galleryWall);  // south wall Z=90
+    wall(scene, -32.5, 96, 15, WALL_T, M.galleryWall);  // north wall Z=96
+    // East side covered by gallery west-wall stubs; west side opens into Salle des Statues
+    // Glowing archway at gallery-side entrance (X=-25, Z=93)
+    { const corrArchM = new THREE.MeshStandardMaterial({
+        color: 0xe8d060, emissive: 0xe8d060, emissiveIntensity: 1.1,
+        roughness: 0.2, transparent: true, opacity: 0.88,
+      });
+      box(scene, 0.14, 0.14, 6.4, -25, WALL_H + 0.16, 93, corrArchM);          // top bar
+      box(scene, 0.14, WALL_H + 0.32, 0.14, -25, WALL_H / 2, 89.9, corrArchM); // south post
+      box(scene, 0.14, WALL_H + 0.32, 0.14, -25, WALL_H / 2, 96.1, corrArchM); // north post
+    }
+    // Wall lanterns in corridor
+    wallLantern(scene, -38, 3.0, 90.12,  1);  // south wall
+    wallLantern(scene, -38, 3.0, 95.88, -1);  // north wall
+
+    // ════════════════════════════════════════════════════════
+    //  SALLE DES STATUES  (Hall of Statues)
+    //  X -40→-80  Z 90→120  (cx=-60, cz=105, 40×30)
+    //  Life-sized Roman & Greek marble statues, bonsai trees, central fountain
+    // ════════════════════════════════════════════════════════
+    {
+      const SCX = -60, SCZ = 105, SCW = 40, SCD = 30;
+
+      // ── Materials ─────────────────────────────────────────
+      const sFloorMat = new THREE.MeshStandardMaterial({
+        color: 0xE4E0D4, roughness: 0.14, metalness: 0.05,  // white veined marble
+      });
+      const sWallMat = new THREE.MeshStandardMaterial({
+        color: 0xDDD6C4, roughness: 0.86, metalness: 0.0,   // warm cream stone
+      });
+      const sCeilMat = new THREE.MeshStandardMaterial({
+        color: 0xF2EDE4, roughness: 0.90, metalness: 0.0,   // ivory ceiling
+      });
+      const statueMarbMat = new THREE.MeshStandardMaterial({
+        color: 0xE2DAC8, roughness: 0.60, metalness: 0.02,  // classical white marble
+      });
+      const statuePedMat = new THREE.MeshStandardMaterial({
+        color: 0xC4BAA8, roughness: 0.72, metalness: 0.03,  // slightly darker pedestal
+      });
+      const statueBaseMat = new THREE.MeshStandardMaterial({
+        color: 0xA8A090, roughness: 0.82, metalness: 0.0,   // grey-stone base slab
+      });
+
+      // ── Room shell ─────────────────────────────────────────
+      floor(scene,   SCX, SCZ, SCW, SCD, sFloorMat);
+      ceiling(scene, SCX, SCZ, SCW, SCD, sCeilMat);
+      wall(scene, SCX, 90,  SCW, WALL_T, sWallMat);  // south wall Z=90
+      wall(scene, SCX, 120, SCW, WALL_T, sWallMat);  // north wall Z=120
+      wall(scene, -80, SCZ, WALL_T, SCD, sWallMat);  // west wall  X=-80
+      wall(scene, -40, 108, WALL_T,  24, sWallMat);  // east wall  Z=96→120 (Z=90→96 open for corridor)
+
+      // ── Archway frame at corridor entrance (X=-40, Z=93) ──
+      { const arch2M = new THREE.MeshStandardMaterial({
+          color: 0xC8B080, emissive: 0x8a6828, emissiveIntensity: 0.14,
+          roughness: 0.44, metalness: 0.46,
+        });
+        box(scene, 0.14, 0.14, 6.4, -40, WALL_H + 0.16, 93, arch2M);           // top bar
+        box(scene, 0.14, WALL_H + 0.32, 0.14, -40, WALL_H / 2, 89.9, arch2M);  // south post
+        box(scene, 0.14, WALL_H + 0.32, 0.14, -40, WALL_H / 2, 96.1, arch2M);  // north post
+      }
+
+      // ── Pillars flanking corridor entrance ─────────────────
+      pillar(scene, -43, 91);
+      pillar(scene, -43, 95);
+
+      // ── Room label ─────────────────────────────────────────
+      roomLabel(scene, SCX, SCZ, 'Salle des Statues', -Math.PI / 2);
+
+      // ── Warm ambient point lights ───────────────────────────
+      [[-52, 97], [-68, 97], [-52, 113], [-68, 113]].forEach(([lx, lz]) => {
+        const pt = new THREE.PointLight(0xfff6e8, 1.0, 28);
+        pt.position.set(lx, 4.5, lz); scene.add(pt);
+      });
+      // Blue-tinted water glow over fountain
+      { const centerPt = new THREE.PointLight(0xddeeff, 0.60, 18);
+        centerPt.position.set(SCX, 4.5, SCZ); scene.add(centerPt); }
+
+      // ── Ceiling lamps ──────────────────────────────────────
+      [[-52, 97], [-68, 97], [-52, 113], [-68, 113]].forEach(([lx, lz]) => {
+        ceilingLamp(scene, lx, lz);
+      });
+
+      // ── Wall lanterns on west wall ──────────────────────────
+      wallLantern(scene, -79.85, 3.0, 97,  1);
+      wallLantern(scene, -79.85, 3.0, 113, 1);
+
+      // ── Wall sconces on east wall (north section) ───────────
+      wallSconce(scene, -40.12, 2.9, 100, -1);
+      wallSconce(scene, -40.12, 2.9, 116, -1);
+
+      // ── Roman/Greek life-sized marble statues ──────────────
+      // type A=arms at sides, B=right arm raised, C=athlete arms extended,
+      //      D=toga-draped arms crossed, E=armless (Venus style)
+      const romanStatue = (sx, sz, rotY, type) => {
+        const g = new THREE.Group();
+        if (rotY) g.rotation.y = rotY;
+        // Base slab
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.12, 1.05), statueBaseMat);
+        slab.position.y = 0.06; g.add(slab);
+        // Pedestal column
+        const ped = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.92, 0.82), statuePedMat);
+        ped.position.y = 0.58; g.add(ped);
+        // Pedestal top cap
+        const pedCap = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.14, 0.92), statueBaseMat);
+        pedCap.position.y = 1.11; g.add(pedCap);
+        const BY = 1.18; // body base Y
+        // Feet
+        const feet = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.30, 0.28), statueMarbMat);
+        feet.position.y = BY + 0.15; g.add(feet);
+        // Calves
+        const calves = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.42, 0.26), statueMarbMat);
+        calves.position.y = BY + 0.51; g.add(calves);
+        // Thighs
+        const thighs = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.40, 0.28), statueMarbMat);
+        thighs.position.y = BY + 0.91; g.add(thighs);
+        // Toga / draped cloth at hips
+        const toga = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.36, 0.36), statueMarbMat);
+        toga.position.y = BY + 1.23; g.add(toga);
+        // Abdomen
+        const abdomen = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.44, 0.32), statueMarbMat);
+        abdomen.position.y = BY + 1.63; g.add(abdomen);
+        // Chest
+        const chest = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.52, 0.34), statueMarbMat);
+        chest.position.y = BY + 2.09; g.add(chest);
+        // Shoulder cross-bar
+        const shoulders = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.18, 0.36), statueMarbMat);
+        shoulders.position.y = BY + 2.45; g.add(shoulders);
+        // Neck
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.24, 8), statueMarbMat);
+        neck.position.y = BY + 2.66; g.add(neck);
+        // Head (slightly elongated sphere)
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), statueMarbMat);
+        head.scale.set(0.90, 1.10, 0.88);
+        head.position.y = BY + 3.02; g.add(head);
+        // Hair cap (low hemisphere on top of head)
+        const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.23, 10, 5), statueMarbMat);
+        hairCap.scale.set(0.94, 0.46, 0.92);
+        hairCap.position.y = BY + 3.20; g.add(hairCap);
+        // Arms vary by type
+        if (type === 'A' || !type) {
+          // Both arms hanging at sides
+          const lA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.62, 0.18), statueMarbMat);
+          lA.position.set(-0.46, BY + 2.00, 0); g.add(lA);
+          const rA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.62, 0.18), statueMarbMat);
+          rA.position.set( 0.46, BY + 2.00, 0); g.add(rA);
+          const lF = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), statueMarbMat);
+          lF.position.set(-0.46, BY + 1.44, 0); g.add(lF);
+          const rF = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), statueMarbMat);
+          rF.position.set( 0.46, BY + 1.44, 0); g.add(rF);
+        } else if (type === 'B') {
+          // Left arm down, right arm raised (orator / emperor pose)
+          const lA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.62, 0.18), statueMarbMat);
+          lA.position.set(-0.46, BY + 2.00, 0); g.add(lA);
+          const lF = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), statueMarbMat);
+          lF.position.set(-0.46, BY + 1.44, 0); g.add(lF);
+          const rA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.60, 0.18), statueMarbMat);
+          rA.rotation.z = -Math.PI / 3; rA.position.set(0.68, BY + 2.60, 0); g.add(rA);
+          const rF = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), statueMarbMat);
+          rF.rotation.z = -Math.PI / 3; rF.position.set(1.00, BY + 3.10, 0); g.add(rF);
+        } else if (type === 'C') {
+          // Both arms extended outward (athlete / discus thrower pose)
+          const lA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.60, 0.18), statueMarbMat);
+          lA.rotation.z = Math.PI / 2.2; lA.position.set(-0.66, BY + 2.40, 0); g.add(lA);
+          const lF = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), statueMarbMat);
+          lF.rotation.z = Math.PI / 2.5; lF.position.set(-1.04, BY + 2.32, 0); g.add(lF);
+          const rA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.60, 0.18), statueMarbMat);
+          rA.rotation.z = -0.32; rA.position.set(0.46, BY + 1.98, 0); g.add(rA);
+          const rF = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), statueMarbMat);
+          rF.rotation.z = -0.22; rF.position.set(0.48, BY + 1.42, 0); g.add(rF);
+        } else if (type === 'D') {
+          // Arms draped / toga-wrapped across chest
+          const lA = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.56, 0.22), statueMarbMat);
+          lA.rotation.z = 0.42; lA.position.set(-0.30, BY + 2.20, 0.06); g.add(lA);
+          const rA = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.56, 0.22), statueMarbMat);
+          rA.rotation.z = -0.42; rA.position.set(0.30, BY + 2.20, 0.06); g.add(rA);
+        }
+        // type 'E' = armless (Venus de Milo style) — no arms added
+        g.position.set(sx, 0, sz);
+        g.castShadow = true;
+        g.receiveShadow = true;
+        scene.add(g);
+        addWallAABB(sx, sz, 1.2, 1.2);
+      };
+
+      // ── Place statues throughout the room ─────────────────
+      // Near entrance (Z=91–97)
+      romanStatue(-46, 91,  Math.PI * 0.15, 'A');
+      romanStatue(-46, 97, -Math.PI * 0.15, 'B');
+      // South section (Z=95–99)
+      romanStatue(-55, 96,  0,              'D');
+      romanStatue(-65, 95,  Math.PI,        'A');
+      romanStatue(-65, 97,  Math.PI,        'B');
+      romanStatue(-76, 95,  Math.PI * 0.5,  'D');
+      // Just south of fountain (Z=99)
+      romanStatue(-52, 99,  0,              'C');
+      romanStatue(-68, 99,  Math.PI,        'C');
+      // Against west wall
+      romanStatue(-77, 99,  Math.PI,        'A');
+      romanStatue(-77, 111, Math.PI,        'B');
+      // Just north of fountain (Z=111)
+      romanStatue(-52, 111, 0,              'A');
+      romanStatue(-68, 111, Math.PI,        'D');
+      // North section (Z=113–117)
+      romanStatue(-46, 114, 0,              'E');
+      romanStatue(-55, 116, 0,              'A');
+      romanStatue(-65, 116, 0,              'B');
+      romanStatue(-75, 113, Math.PI * 0.5,  'D');
+      romanStatue(-75, 117, Math.PI * 0.5,  'C');
+
+      // ── Central fountain ──────────────────────────────────
+      { const FX = SCX, FZ = SCZ;  // fountain center at room center (-60, 105)
+        const fStoneMat = new THREE.MeshStandardMaterial({
+          color: 0xC4BEB0, roughness: 0.58, metalness: 0.08,
+        });
+        const fWaterMat = new THREE.MeshStandardMaterial({
+          color: 0x3A88CC, emissive: 0x103888, emissiveIntensity: 0.22,
+          roughness: 0.06, metalness: 0.02, transparent: true, opacity: 0.70,
+        });
+        const fGoldMat = new THREE.MeshStandardMaterial({
+          color: 0xD4A020, emissive: 0x5a3c00, emissiveIntensity: 0.14,
+          roughness: 0.18, metalness: 0.88,
+        });
+        // Outer basin rim
+        const outerRim = new THREE.Mesh(new THREE.CylinderGeometry(3.40, 3.60, 0.28, 24), fStoneMat);
+        outerRim.position.set(FX, 0.14, FZ); outerRim.castShadow = true; scene.add(outerRim);
+        // Basin floor
+        const basinFloor = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 0.12, 24), fStoneMat);
+        basinFloor.position.set(FX, 0.06, FZ); scene.add(basinFloor);
+        // Water surface
+        const water = new THREE.Mesh(new THREE.CylinderGeometry(2.90, 2.90, 0.04, 24), fWaterMat);
+        water.position.set(FX, 0.27, FZ); scene.add(water);
+        // Gold decorative ring around basin lip
+        const goldRing = new THREE.Mesh(new THREE.TorusGeometry(3.48, 0.042, 6, 32), fGoldMat);
+        goldRing.rotation.x = Math.PI / 2; goldRing.position.set(FX, 0.28, FZ); scene.add(goldRing);
+        // Centre column base
+        const colBase = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 0.46, 12), fStoneMat);
+        colBase.position.set(FX, 0.23, FZ); colBase.castShadow = true; scene.add(colBase);
+        // Column shaft
+        const colShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.82, 12), fStoneMat);
+        colShaft.position.set(FX, 1.14, FZ); colShaft.castShadow = true; scene.add(colShaft);
+        // Column capital
+        const colCap = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.30, 0.30, 12), fStoneMat);
+        colCap.position.set(FX, 2.20, FZ); scene.add(colCap);
+        // Gold capital band
+        const capBand = new THREE.Mesh(new THREE.TorusGeometry(0.50, 0.032, 6, 16), fGoldMat);
+        capBand.rotation.x = Math.PI / 2; capBand.position.set(FX, 2.36, FZ); scene.add(capBand);
+        // Upper bowl rim
+        const uBowl = new THREE.Mesh(new THREE.CylinderGeometry(1.40, 1.56, 0.24, 16), fStoneMat);
+        uBowl.position.set(FX, 2.50, FZ); uBowl.castShadow = true; scene.add(uBowl);
+        // Upper water pool
+        const uWater = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.28, 0.05, 16), fWaterMat);
+        uWater.position.set(FX, 2.63, FZ); scene.add(uWater);
+        // Gold ring on upper bowl
+        const uGoldRing = new THREE.Mesh(new THREE.TorusGeometry(1.46, 0.030, 6, 20), fGoldMat);
+        uGoldRing.rotation.x = Math.PI / 2; uGoldRing.position.set(FX, 2.62, FZ); scene.add(uGoldRing);
+        // Finial spire
+        const finial = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.16, 0.60, 8), fGoldMat);
+        finial.position.set(FX, 3.16, FZ); scene.add(finial);
+        const finialSphere = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), fGoldMat);
+        finialSphere.position.set(FX, 3.50, FZ); scene.add(finialSphere);
+        // Subtle blue water glow light
+        const waterPt = new THREE.PointLight(0x66aaff, 0.55, 8);
+        waterPt.position.set(FX, 1.5, FZ); scene.add(waterPt);
+        addWallAABB(FX, FZ, 7.4, 7.4);  // fountain collision zone
+      }
+
+      // ── Bonsai trees ──────────────────────────────────────
+      const bonsaiTree = (bx, bz) => {
+        const potM   = new THREE.MeshStandardMaterial({ color: 0x7A3A18, roughness: 0.92, metalness: 0.0 });
+        const soilM  = new THREE.MeshStandardMaterial({ color: 0x281A0C, roughness: 0.96, metalness: 0.0 });
+        const trunkM = new THREE.MeshStandardMaterial({ color: 0x3A1E08, roughness: 0.88, metalness: 0.0 });
+        const leafM  = new THREE.MeshStandardMaterial({ color: 0x2A5A18, roughness: 0.86, metalness: 0.0 });
+        // Shallow oval pot
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.22, 0.22, 10), potM);
+        pot.position.set(bx, 0.11, bz); pot.castShadow = true; scene.add(pot);
+        // Soil disc
+        const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.04, 10), soilM);
+        soil.position.set(bx, 0.24, bz); scene.add(soil);
+        // Main trunk — slightly leaning
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.07, 0.62, 7), trunkM);
+        trunk.rotation.z = 0.20; trunk.position.set(bx + 0.07, 0.57, bz);
+        trunk.castShadow = true; scene.add(trunk);
+        // Side branch sweeping outward
+        const br1 = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.038, 0.38, 6), trunkM);
+        br1.rotation.z = Math.PI / 2.4; br1.position.set(bx + 0.24, 0.82, bz); scene.add(br1);
+        // Small secondary branch
+        const br2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.028, 0.26, 5), trunkM);
+        br2.rotation.z = -Math.PI / 3.5; br2.position.set(bx - 0.14, 0.78, bz); scene.add(br2);
+        // Foliage clusters (pom-pom spheres)
+        [[bx + 0.08, 1.10, bz, 0.23],
+         [bx + 0.32, 0.88, bz + 0.08, 0.17],
+         [bx - 0.10, 1.18, bz - 0.06, 0.15],
+         [bx + 0.16, 1.26, bz + 0.04, 0.13]].forEach(([fx, fy, fz, fr]) => {
+          const leaf = new THREE.Mesh(new THREE.SphereGeometry(fr, 7, 5), leafM);
+          leaf.position.set(fx, fy, fz); leaf.castShadow = true; scene.add(leaf);
+        });
+      };
+
+      // Place bonsai trees in corners and along walls
+      bonsaiTree(-42, 91);   // near entrance, south
+      bonsaiTree(-42, 95);   // near entrance, north
+      bonsaiTree(-78, 92);   // far west, south corner
+      bonsaiTree(-78, 118);  // far west, north corner
+      bonsaiTree(-58, 119);  // north wall, centre-west
+      bonsaiTree(-66, 119);  // north wall, centre-east
+      bonsaiTree(-44, 119);  // north wall, east side
+
+      // ── Classic pillar colonnade ────────────────────────────
+      pillar(scene, -48, 98);
+      pillar(scene, -72, 98);
+      pillar(scene, -48, 112);
+      pillar(scene, -72, 112);
+
+      // ── Central decorative rug ──────────────────────────────
+      rug(scene, SCX, SCZ, 20, 14, 0x1C1408, 0xD4A828);
+
+      // ── Guard patrol ────────────────────────────────────────
+      guardData.push({
+        spawnX: -55, spawnZ: 98,
+        waypoints: [
+          new THREE.Vector3(-55, 0, 98),
+          new THREE.Vector3(-55, 0, 112),
+          new THREE.Vector3(-65, 0, 112),
+          new THREE.Vector3(-65, 0, 98),
+        ],
+      });
+
+      // ── Security camera watching the corridor entrance ──────
+      cameraData.push({ x: -60, y: WALL_H - 0.3, z: 93, sweepAngle: Math.PI / 2.5, facingZ: 1 });
+
+    } // end Salle des Statues
 
     // ════════════════════════════════
     //  CORRIDOR 2  cx=0  cz=107.5  10×15
