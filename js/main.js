@@ -1161,21 +1161,30 @@
   // ── Proximity vignette ─────────────────────────────────
   const stressVignette = document.getElementById('stress-vignette');
   let   _vignetteOpacity = 0;
+  let   _vignetteFrame   = 0;
+  let   _vignetteLast    = '0';  // last written opacity string, avoids DOM write when unchanged
 
   function tickStressVignette(dt, playerPos) {
-    const guardPositions = Guards.getGuardPositions();
-    let minDist = Infinity;
-    for (const gp of guardPositions) {
-      const dx = gp.x - playerPos.x;
-      const dz = gp.z - playerPos.z;
-      const d  = dx * dx + dz * dz;
-      if (d < minDist) minDist = d;
+    // Recompute guard proximity every 3 frames (~20 Hz) to reduce LOS + DOM cost
+    if (++_vignetteFrame % 3 === 0) {
+      const guardPositions = Guards.getGuardPositions();
+      let minDist2 = Infinity;
+      for (const gp of guardPositions) {
+        const dx = gp.x - playerPos.x;
+        const dz = gp.z - playerPos.z;
+        const d  = dx * dx + dz * dz;
+        if (d < minDist2) minDist2 = d;
+      }
+      const minDist = Math.sqrt(minDist2);
+      // Full vignette at dist ≤ 4, zero at dist ≥ 14
+      const target = Math.max(0, Math.min(1, 1 - (minDist - 4) / 10)) * 0.8;
+      _vignetteOpacity += (target - _vignetteOpacity) * Math.min(1, dt * 5);
+      const opStr = _vignetteOpacity.toFixed(3);
+      if (opStr !== _vignetteLast) {
+        stressVignette.style.opacity = opStr;
+        _vignetteLast = opStr;
+      }
     }
-    minDist = Math.sqrt(minDist);
-    // Full vignette at dist ≤ 4, zero at dist ≥ 14
-    const target = Math.max(0, Math.min(1, 1 - (minDist - 4) / 10)) * 0.8;
-    _vignetteOpacity += (target - _vignetteOpacity) * Math.min(1, dt * 5);
-    stressVignette.style.opacity = _vignetteOpacity;
   }
 
   // ── Game start / restart ───────────────────────────────

@@ -475,6 +475,13 @@ window.Guards = (function () {
     return top;
   }
 
+  // Pre-allocated A* buffers — reused each call to avoid TypedArray GC churn
+  const _ASTAR_N      = NAV_COLS * NAV_ROWS;
+  const _astarClosed  = new Uint8Array(_ASTAR_N);
+  const _astarParents = new Int32Array(_ASTAR_N).fill(-1);
+  // Dirty list can hold at most _ASTAR_N cells (one per grid cell max)
+  const _astarDirty   = new Int32Array(_ASTAR_N);
+
   // Returns array of {x, z} world waypoints from (sx,sz) to (ex,ez), or null if none.
   function astar(sx, sz, ex, ez) {
     if (!_navGrid) return null;
@@ -508,48 +515,60 @@ window.Guards = (function () {
     // If start equals goal, nothing to do
     if (sc === ec && sr === er) return [];
 
-    const closed   = new Uint8Array(NAV_COLS * NAV_ROWS);
-    const parents  = new Int32Array(NAV_COLS * NAV_ROWS).fill(-1);
-    const heap     = [];
-    const DIRS     = [
-      [-1,-1,Math.SQRT2],[0,-1,1],[1,-1,Math.SQRT2],
-      [-1, 0,1],                  [1, 0,1],
-      [-1, 1,Math.SQRT2],[0, 1,1],[1, 1,Math.SQRT2],
-    ];
-
+    let dirtyN = 0;
+    const heap = [];
     const heur = (c, r) => Math.sqrt((c-ec)*(c-ec)+(r-er)*(r-er));
     _heapPush(heap, { col: sc, row: sr, g: 0, f: heur(sc, sr), parentIdx: -1 });
 
     let expansions = 0;
-    while (heap.length > 0 && expansions < NAV_COLS * NAV_ROWS) {
+    while (heap.length > 0 && expansions < _ASTAR_N) {
       const cur = _heapPop(heap);
       const idx = cur.row * NAV_COLS + cur.col;
-      if (closed[idx]) continue;
-      closed[idx]   = 1;
-      parents[idx]  = cur.parentIdx >= 0 ? cur.parentIdx : idx;
+      if (_astarClosed[idx]) continue;
+      _astarClosed[idx] = 1;
+      _astarParents[idx] = cur.parentIdx >= 0 ? cur.parentIdx : idx;
+      _astarDirty[dirtyN++] = idx;
       expansions++;
 
       if (cur.col === ec && cur.row === er) {
         // Reconstruct path
         const path = [];
         let ci = idx;
-        while (ci !== parents[ci]) {
+        while (ci !== _astarParents[ci]) {
           const c = ci % NAV_COLS, r = Math.floor(ci / NAV_COLS);
           path.push(cellToWorld(c, r));
-          ci = parents[ci];
+          ci = _astarParents[ci];
         }
         path.reverse();
+        // Reset only touched cells (no full-array fill each call)
+        for (let i = 0; i < dirtyN; i++) {
+          const di = _astarDirty[i];
+          _astarClosed[di] = 0;
+          _astarParents[di] = -1;
+        }
         return path;
       }
 
-      for (const [dc, dr, cost] of DIRS) {
+      const DIRS8 = [
+        [-1,-1,Math.SQRT2],[0,-1,1],[1,-1,Math.SQRT2],
+        [-1, 0,1],                  [1, 0,1],
+        [-1, 1,Math.SQRT2],[0, 1,1],[1, 1,Math.SQRT2],
+      ];
+      for (const [dc, dr, cost] of DIRS8) {
         const nc = cur.col + dc, nr = cur.row + dr;
         if (nc < 0 || nc >= NAV_COLS || nr < 0 || nr >= NAV_ROWS) continue;
         const ni = nr * NAV_COLS + nc;
-        if (closed[ni] || _navGrid[ni] === 1) continue;
+        if (_astarClosed[ni] || _navGrid[ni] === 1) continue;
         const g = cur.g + cost;
         _heapPush(heap, { col: nc, row: nr, g, f: g + heur(nc, nr), parentIdx: idx });
       }
+    }
+
+    // Reset touched cells on failure path too
+    for (let i = 0; i < dirtyN; i++) {
+      const di = _astarDirty[i];
+      _astarClosed[di] = 0;
+      _astarParents[di] = -1;
     }
     return null; // no path found
   }
@@ -717,8 +736,9 @@ window.Guards = (function () {
 
     update(dt, playerPos, isCrouching, doVisionCheck) {
       const G = window.G;
-      // Refresh cached vision result on this guard's assigned frame, or whenever chasing
-      if (this.state === 'alerted' || doVisionCheck) {
+      // Refresh cached vision on this guard's staggered frame.
+      // Even alerted guards are staggered — catch distance check below runs every frame.
+      if (doVisionCheck) {
         this._lastSaw = this.canSeePlayer(playerPos, isCrouching);
       }
       const sees = this._lastSaw;

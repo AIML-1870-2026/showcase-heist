@@ -2518,8 +2518,8 @@ window.GameMap = (function () {
     stealables.push({ mesh: paintMesh, wallMesh: monaWallMesh, item: 'painting', x: -24.9, z: 86, taken: false, value: 800000000 });
     placard(scene, -24.9, 2.6, 86, 'Mona Lisa', 'Léonard de Vinci, c. 1503', 'west');
     // Glowing floor ring — guides player to the stealable painting
-    const paintRingMat = new THREE.MeshBasicMaterial({
-      color: 0xffe066, emissive: 0xffe066, transparent: true, opacity: 0.45,
+    const paintRingMat = new THREE.MeshStandardMaterial({
+      color: 0xffe066, emissive: 0xffe066, emissiveIntensity: 0.8, transparent: true, opacity: 0.45,
       side: THREE.DoubleSide, depthWrite: false,
     });
     const paintRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.1, 32), paintRingMat);
