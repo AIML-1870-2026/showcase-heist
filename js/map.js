@@ -1180,20 +1180,31 @@ window.GameMap = (function () {
   }
 
   // ── Elegant bay tree (Louvre-style topiary in stone urn) ────────────────────
+  // Shared lorTree materials & geometries (created once)
+  const _lorTreeMats = {
+    urn:   new THREE.MeshStandardMaterial({ color: 0x8c9090, roughness: 0.72, metalness: 0.08 }),
+    rim:   new THREE.MeshStandardMaterial({ color: 0xc8a040, roughness: 0.28, metalness: 0.75, emissive: 0x806418, emissiveIntensity: 0.20 }),
+    trunk: new THREE.MeshStandardMaterial({ color: 0x5a3a18, roughness: 0.88, metalness: 0.0  }),
+    leaf:  new THREE.MeshStandardMaterial({ color: 0x2a5518, roughness: 0.80, metalness: 0.0,  emissive: 0x0a1a06, emissiveIntensity: 0.15 }),
+  };
+  const _lorTreeGeos = {
+    urn:   new THREE.CylinderGeometry(0.34, 0.24, 0.55, 12),
+    rim:   new THREE.TorusGeometry(0.34, 0.03, 6, 20),
+    trunk: new THREE.CylinderGeometry(0.06, 0.09, 1.8, 7),
+    ball:  new THREE.SphereGeometry(0.68, 9, 7),
+    top:   new THREE.SphereGeometry(0.28, 7, 5),
+  };
   function lorTree(scene, x, z) {
-    const urnMat   = new THREE.MeshStandardMaterial({ color: 0x8c9090, roughness: 0.72, metalness: 0.08 });
-    const goldRim  = new THREE.MeshStandardMaterial({ color: 0xc8a040, roughness: 0.28, metalness: 0.75, emissive: 0x806418, emissiveIntensity: 0.20 });
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a18, roughness: 0.88, metalness: 0.0  });
-    const leafMat  = new THREE.MeshStandardMaterial({ color: 0x2a5518, roughness: 0.80, metalness: 0.0,  emissive: 0x0a1a06, emissiveIntensity: 0.15 });
-    const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.24, 0.55, 12), urnMat);
+    const { urn: urnMat, rim: goldRim, trunk: trunkMat, leaf: leafMat } = _lorTreeMats;
+    const urn = new THREE.Mesh(_lorTreeGeos.urn, urnMat);
     urn.position.set(x, 0.275, z); urn.castShadow = true; scene.add(urn);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.03, 6, 20), goldRim);
+    const rim = new THREE.Mesh(_lorTreeGeos.rim, goldRim);
     rim.rotation.x = Math.PI / 2; rim.position.set(x, 0.55, z); scene.add(rim);
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 1.8, 7), trunkMat);
+    const trunk = new THREE.Mesh(_lorTreeGeos.trunk, trunkMat);
     trunk.position.set(x, 1.45, z); trunk.castShadow = true; scene.add(trunk);
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.68, 9, 7), leafMat);
+    const ball = new THREE.Mesh(_lorTreeGeos.ball, leafMat);
     ball.position.set(x, 3.08, z); ball.castShadow = true; scene.add(ball);
-    const top = new THREE.Mesh(new THREE.SphereGeometry(0.28, 7, 5), leafMat);
+    const top = new THREE.Mesh(_lorTreeGeos.top, leafMat);
     top.position.set(x, 3.92, z); top.castShadow = true; scene.add(top);
     addWallAABB(x, z, 0.9, 0.9);
   }
@@ -2289,20 +2300,25 @@ window.GameMap = (function () {
 
       // ── Flower beds in garden compartments ───────────────
       {
+        // Shared materials & geometries (created once, reused across all beds)
+        const mStem = new THREE.MeshLambertMaterial({ color: 0x2a6020 });
+        const bedColors = [0xee3333, 0xffcc00, 0xff88bb, 0x9933ee, 0xff6600, 0x44bbee, 0xff4488, 0x88dd44];
+        const flowerMats = bedColors.map(c => new THREE.MeshLambertMaterial({ color: c }));
+        const flowerGeoSm = new THREE.SphereGeometry(0.09, 5, 4);
+        const flowerGeoLg = new THREE.SphereGeometry(0.12, 5, 4);
+        const stemGeo = new THREE.BoxGeometry(0.04, 1, 0.04); // scaled per stem
         function flowerBed(fbx, fbz, fw, fd) {
           box(scene, fw, 0.12, fd, fbx, 0.06, fbz, mSoil);
-          const bedColors = [0xee3333, 0xffcc00, 0xff88bb, 0x9933ee, 0xff6600, 0x44bbee, 0xff4488, 0x88dd44];
           let fi = 0;
           for (let row = 0; row < 3; row++) {
             for (let col = 0; col < 5; col++) {
               const fx = fbx - fw / 2 + 0.28 + col * ((fw - 0.56) / 4);
               const fz = fbz - fd / 2 + 0.28 + row * ((fd - 0.56) / 2);
               const fh = 0.20 + (fi % 3) * 0.09;
-              const clr = bedColors[fi % bedColors.length];
-              box(scene, 0.04, fh, 0.04, fx, fh / 2 + 0.12, fz,
-                new THREE.MeshStandardMaterial({ color: 0x2a6020, roughness: 0.9 }));
-              const flwr = new THREE.Mesh(new THREE.SphereGeometry(0.09 + (fi % 2) * 0.03, 5, 4),
-                new THREE.MeshStandardMaterial({ color: clr, roughness: 0.78, emissive: clr, emissiveIntensity: 0.12 }));
+              const stem = new THREE.Mesh(stemGeo, mStem);
+              stem.scale.y = fh; stem.position.set(fx, fh / 2 + 0.12, fz); scene.add(stem);
+              const flwr = new THREE.Mesh(fi % 2 === 0 ? flowerGeoSm : flowerGeoLg,
+                flowerMats[fi % flowerMats.length]);
               flwr.position.set(fx, 0.12 + fh + 0.05, fz); scene.add(flwr);
               fi++;
             }

@@ -873,7 +873,9 @@ window.Player = (function () {
     const nx = dx / len, nz = dz / len;
     let minT = len;
     const R = 0.25; // camera radius padding
-    for (const w of G.walls) {
+    // Use spatial grid (covers ±10 units — more than CAM_DIST) instead of all walls
+    const nearWalls = _queryWallGrid(pos.x, pos.z);
+    for (const w of nearWalls) {
       let t0x, t1x, t0z, t1z;
       if (Math.abs(nx) < 1e-8) {
         if (pos.x + R < w.minX || pos.x - R > w.maxX) continue;

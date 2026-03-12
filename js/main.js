@@ -599,14 +599,17 @@
       alarmPulse += dt * 5;
       light.intensity = 0.35 + Math.abs(Math.sin(alarmPulse)) * 0.35;
 
-      // Flicker static room lights
-      flickerT += dt * 18;
-      const flicker = 0.6 + Math.sin(flickerT) * 0.28 + Math.sin(flickerT * 2.73) * 0.12;
-      flickerLights.forEach(l => { l.intensity = l._baseIntensity * flicker; });
-
+      // Flicker static room lights (skip if power-out block will override this frame)
+      if (!G._powerOut) {
+        flickerT += dt * 18;
+        const flicker = 0.6 + Math.sin(flickerT) * 0.28 + Math.sin(flickerT * 2.73) * 0.12;
+        flickerLights.forEach(l => { l.intensity = l._baseIntensity * flicker; });
+      }
     } else {
       light.intensity = 0;
-      flickerLights.forEach(l => { l.intensity = l._baseIntensity; });
+      if (!G._powerOut) {
+        flickerLights.forEach(l => { l.intensity = l._baseIntensity; });
+      }
     }
   }
 
@@ -887,22 +890,25 @@
       _spawnSmoke(G._smokeEvent.x, G._smokeEvent.z);
       G._smokeEvent = null;
     }
-    // Age clouds
-    for (let i = G._smokeClouds.length - 1; i >= 0; i--) {
+    // Age clouds (filter only when something actually expired to avoid splice overhead)
+    let anyExpired = false;
+    for (let i = 0; i < G._smokeClouds.length; i++) {
       G._smokeClouds[i].t += dt;
-      if (G._smokeClouds[i].t >= G._smokeClouds[i].maxT) G._smokeClouds.splice(i, 1);
+      if (G._smokeClouds[i].t >= G._smokeClouds[i].maxT) anyExpired = true;
     }
+    if (anyExpired) G._smokeClouds = G._smokeClouds.filter(c => c.t < c.maxT);
     // Particles
     if (_smokeT >= SMOKE_DUR) { smokeMesh.material.opacity = 0; return; }
     _smokeT += dt;
+    const smokeDamp = Math.pow(0.88, dt * 60);
     for (let i = 0; i < SMOKE_COUNT; i++) {
       if (smokeLife[i] >= SMOKE_DUR) continue;
       smokeLife[i]        += dt;
       smokePos[i * 3]     += smokeVel[i * 3]     * dt;
       smokePos[i * 3 + 1] += smokeVel[i * 3 + 1] * dt;
       smokePos[i * 3 + 2] += smokeVel[i * 3 + 2] * dt;
-      smokeVel[i * 3]     *= Math.pow(0.88, dt * 60);
-      smokeVel[i * 3 + 2] *= Math.pow(0.88, dt * 60);
+      smokeVel[i * 3]     *= smokeDamp;
+      smokeVel[i * 3 + 2] *= smokeDamp;
     }
     smokeGeo.attributes.position.needsUpdate = true;
     smokeMesh.material.opacity = 0.48 * Math.max(0, 1 - _smokeT / SMOKE_DUR);

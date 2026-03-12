@@ -159,7 +159,7 @@ window.Companion = (function () {
 
       case 'hack': {
         if (!G || !G.terminals) break;
-        const playerPos = Player.getPosition();
+        const playerPos = Player.getPositionRef();
         let nearestT = null, nearDist = Infinity;
         G.terminals.forEach(t => {
           if (t.hacked) return;
