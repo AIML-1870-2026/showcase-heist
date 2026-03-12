@@ -2349,12 +2349,12 @@ window.GameMap = (function () {
     laserData.push({ type: 'low', x1:   8, x2:  20, y: 0.5, z: 67 });
     laserData.push({ type: 'low', x1: -20, x2:  20, y: 0.5, z: 74 });
 
-    // La Joconde (Mona Lisa) — main stealable painting on west wall of gallery
-    const monaWallMesh = wallPainting(scene, -24.9, 3.8, 92, M.monaLisa, true);
-    paintingSpotlight(scene, -24.9, 3.8, 92, 'west');
-    const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 92, M.monaLisa);
-    stealables.push({ mesh: paintMesh, wallMesh: monaWallMesh, item: 'painting', x: -24.9, z: 92, taken: false, value: 800000000 });
-    placard(scene, -24.9, 2.6, 92, 'La Joconde', 'Léonard de Vinci, c. 1503', 'west');
+    // La Joconde (Mona Lisa) — main stealable painting on west wall of gallery (Z=86, on solid wall stub Z=78.5→90)
+    const monaWallMesh = wallPainting(scene, -24.9, 3.8, 86, M.monaLisa, true);
+    paintingSpotlight(scene, -24.9, 3.8, 86, 'west');
+    const paintMesh = box(scene, 0.05, 2.0, 2.8, -24.9, 3.8, 86, M.monaLisa);
+    stealables.push({ mesh: paintMesh, wallMesh: monaWallMesh, item: 'painting', x: -24.9, z: 86, taken: false, value: 800000000 });
+    placard(scene, -24.9, 2.6, 86, 'La Joconde', 'Léonard de Vinci, c. 1503', 'west');
     // Glowing floor ring — guides player to the stealable painting
     const paintRingMat = new THREE.MeshBasicMaterial({
       color: 0xffe066, emissive: 0xffe066, transparent: true, opacity: 0.45,
@@ -2362,16 +2362,16 @@ window.GameMap = (function () {
     });
     const paintRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.1, 32), paintRingMat);
     paintRing.rotation.x = -Math.PI / 2;
-    paintRing.position.set(-24.5, 0.02, 92);
+    paintRing.position.set(-24.5, 0.02, 86);
     scene.add(paintRing);
     paintMesh.userData.floorRing = paintRing;  // hidden when painting is taken
 
     // Velvet rope barrier around the Mona Lisa
+    stanchion(scene, -21.2, 83.0);
+    stanchion(scene, -21.2, 86.0);
     stanchion(scene, -21.2, 89.0);
-    stanchion(scene, -21.2, 92.0);
-    stanchion(scene, -21.2, 95.0);
-    velvetRope(scene, -21.2, 89.0, -21.2, 92.0);
-    velvetRope(scene, -21.2, 92.0, -21.2, 95.0);
+    velvetRope(scene, -21.2, 83.0, -21.2, 86.0);
+    velvetRope(scene, -21.2, 86.0, -21.2, 89.0);
 
     // Display cases
     displayCase(scene,  14, 70);

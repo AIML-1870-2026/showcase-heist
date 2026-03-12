@@ -1812,7 +1812,7 @@
       navTargets: {
         yellow:  { x:  0,    z: 16.5  },
         gallery: { x: -14,   z: 60    },
-        painting:{ x: -24.9, z: 92    },
+        painting:{ x: -24.9, z: 86    },
         blue:    { x:  14,   z: 70    },
         crown:   { x:  0,    z: 140   },
         escape:  { x:  0,    z: 163   },
@@ -2067,7 +2067,7 @@
       navTargets: {
         yellow:  { x:  0,    z: 16.5 },
         gallery: { x: -14,   z: 60   },
-        painting:{ x: -24.9, z: 92   },
+        painting:{ x: -24.9, z: 86   },
         crown:   { x: 46,    z: 104  },
         escape:  { x:  0,    z: 163  },
       },
