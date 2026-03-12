@@ -1492,12 +1492,14 @@ window.Player = (function () {
       camera.lookAt(pos.x, pos.y + 1.4, pos.z);
     }
     // Rebuild mesh so suit/eye colours from customisation screen take effect
-    if (playerMesh) scene.remove(playerMesh);
-    playerMesh = buildMesh(scene);
-    _leftLeg   = playerMesh.userData.leftLeg;
-    _rightLeg  = playerMesh.userData.rightLeg;
-    _leftArm   = playerMesh.userData.leftArm;
-    _rightArm  = playerMesh.userData.rightArm;
+    if (scene) {
+      if (playerMesh) scene.remove(playerMesh);
+      playerMesh = buildMesh(scene);
+      _leftLeg   = playerMesh.userData.leftLeg;
+      _rightLeg  = playerMesh.userData.rightLeg;
+      _leftArm   = playerMesh.userData.leftArm;
+      _rightArm  = playerMesh.userData.rightArm;
+    }
 
   }
 
