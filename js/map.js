@@ -824,9 +824,11 @@ window.GameMap = (function () {
 
   // Full room shell: floor + ceiling + 4 walls with opening gap
   // Openings (door slots) are left by NOT drawing that full wall segment —
-  // instead two partial segments are drawn, leaving a 3-unit door gap.
-  function roomWalls(scene, cx, cz, rw, rd, openings, wallMat, floorMat, ceilMat) {
+  // instead two partial segments are drawn, leaving a gap for corridor passage.
+  // doorW: optional width of the north opening in units (default 10 = corridor width)
+  function roomWalls(scene, cx, cz, rw, rd, openings, wallMat, floorMat, ceilMat, doorW) {
     openings = openings || {};
+    doorW = doorW || 10; // match the 10-unit-wide corridors (X ±5)
 
     // South wall (−Z face)
     if (!openings.south) {
@@ -836,8 +838,8 @@ window.GameMap = (function () {
     if (!openings.north) {
       wall(scene, cx, cz + rd / 2, rw, WALL_T, wallMat);
     } else {
-      // Two stubs flanking the door gap (3 units wide centered)
-      const stub = (rw - 3) / 2;
+      // Two stubs flanking the corridor gap (doorW units wide, centered)
+      const stub = (rw - doorW) / 2;
       wall(scene, cx - (rw / 2 - stub / 2), cz + rd / 2, stub, WALL_T, wallMat);
       wall(scene, cx + (rw / 2 - stub / 2), cz + rd / 2, stub, WALL_T, wallMat);
     }
