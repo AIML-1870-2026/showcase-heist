@@ -51,7 +51,13 @@ window.Guards = (function () {
     const dx = bx - ax;
     const dz = bz - az;
     const walls = window.G ? window.G.walls : [];
+    // Segment AABB — cheap pre-filter skips most walls
+    const segMinX = ax < bx ? ax : bx;
+    const segMaxX = ax > bx ? ax : bx;
+    const segMinZ = az < bz ? az : bz;
+    const segMaxZ = az > bz ? az : bz;
     for (const w of walls) {
+      if (w.minX > segMaxX || w.maxX < segMinX || w.minZ > segMaxZ || w.maxZ < segMinZ) continue;
       let tminX, tmaxX;
       if (Math.abs(dx) < 1e-8) {
         if (ax < w.minX || ax > w.maxX) continue;
@@ -88,7 +94,11 @@ window.Guards = (function () {
   };
 
   // ── Alert icon sprite (! / ?) ──────────────────────────
+  // Pre-built cache — avoids canvas+texture allocation on every guard state change
+  const _iconMatCache = {};
   function makeIconMaterial(symbol, color) {
+    const key = symbol + '|' + color;
+    if (_iconMatCache[key]) return _iconMatCache[key];
     const W = 128, H = 128;
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
@@ -107,7 +117,8 @@ window.Guards = (function () {
     c.strokeText(symbol, W / 2, H / 2 + 4);
     c.fillText(symbol, W / 2, H / 2 + 4);
     const tex = new THREE.CanvasTexture(canvas);
-    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    _iconMatCache[key] = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    return _iconMatCache[key];
   }
 
   function makeBubbleMaterial(text, state) {
@@ -689,10 +700,10 @@ window.Guards = (function () {
       const dist2 = dx * dx + dz * dz;
       if (dist2 > range * range) return false;
 
-      // Dot-product angle check
+      // Dot-product angle check — compare dot*dist instead of dividing dx/dz
       const dist = Math.sqrt(dist2);
-      const dot  = this.facing.x * (dx / dist) + this.facing.z * (dz / dist);
-      if (dot <= Math.cos(VISION_ANGLE / 2)) return false;
+      const dot  = this.facing.x * dx + this.facing.z * dz;
+      if (dot <= Math.cos(VISION_ANGLE / 2) * dist) return false;
 
       // Smoke cloud — player invisible when inside active cloud
       const clouds = window.G && window.G._smokeClouds;
@@ -925,8 +936,7 @@ window.Guards = (function () {
     tickFlashlight() {}
 
     _showIcon(symbol, color) {
-      if (this._iconSpriteMat) { this._iconSpriteMat.map.dispose(); this._iconSpriteMat.dispose(); }
-      this._iconSpriteMat = makeIconMaterial(symbol, color);
+      this._iconSpriteMat = makeIconMaterial(symbol, color); // returns cached material
       this._iconSprite.material = this._iconSpriteMat;
       this._iconSprite.material.opacity = 0;
       this._iconSprite.visible = true;
@@ -1092,6 +1102,10 @@ window.Guards = (function () {
     guards.forEach((g, i) => g.update(dt, playerPos, isCrouching, i % 3 === _visionFrame));
 
     // Body discovery: patrolling guards that walk near a subdued guard raise alarm
+    // Early-exit if no guard is subdued (the common case) — avoids O(n²) scan every frame
+    let _anySubdued = false;
+    for (let _si = 0; _si < guards.length; _si++) { if (guards[_si].state === 'subdued') { _anySubdued = true; break; } }
+    if (!_anySubdued) return;
     guards.forEach((g, i) => {
       if (g.state !== 'subdued') return;
       guards.forEach((other, j) => {
