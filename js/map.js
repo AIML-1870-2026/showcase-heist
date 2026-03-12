@@ -6908,7 +6908,8 @@ window.GameMap = (function () {
         const aHelm = new THREE.Group();
         const aHelmBall = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), whiteMat);
         aHelm.add(aHelmBall);
-        const aVisor = new THREE.Mesh(new THREE.SphereGeometry(0.20, 10, 8), goldVisorMat);
+        const goldVisorMat2 = new THREE.MeshStandardMaterial({ color: 0xd4a820, roughness: 0.06, metalness: 0.92, emissive: 0x6a4400, emissiveIntensity: 0.22, transparent: true, opacity: 0.80 });
+        const aVisor = new THREE.Mesh(new THREE.SphereGeometry(0.20, 10, 8), goldVisorMat2);
         aVisor.scale.set(1, 0.70, 0.55); aVisor.position.set(0.08, 0, 0.20);
         aHelm.add(aVisor);
         aHelm.position.set(93, 1.62, 142);
